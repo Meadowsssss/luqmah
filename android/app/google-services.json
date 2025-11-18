@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "280963705216",
+    "project_id": "luqmah-14bc5",
+    "storage_bucket": "luqmah-14bc5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:280963705216:android:08e954e52417bfcb7d7965",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIFDhlTI6bSSe9nmoHtK6Q0ngYxEze6To"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
