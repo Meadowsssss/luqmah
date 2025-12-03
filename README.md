@@ -114,11 +114,12 @@ flutter run -d chrome
 ```text
 lib/
   main.dart
-  screens/
+  pages/
   widgets/
   services/
   models/
   firebase_options.dart
+  main.dart
 ```
 
 ---
