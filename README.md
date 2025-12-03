@@ -19,7 +19,7 @@ The backend uses **Firebase Firestore** to store restaurants, menus, and custome
 
 ---
 
-## 📚 Official Documentation (What you will be following)
+## 📚 Official Documentation (What you will be following DO NOT IGNORE THIS README ISN'T A REPLACEMENT FOR THESE DOCS)
 
 ### 🔗 Flutter Install  
 https://docs.flutter.dev/install/manual
@@ -42,6 +42,8 @@ https://firebase.google.com/docs/flutter/setup?platform=web
 3. **Code editor** (VS Code recommended)
 
 4. **Firebase CLI (optional, only for project owner)**  
+  You need to isntall node.JS .
+  Use the firebase docs above for more detials.
    ```bash
    npm install -g firebase-tools
    ```
@@ -113,12 +115,13 @@ flutter run -d chrome
 ## 🗂 Project Structure
 ```text
 lib/
-  main.dart
+  
   pages/
   widgets/
   services/
   models/
   firebase_options.dart
+  main.dart
 ```
 
 ---
@@ -150,17 +153,6 @@ Future<void> printCustomers() async {
 ### Version solving failed  
 Make sure all collaborators use the SAME `pubspec.yaml`.
 
-### LNK1168 (Windows build error)  
-Close/kil app exe → run again.
-
-### Firebase not initialized  
-Ensure:
-```dart
-await Firebase.initializeApp(
-  options: DefaultFirebaseOptions.currentPlatform,
-);
-```
-
 ---
 
 ## 👥 Collaboration Rules
@@ -175,4 +167,4 @@ await Firebase.initializeApp(
 ---
 
 ## 📄 License  
-(Add a license if needed)
+()
