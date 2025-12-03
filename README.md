@@ -119,7 +119,6 @@ lib/
   services/
   models/
   firebase_options.dart
-  main.dart
 ```
 
 ---
