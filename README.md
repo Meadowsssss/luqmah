@@ -37,7 +37,7 @@ https://firebase.google.com/docs/flutter/setup?platform=web
    flutter doctor
    ```
 
-2. **Git**
+2. **ANDRIOD SDK**
 
 3. **Code editor** (VS Code recommended)
 
