@@ -1,5 +1,9 @@
+// lib/pages/splash_page.dart
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'restaurants_page.dart';
+import 'auth/login_page.dart';
+import 'auth/verify_email_page.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -12,36 +16,46 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
+    Future.delayed(const Duration(seconds: 2), _handleNavigation);
+  }
 
-    // Fake loading for 2 seconds then go to home page
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const RestaurantsPage(),
-        ),
+  Future<void> _handleNavigation() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (!mounted) return;
+
+    if (user == null) {
+      // Not logged in
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
       );
-    });
+    } else if (!user.emailVerified) {
+      // Logged in but not verified
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+      );
+    } else {
+      // Logged in & verified
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const RestaurantsPage()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = const Color(0xFF2E7D32);
+    final color = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Fake "logo"
-            Container(
-              height: 90,
-              width: 90,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: color.withOpacity(0.1),
               child: Icon(
                 Icons.restaurant_menu_rounded,
                 size: 48,
@@ -57,19 +71,7 @@ class _SplashPageState extends State<SplashPage> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Loading your campus bites...',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 24),
-            const SizedBox(
-              height: 22,
-              width: 22,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+            const Text('Loading...', style: TextStyle(color: Colors.black54)),
           ],
         ),
       ),
