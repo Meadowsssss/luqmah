@@ -6,11 +6,13 @@ import 'firebase_options.dart';
 import 'pages/splash_page.dart';
 import 'pages/restaurant_menu_page.dart';
 import 'models/restaurant.dart';
+import 'services/app_session_service.dart';
 
 /// Optional helper, just for testing your Firestore data.
 Future<void> printCustomers() async {
-  final snapshot =
-      await FirebaseFirestore.instance.collection('customers').get();
+  final snapshot = await FirebaseFirestore.instance
+      .collection('customers')
+      .get();
 
   for (var doc in snapshot.docs) {
     print('Customer ID: ${doc.id}');
@@ -24,9 +26,9 @@ Future<void> printCustomers() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  await AppSessionService.init();
 
   // You can call this to debug your data if you want:
   // await printCustomers();
@@ -42,10 +44,7 @@ class LuqmahApp extends StatelessWidget {
     return MaterialApp(
       title: 'Luqmah',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.green, useMaterial3: true),
       home: const SplashPage(),
       onGenerateRoute: (settings) {
         // for navigating to a restaurant menu:

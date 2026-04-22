@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../models/restaurant.dart';
 
@@ -35,7 +34,9 @@ class RestaurantCard extends StatelessWidget {
           children: [
             // IMAGE
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
               child: Image.network(
                 restaurant.image,
                 height: 170,
@@ -60,22 +61,27 @@ class RestaurantCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     restaurant.description,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: const TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
+                      const Icon(
+                        Icons.star_rounded,
+                        color: Colors.amber,
+                        size: 18,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         restaurant.rating,
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(width: 16),
-                      const Icon(Icons.timer_outlined, size: 18, color: Colors.black54),
+                      const Icon(
+                        Icons.timer_outlined,
+                        size: 18,
+                        color: Colors.black54,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         restaurant.time,
@@ -95,7 +101,8 @@ class RestaurantCard extends StatelessWidget {
                             ),
                             padding: EdgeInsets.zero,
                             visualDensity: VisualDensity.compact,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
                           ),
                         )
                         .toList(),

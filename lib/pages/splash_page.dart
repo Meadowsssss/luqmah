@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'restaurants_page.dart';
 import 'auth/login_page.dart';
 import 'auth/verify_email_page.dart';
+import 'vendor/vendor_orders_page.dart';
+import '../services/app_session_service.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -21,9 +23,18 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> _handleNavigation() async {
     final user = FirebaseAuth.instance.currentUser;
+    final isVendorDemoEnabled = await AppSessionService.isVendorDemoEnabled();
     if (!mounted) return;
 
     if (user == null) {
+      if (isVendorDemoEnabled) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const VendorOrdersPage()),
+        );
+        return;
+      }
+
       // Not logged in
       Navigator.pushReplacement(
         context,
@@ -37,9 +48,15 @@ class _SplashPageState extends State<SplashPage> {
       );
     } else {
       // Logged in & verified
+      final role = await AppSessionService.refreshRoleFromCurrentUser();
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const RestaurantsPage()),
+        MaterialPageRoute(
+          builder: (_) => role == AppRole.vendor
+              ? const VendorOrdersPage()
+              : const RestaurantsPage(),
+        ),
       );
     }
   }
@@ -65,10 +82,7 @@ class _SplashPageState extends State<SplashPage> {
             const SizedBox(height: 16),
             const Text(
               'Luqmah',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text('Loading...', style: TextStyle(color: Colors.black54)),

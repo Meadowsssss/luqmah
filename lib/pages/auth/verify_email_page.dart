@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../restaurants_page.dart';
+import '../../services/app_session_service.dart';
+import '../vendor/vendor_orders_page.dart';
 
 class VerifyEmailPage extends StatefulWidget {
   const VerifyEmailPage({super.key});
@@ -26,9 +28,15 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     if (!mounted) return;
 
     if (user != null && user.emailVerified) {
+      final role = await AppSessionService.refreshRoleFromCurrentUser();
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const RestaurantsPage()),
+        MaterialPageRoute(
+          builder: (_) => role == AppRole.vendor
+              ? const VendorOrdersPage()
+              : const RestaurantsPage(),
+        ),
       );
     } else {
       setState(() {
@@ -60,16 +68,10 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),
-            Text(
-              email,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            Text(email, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             if (_msg != null)
-              Text(
-                _msg!,
-                style: const TextStyle(color: Colors.blueGrey),
-              ),
+              Text(_msg!, style: const TextStyle(color: Colors.blueGrey)),
             const Spacer(),
             SizedBox(
               width: double.infinity,

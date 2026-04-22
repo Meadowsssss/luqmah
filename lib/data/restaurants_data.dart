@@ -1,11 +1,15 @@
-
 import '../models/restaurant.dart';
 
-const _shawarmaImage = 'https://images.pexels.com/photos/616409/pexels-photo-616409.jpeg';
-const _burgerImage = 'https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg';
-const _pizzaImage = 'https://images.pexels.com/photos/2619967/pexels-photo-2619967.jpeg';
-const _saladImage = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg';
-const _pastaImage = 'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg';
+const _shawarmaImage =
+    'https://images.pexels.com/photos/616409/pexels-photo-616409.jpeg';
+const _burgerImage =
+    'https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg';
+const _pizzaImage =
+    'https://images.pexels.com/photos/2619967/pexels-photo-2619967.jpeg';
+const _saladImage =
+    'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg';
+const _pastaImage =
+    'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg';
 
 const List<Restaurant> restaurants = <Restaurant>[
   Restaurant(
@@ -23,6 +27,8 @@ const List<Restaurant> restaurants = <Restaurant>[
         description: 'Grilled chicken with garlic sauce and pickles',
         price: 2.50,
         image: _shawarmaImage,
+        category: 'Most Selling',
+        isMostSelling: true,
       ),
       MenuItem(
         id: 'beef_shawarma',
@@ -30,6 +36,7 @@ const List<Restaurant> restaurants = <Restaurant>[
         description: 'Tender beef with tahini sauce and vegetables',
         price: 3.00,
         image: _shawarmaImage,
+        category: 'Grills',
       ),
       MenuItem(
         id: 'falafel_plate',
@@ -37,6 +44,8 @@ const List<Restaurant> restaurants = <Restaurant>[
         description: 'Crispy falafel with hummus and tahini',
         price: 2.00,
         image: _saladImage,
+        category: 'Most Selling',
+        isMostSelling: true,
       ),
       MenuItem(
         id: 'fattoush_salad',
@@ -44,6 +53,7 @@ const List<Restaurant> restaurants = <Restaurant>[
         description: 'Fresh vegetables with crispy bread and sumac',
         price: 1.50,
         image: _saladImage,
+        category: 'Salads',
       ),
     ],
   ),
@@ -62,6 +72,8 @@ const List<Restaurant> restaurants = <Restaurant>[
         description: 'Grilled beef patty with cheese and lettuce',
         price: 3.50,
         image: _burgerImage,
+        category: 'Most Selling',
+        isMostSelling: true,
       ),
       MenuItem(
         id: 'chicken_burger',
@@ -69,6 +81,7 @@ const List<Restaurant> restaurants = <Restaurant>[
         description: 'Crispy chicken fillet with mayo and pickles',
         price: 3.00,
         image: _burgerImage,
+        category: 'Burgers',
       ),
       MenuItem(
         id: 'fries',
@@ -76,6 +89,7 @@ const List<Restaurant> restaurants = <Restaurant>[
         description: 'Golden fries with house seasoning',
         price: 1.20,
         image: _burgerImage,
+        category: 'Sides',
       ),
     ],
   ),
@@ -94,6 +108,8 @@ const List<Restaurant> restaurants = <Restaurant>[
         description: 'Tomato sauce, mozzarella and basil',
         price: 4.00,
         image: _pizzaImage,
+        category: 'Most Selling',
+        isMostSelling: true,
       ),
       MenuItem(
         id: 'pepperoni',
@@ -101,6 +117,7 @@ const List<Restaurant> restaurants = <Restaurant>[
         description: 'Beef pepperoni, cheese and tomato sauce',
         price: 4.50,
         image: _pizzaImage,
+        category: 'Pizza',
       ),
       MenuItem(
         id: 'creamy_pasta',
@@ -108,6 +125,7 @@ const List<Restaurant> restaurants = <Restaurant>[
         description: 'Penne pasta with creamy chicken sauce',
         price: 3.75,
         image: _pastaImage,
+        category: 'Pasta',
       ),
     ],
   ),

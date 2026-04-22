@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../restaurants_page.dart';
+import '../../services/app_session_service.dart';
+import '../vendor/vendor_orders_page.dart';
 import 'register_page.dart';
 import 'verify_email_page.dart';
 
@@ -30,6 +32,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
+      await AppSessionService.clearVendorDemoAccess();
       final email = _emailCtrl.text.trim();
       final password = _passwordCtrl.text.trim();
 
@@ -50,10 +53,15 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
         );
       } else {
+        final role = await AppSessionService.refreshRoleFromCurrentUser();
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const RestaurantsPage()),
+          MaterialPageRoute(
+            builder: (_) => role == AppRole.vendor
+                ? const VendorOrdersPage()
+                : const RestaurantsPage(),
+          ),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -65,6 +73,16 @@ class _LoginPageState extends State<LoginPage> {
         setState(() => _loading = false);
       }
     }
+  }
+
+  Future<void> _continueAsVendorDemo() async {
+    await AppSessionService.enableVendorDemoAccess();
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const VendorOrdersPage()),
+    );
   }
 
   @override
@@ -160,6 +178,20 @@ class _LoginPageState extends State<LoginPage> {
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: Colors.black54,
                               ),
+                            ),
+                            const SizedBox(height: 10),
+                            const Text(
+                              'Customer login still uses Firebase. Vendor mode can be opened directly for now.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.black45,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            OutlinedButton.icon(
+                              onPressed: _continueAsVendorDemo,
+                              icon: const Icon(Icons.storefront_outlined),
+                              label: const Text('Continue as vendor'),
                             ),
                             const SizedBox(height: 20),
                             TextFormField(

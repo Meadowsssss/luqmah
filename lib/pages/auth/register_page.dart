@@ -2,6 +2,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../services/app_session_service.dart';
+import '../vendor/vendor_orders_page.dart';
 import 'verify_email_page.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -18,12 +20,18 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _loading = false;
   bool _obscurePassword = true;
   String? _error;
+  AppRole _selectedRole = AppRole.customer;
 
   bool _isHuEmail(String email) {
     return email.toLowerCase().endsWith('hu.edu.jo');
   }
 
   Future<void> _register() async {
+    if (_selectedRole == AppRole.vendor) {
+      await _continueAsVendorDemo();
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -32,6 +40,7 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
+      await AppSessionService.clearVendorDemoAccess();
       final email = _emailCtrl.text.trim();
       final password = _passwordCtrl.text.trim();
 
@@ -40,6 +49,12 @@ class _RegisterPageState extends State<RegisterPage> {
         password: password,
       );
 
+      await AppSessionService.setRoleForIdentifier(
+        cred.user!.uid,
+        _selectedRole,
+      );
+      await AppSessionService.setRoleForIdentifier(email, _selectedRole);
+      await AppSessionService.setRoleForCurrentUser(_selectedRole);
       await cred.user!.sendEmailVerification();
 
       if (!mounted) return;
@@ -51,6 +66,27 @@ class _RegisterPageState extends State<RegisterPage> {
       setState(() => _error = e.message);
     } catch (e) {
       setState(() => _error = 'Something went wrong, try again.');
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _continueAsVendorDemo() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      await AppSessionService.enableVendorDemoAccess();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const VendorOrdersPage()),
+        (route) => false,
+      );
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -125,7 +161,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Join Luqmah with your university email to start ordering on campus.',
+                        _selectedRole == AppRole.vendor
+                            ? 'Open the vendor dashboard in demo mode without creating a Firebase account.'
+                            : 'Join Luqmah with your university email to start ordering on campus.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: Colors.black54,
@@ -157,74 +195,141 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Only Hashemite University email addresses are allowed.',
+                              _selectedRole == AppRole.vendor
+                                  ? 'Vendor registration is bypassed for now so you can test the vendor pages directly.'
+                                  : 'Only Hashemite University email addresses are allowed.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: Colors.black54,
                               ),
                             ),
-                            const SizedBox(height: 20),
-                            TextFormField(
-                              controller: _emailCtrl,
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.newUsername],
-                              decoration: InputDecoration(
-                                labelText: 'HU email',
-                                hintText: 'your_id@hu.edu.jo',
-                                prefixIcon: const Icon(
-                                  Icons.alternate_email_rounded,
+                            const SizedBox(height: 18),
+                            SegmentedButton<AppRole>(
+                              showSelectedIcon: false,
+                              segments: const [
+                                ButtonSegment<AppRole>(
+                                  value: AppRole.customer,
+                                  label: Text('Customer'),
+                                  icon: Icon(Icons.person_outline_rounded),
                                 ),
-                                filled: true,
-                                fillColor: const Color(0xFFF7F8F9),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide.none,
+                                ButtonSegment<AppRole>(
+                                  value: AppRole.vendor,
+                                  label: Text('Vendor'),
+                                  icon: Icon(Icons.storefront_outlined),
                                 ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Email required';
-                                }
-                                if (!_isHuEmail(value)) {
-                                  return 'You must use your university email';
-                                }
-                                return null;
+                              ],
+                              selected: <AppRole>{_selectedRole},
+                              onSelectionChanged: (selection) {
+                                setState(() {
+                                  _selectedRole = selection.first;
+                                });
                               },
                             ),
-                            const SizedBox(height: 14),
-                            TextFormField(
-                              controller: _passwordCtrl,
-                              obscureText: _obscurePassword,
-                              autofillHints: const [AutofillHints.newPassword],
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                helperText: 'Use at least 6 characters',
-                                prefixIcon: const Icon(
-                                  Icons.lock_outline_rounded,
-                                ),
-                                suffixIcon: IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
+                            const SizedBox(height: 10),
+                            Text(
+                              _selectedRole == AppRole.vendor
+                                  ? 'No email or password is required for vendor demo access right now.'
+                                  : 'Customer accounts will open the restaurant browsing flow after email verification.',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black45,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            if (_selectedRole == AppRole.customer) ...[
+                              TextFormField(
+                                controller: _emailCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                autofillHints: const [
+                                  AutofillHints.newUsername,
+                                ],
+                                decoration: InputDecoration(
+                                  labelText: 'HU email',
+                                  hintText: 'your_id@hu.edu.jo',
+                                  prefixIcon: const Icon(
+                                    Icons.alternate_email_rounded,
+                                  ),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF7F8F9),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
                                   ),
                                 ),
-                                filled: true,
-                                fillColor: const Color(0xFFF7F8F9),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide.none,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Email required';
+                                  }
+                                  if (!_isHuEmail(value)) {
+                                    return 'You must use your university email';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _passwordCtrl,
+                                obscureText: _obscurePassword,
+                                autofillHints: const [
+                                  AutofillHints.newPassword,
+                                ],
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  helperText: 'Use at least 6 characters',
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline_rounded,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF7F8F9),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                                validator: (value) =>
+                                    value != null && value.length >= 6
+                                    ? null
+                                    : 'Min 6 characters',
+                              ),
+                            ] else ...[
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3FAF4),
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                child: const Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline_rounded,
+                                      color: Color(0xFF2E7D32),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'This is a temporary shortcut so you can test the vendor experience before the real backend is ready.',
+                                        style: TextStyle(
+                                          height: 1.4,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              validator: (value) =>
-                                  value != null && value.length >= 6
-                                  ? null
-                                  : 'Min 6 characters',
-                            ),
+                            ],
                             if (_error != null) ...[
                               const SizedBox(height: 14),
                               Container(
@@ -262,7 +367,11 @@ class _RegisterPageState extends State<RegisterPage> {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text('Sign up'),
+                                    : Text(
+                                        _selectedRole == AppRole.vendor
+                                            ? 'Continue as vendor'
+                                            : 'Sign up',
+                                      ),
                               ),
                             ),
                           ],

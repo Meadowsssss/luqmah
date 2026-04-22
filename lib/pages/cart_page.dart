@@ -8,9 +8,7 @@ class CartPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Your Cart'),
-      ),
+      appBar: AppBar(title: const Text('Your Cart')),
 
       // Rebuild UI whenever cart changes
       body: ValueListenableBuilder<int>(
@@ -20,10 +18,7 @@ class CartPage extends StatelessWidget {
 
           if (items.isEmpty) {
             return const Center(
-              child: Text(
-                'Your cart is empty',
-                style: TextStyle(fontSize: 16),
-              ),
+              child: Text('Your cart is empty', style: TextStyle(fontSize: 16)),
             );
           }
 
@@ -114,7 +109,7 @@ class CartPage extends StatelessWidget {
                                 icon: const Icon(Icons.add_circle_outline),
                               ),
                             ],
-                          )
+                          ),
                         ],
                       ),
                     );
@@ -144,10 +139,7 @@ class CartPage extends StatelessWidget {
                       children: [
                         const Text(
                           'Total',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.black54),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -168,7 +160,8 @@ class CartPage extends StatelessWidget {
                           builder: (_) => AlertDialog(
                             title: const Text('Order placed'),
                             content: const Text(
-                                'Demo only – but everything is working correctly.'),
+                              'Demo only – but everything is working correctly.',
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () {
