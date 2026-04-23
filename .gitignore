@@ -43,3 +43,18 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Backend / server
+server/node_modules/
+server/dist/
+server/build/
+server/coverage/
+server/.env
+server/.env.*
+!server/.env.example
+server/generated/
+
+# Local secrets
+.env
+.env.*
+!.env.example
