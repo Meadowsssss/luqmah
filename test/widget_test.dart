@@ -1,17 +1,22 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:flutter_application_1/pages/vendor/vendor_orders_page.dart';
-import 'package:flutter_application_1/services/app_session_service.dart';
+import 'package:luqmah/app/theme/luqmah_theme.dart';
+import 'package:luqmah/features/customer/presentation/restaurants_page.dart';
 
 void main() {
-  testWidgets('vendor home shows orders screen', (WidgetTester tester) async {
-    AppSessionService.role.value = AppRole.vendor;
+  testWidgets('restaurants screen shows hero copy', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: buildLuqmahTheme(),
+          home: const RestaurantsPage(),
+        ),
+      ),
+    );
 
-    await tester.pumpWidget(const MaterialApp(home: VendorOrdersPage()));
-
-    expect(find.text('Orders'), findsWidgets);
-    expect(find.text('New Orders'), findsOneWidget);
-    expect(find.text('Past Orders'), findsOneWidget);
+    expect(find.text('Luqmah'), findsOneWidget);
+    expect(find.text('Choose a restaurant'), findsOneWidget);
   });
 }
