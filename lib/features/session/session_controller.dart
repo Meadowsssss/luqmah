@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth_repository.dart';
+import 'backend_auth_repository.dart';
 import 'session_models.dart';
 import 'session_repository.dart';
 
@@ -21,6 +22,7 @@ final sessionControllerProvider = ChangeNotifierProvider<SessionController>((
 ) {
   final controller = SessionController(
     authRepository: ref.watch(authRepositoryProvider),
+    backendAuthRepository: ref.watch(backendAuthRepositoryProvider),
     sessionRepository: ref.watch(sessionRepositoryProvider),
   );
   ref.onDispose(controller.dispose);
@@ -30,9 +32,11 @@ final sessionControllerProvider = ChangeNotifierProvider<SessionController>((
 class SessionController extends ChangeNotifier {
   SessionController({
     required AuthRepository authRepository,
+    required BackendAuthRepository backendAuthRepository,
     required SessionRepository sessionRepository,
   }) : _authRepository = authRepository,
-       _sessionRepository = sessionRepository {
+       _backendAuthRepository = backendAuthRepository,
+        _sessionRepository = sessionRepository {
     _subscription = _authRepository.authStateChanges().listen((_) {
       refresh();
     });
@@ -40,6 +44,7 @@ class SessionController extends ChangeNotifier {
   }
 
   final AuthRepository _authRepository;
+  final BackendAuthRepository _backendAuthRepository;
   final SessionRepository _sessionRepository;
   late final StreamSubscription<User?> _subscription;
 
@@ -56,8 +61,26 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> login({required String email, required String password}) async {
-    await _sessionRepository.clearVendorDemoAccess();
+    await _sessionRepository.clearBackendSession();
     await _authRepository.login(email: email, password: password);
+    await refresh();
+  }
+
+  Future<void> loginVendor({required String email, required String password}) async {
+    if (_authRepository.currentUser != null) {
+      await _authRepository.logout();
+    }
+    final session = await _backendAuthRepository.loginVendor(email: email, password: password);
+    await _sessionRepository.saveBackendSession(session);
+    await refresh();
+  }
+
+  Future<void> loginAdmin({required String email, required String password}) async {
+    if (_authRepository.currentUser != null) {
+      await _authRepository.logout();
+    }
+    final session = await _backendAuthRepository.loginAdmin(email: email, password: password);
+    await _sessionRepository.saveBackendSession(session);
     await refresh();
   }
 
@@ -65,21 +88,12 @@ class SessionController extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
-    await _sessionRepository.clearVendorDemoAccess();
+    await _sessionRepository.clearBackendSession();
     final credential = await _authRepository.register(
       email: email,
       password: password,
     );
-    final user = credential.user;
-    if (user != null) {
-      await _sessionRepository.setRoleForUser(user, AppRole.customer);
-      await user.sendEmailVerification();
-    }
-    await refresh();
-  }
-
-  Future<void> continueAsVendorDemo() async {
-    await _sessionRepository.enableVendorDemoAccess();
+    await credential.user?.sendEmailVerification();
     await refresh();
   }
 
@@ -93,7 +107,7 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _sessionRepository.clearVendorDemoAccess();
+    await _sessionRepository.clearBackendSession();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
     }

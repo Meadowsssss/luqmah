@@ -12,7 +12,7 @@ class VendorProductsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final items = ref.watch(vendorDataControllerProvider).menuItems;
+    final data = ref.watch(vendorDataControllerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Products')),
@@ -42,46 +42,71 @@ class VendorProductsPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          if (items.isEmpty)
-            const AppEmptyState(
-              icon: Icons.soup_kitchen_outlined,
-              title: 'No products yet',
-              message: 'Add your first vendor item to populate the mock menu list.',
-            )
-          else
-            for (final item in items) ...[
-              AppSurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(item.title, style: Theme.of(context).textTheme.titleMedium),
-                        ),
-                        Text(
-                          '${item.price.toStringAsFixed(0)} JD',
-                          style: const TextStyle(
-                            color: AppColors.accent,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      '${item.type} · ${item.category}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    if (item.ingredients.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(item.ingredients.join(', ')),
-                    ],
-                  ],
-                ),
+          data.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.xl),
+                child: CircularProgressIndicator(),
               ),
-              const SizedBox(height: AppSpacing.lg),
-            ],
+            ),
+            error: (error, _) => AppEmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Unable to load products',
+              message: error.toString(),
+            ),
+            data: (state) {
+              final items = state.menuItems;
+              if (items.isEmpty) {
+                return const AppEmptyState(
+                  icon: Icons.soup_kitchen_outlined,
+                  title: 'No products yet',
+                  message: 'Add your first vendor item to publish it to the customer menu.',
+                );
+              }
+
+              return Column(
+                children: [
+                  for (final item in items) ...[
+                    AppSurfaceCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(item.title, style: Theme.of(context).textTheme.titleMedium),
+                              ),
+                              Text(
+                                '${item.price.toStringAsFixed(2)} JD',
+                                style: const TextStyle(
+                                  color: AppColors.accent,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            '${item.restaurantTitle} · ${item.category}${item.isAvailable ? '' : ' · Unavailable'}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          if (item.description.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(item.description),
+                          ],
+                          if (item.ingredients.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(item.ingredients.join(', ')),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                ],
+              );
+            },
+          ),
         ],
       ),
     );

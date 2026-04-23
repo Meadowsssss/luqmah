@@ -14,86 +14,90 @@ class VendorInsightsPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Insights')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _StatCard(
-                  label: 'Active',
-                  value: '${insights.activeOrders}',
-                  accent: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.lg),
-              Expanded(
-                child: _StatCard(
-                  label: 'Completed',
-                  value: '${insights.completedOrders}',
-                  accent: context.luqmah.success,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: _StatCard(
-                  label: 'Revenue',
-                  value: '${insights.totalRevenue.toStringAsFixed(0)} JD',
-                  accent: AppColors.accent,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.lg),
-              Expanded(
-                child: _StatCard(
-                  label: 'Avg order',
-                  value: '${insights.averageOrderValue.toStringAsFixed(0)} JD',
-                  accent: context.luqmah.info,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          AppSurfaceCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: insights.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text(error.toString())),
+        data: (data) => ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            Row(
               children: [
-                Text('Top items', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.md),
-                if (insights.topItems.isEmpty)
-                  Text(
-                    'Top sellers will appear once more mock order activity is recorded.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: context.luqmah.mutedText,
-                    ),
-                  )
-                else
-                  for (final item in insights.topItems) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.name,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '${item.quantity} sold · ${item.revenue.toStringAsFixed(0)} JD',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                    if (item != insights.topItems.last) const Divider(height: 24),
-                  ],
+                Expanded(
+                  child: _StatCard(
+                    label: 'Active',
+                    value: '${data.activeOrders}',
+                    accent: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: _StatCard(
+                    label: 'Completed',
+                    value: '${data.completedOrders}',
+                    accent: context.luqmah.success,
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    label: 'Revenue',
+                    value: '${data.totalRevenue.toStringAsFixed(2)} JD',
+                    accent: AppColors.accent,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: _StatCard(
+                    label: 'Avg order',
+                    value: '${data.averageOrderValue.toStringAsFixed(2)} JD',
+                    accent: context.luqmah.info,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Top items', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: AppSpacing.md),
+                  if (data.topItems.isEmpty)
+                    Text(
+                      'Top sellers will appear once real order activity is recorded.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: context.luqmah.mutedText,
+                      ),
+                    )
+                  else
+                    for (final item in data.topItems) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.name,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '${item.quantity} sold · ${item.revenue.toStringAsFixed(2)} JD',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                      if (item != data.topItems.last) const Divider(height: 24),
+                    ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

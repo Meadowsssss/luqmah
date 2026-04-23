@@ -1,89 +1,97 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/vendor_mock_data.dart';
-import '../customer/cart/cart_controller.dart';
 import '../../models/vendor.dart';
+import '../session/session_controller.dart';
+import 'vendor_repository.dart';
 
 class VendorDataState {
-  const VendorDataState({required this.orders, required this.menuItems});
+  const VendorDataState({
+    required this.orders,
+    required this.menuItems,
+    required this.restaurants,
+  });
 
   final List<VendorOrder> orders;
   final List<VendorMenuItem> menuItems;
+  final List<VendorRestaurant> restaurants;
 }
 
-class VendorDataController extends Notifier<VendorDataState> {
+class VendorDataController extends AsyncNotifier<VendorDataState> {
+  VendorRepository get _repository => ref.read(vendorRepositoryProvider);
+
   @override
-  VendorDataState build() {
+  Future<VendorDataState> build() async {
+    final token = ref.watch(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      return const VendorDataState(orders: [], menuItems: [], restaurants: []);
+    }
+
+    final workspace = await _repository.loadWorkspace(token);
     return VendorDataState(
-      orders: List<VendorOrder>.from(initialVendorOrders),
-      menuItems: List<VendorMenuItem>.from(initialVendorMenuItems),
+      orders: workspace.orders,
+      menuItems: workspace.menuItems,
+      restaurants: workspace.restaurants,
     );
   }
 
-  void updateOrderStatus(String orderId, VendorOrderStatus status) {
-    state = VendorDataState(
-      orders: state.orders
-          .map((order) => order.id == orderId ? order.copyWith(status: status) : order)
-          .toList(growable: false),
-      menuItems: state.menuItems,
-    );
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(build);
   }
 
-  void addMenuItem(VendorMenuItem item) {
-    state = VendorDataState(
-      orders: state.orders,
-      menuItems: <VendorMenuItem>[item, ...state.menuItems],
+  Future<void> addMenuItem({
+    required String restaurantId,
+    required String categoryId,
+    required String title,
+    required String description,
+    required double price,
+    required String imageUrl,
+    required List<String> ingredientNames,
+    required List<Map<String, Object?>> customizations,
+  }) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Vendor session is required');
+    }
+
+    await _repository.createMenuItem(
+      token: token,
+      restaurantId: restaurantId,
+      categoryId: categoryId,
+      title: title,
+      description: description,
+      price: price,
+      imageUrl: imageUrl,
+      ingredientNames: ingredientNames,
+      customizations: customizations,
     );
+    await refresh();
   }
 
-  void appendIncomingOrder({
-    required String customerName,
-    required String customerPhone,
-    required String paymentMethod,
-    required List<CartLine> lines,
-    required double total,
-  }) {
-    final subtotal = lines.fold<double>(0, (sum, line) => sum + line.lineTotal);
-    final nextOrder = VendorOrder(
-      id: '#${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}',
-      customerName: customerName,
-      customerPhone: customerPhone,
-      dateTime: DateTime.now(),
-      paymentMethod: paymentMethod,
-      status: VendorOrderStatus.accepted,
-      items: lines
-          .map(
-            (line) => VendorOrderItem(
-              name: line.item.name,
-              quantity: line.quantity,
-              price: line.item.price,
-            ),
-          )
-          .toList(growable: false),
-      subtotal: subtotal,
-      coupon: subtotal - total,
-      total: total,
-    );
+  Future<void> updateOrderStatus(String orderId, VendorOrderStatus status) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Vendor session is required');
+    }
 
-    state = VendorDataState(
-      orders: <VendorOrder>[nextOrder, ...state.orders],
-      menuItems: state.menuItems,
-    );
+    await _repository.updateOrderStatus(token: token, orderId: orderId, status: status);
+    await refresh();
   }
 }
 
 final vendorDataControllerProvider =
-    NotifierProvider<VendorDataController, VendorDataState>(
-      VendorDataController.new,
-    );
+    AsyncNotifierProvider<VendorDataController, VendorDataState>(VendorDataController.new);
 
-final vendorOrderByIdProvider = Provider.family<VendorOrder?, String>((ref, id) {
-  for (final order in ref.watch(vendorDataControllerProvider).orders) {
-    if (order.id == id) {
-      return order;
+final vendorOrderByIdProvider = Provider.family<AsyncValue<VendorOrder?>, String>((ref, id) {
+  final state = ref.watch(vendorDataControllerProvider);
+  return state.whenData((value) {
+    for (final order in value.orders) {
+      if (order.id == id) {
+        return order;
+      }
     }
-  }
-  return null;
+    return null;
+  });
 });
 
 class VendorInsightsSummary {
@@ -114,15 +122,12 @@ class VendorTopItem {
   final double revenue;
 }
 
-final vendorInsightsProvider = Provider<VendorInsightsSummary>((ref) {
-  final orders = ref.watch(vendorDataControllerProvider).orders;
+VendorInsightsSummary summarizeVendorInsights(List<VendorOrder> orders) {
   final completedOrders = orders.where((order) => order.status.isPast).toList(growable: false);
   final activeOrders = orders.length - completedOrders.length;
   final revenueSource = completedOrders.isEmpty ? orders : completedOrders;
   final totalRevenue = revenueSource.fold<double>(0, (sum, order) => sum + order.total);
-  final averageOrderValue = revenueSource.isEmpty
-      ? 0.0
-      : totalRevenue / revenueSource.length;
+  final averageOrderValue = revenueSource.isEmpty ? 0.0 : totalRevenue / revenueSource.length;
 
   final totals = <String, VendorTopItem>{};
   for (final order in orders) {
@@ -146,4 +151,9 @@ final vendorInsightsProvider = Provider<VendorInsightsSummary>((ref) {
     averageOrderValue: averageOrderValue,
     topItems: topItems.take(4).toList(growable: false),
   );
+}
+
+final vendorInsightsProvider = Provider<AsyncValue<VendorInsightsSummary>>((ref) {
+  final state = ref.watch(vendorDataControllerProvider);
+  return state.whenData((value) => summarizeVendorInsights(value.orders));
 });

@@ -8,6 +8,9 @@ import '../../features/customer/presentation/order_history_page.dart';
 import '../../features/customer/presentation/customer_shell.dart';
 import '../../features/customer/presentation/restaurant_menu_page.dart';
 import '../../features/customer/presentation/restaurants_page.dart';
+import '../../features/admin/presentation/admin_create_vendor_page.dart';
+import '../../features/admin/presentation/admin_login_page.dart';
+import '../../features/admin/presentation/admin_vendors_page.dart';
 import '../../features/session/session_controller.dart';
 import '../../features/vendor/presentation/vendor_insights_page.dart';
 import '../../features/vendor/presentation/vendor_order_details_page.dart';
@@ -39,27 +42,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isVerifyRoute = location == '/verify-email';
       final isLoadingRoute = location == '/loading';
       final isVendorRoute = location.startsWith('/vendor');
+      final isAdminRoute = location.startsWith('/admin');
+      final isAdminLoginRoute = location == '/admin/login';
 
       if (snapshot.isLoading) {
         return isLoadingRoute ? null : '/loading';
       }
 
-      if (!snapshot.isSignedIn && !snapshot.isVendorDemo) {
-        return isAuthRoute ? null : '/login';
+      if (!snapshot.isSignedIn) {
+        return (isAuthRoute || isAdminLoginRoute) ? null : '/login';
       }
 
-      if (snapshot.isSignedIn && !snapshot.isEmailVerified) {
+      if (!snapshot.isAdminSurface && !snapshot.isVendorSurface && !snapshot.isEmailVerified) {
         return isVerifyRoute ? null : '/verify-email';
       }
 
+      if (snapshot.isAdminSurface) {
+        if (isLoadingRoute || isAuthRoute || isVerifyRoute || !isAdminRoute) {
+          return '/admin/vendors';
+        }
+        return null;
+      }
+
       if (snapshot.isVendorSurface) {
-        if (isLoadingRoute || isAuthRoute || isVerifyRoute || !isVendorRoute) {
+        if (isLoadingRoute || isAuthRoute || isVerifyRoute || isAdminRoute || !isVendorRoute) {
           return '/vendor/orders';
         }
         return null;
       }
 
-      if (isVendorRoute || isAuthRoute || isVerifyRoute || isLoadingRoute) {
+      if (isVendorRoute || isAdminRoute || isAuthRoute || isVerifyRoute || isLoadingRoute) {
         return '/restaurants';
       }
 
@@ -75,8 +87,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginPage(),
       ),
       GoRoute(
+        path: '/admin/login',
+        builder: (context, state) => const AdminLoginPage(),
+      ),
+      GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: '/admin/vendors',
+        builder: (context, state) => const AdminVendorsPage(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const AdminCreateVendorPage(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/verify-email',

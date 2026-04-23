@@ -8,6 +8,7 @@ const userRoutes = require("./routes/user.routes");
 const restaurantRoutes = require("./routes/restaurant.routes");
 const orderRoutes = require("./routes/order.routes");
 const vendorRoutes = require("./routes/vendor.routes");
+const adminRoutes = require("./routes/admin.routes");
 const { notFoundHandler, errorHandler } = require("./middleware/error-handler");
 
 const app = express();
@@ -25,6 +26,7 @@ app.use("/users", userRoutes);
 app.use("/restaurants", restaurantRoutes);
 app.use("/orders", orderRoutes);
 app.use("/vendor", vendorRoutes);
+app.use("/admin", adminRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

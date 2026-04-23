@@ -15,6 +15,7 @@ Node.js + Express + Prisma + PostgreSQL backend for the Luqmah Flutter food orde
 ## Features
 
 - Customer and vendor roles
+- Admin-managed vendor onboarding
 - Vendor-scoped restaurants, menu items, and order access
 - Customer-scoped order access
 - Restaurant browsing and menu retrieval
@@ -64,10 +65,23 @@ npm run dev
 
 Server default URL: `http://localhost:4000`
 
+## Admin Bootstrap
+
+1. Copy the admin variables from `.env.example` into `.env`.
+2. Run:
+
+```bash
+npm run admin:bootstrap
+```
+
+This creates or updates the backend admin account used by the hidden in-app admin portal.
+
 ## Seeded Accounts
 
 - Vendor: `vendor@luqmah.app` / `Password123!`
 - Customer: `customer@luqmah.app` / `Password123!`
+
+Public registration only supports customers. Vendor accounts are provisioned manually by an admin.
 
 ## API Notes
 
@@ -199,6 +213,10 @@ curl -X POST http://localhost:4000/vendor/menu-items \
 - `POST /auth/register`
 - `POST /auth/login`
 - `GET /auth/me`
+- `POST /admin/login`
+- `GET /admin/me`
+- `GET /admin/vendors`
+- `POST /admin/vendors`
 - `PATCH /users/me/password`
 - `GET /restaurants`
 - `GET /restaurants/:id`

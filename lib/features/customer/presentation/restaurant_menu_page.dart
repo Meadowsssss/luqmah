@@ -22,107 +22,114 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
 
   @override
   Widget build(BuildContext context) {
-    final restaurant = ref.watch(restaurantByIdProvider(widget.restaurantId));
+    final restaurantAsync = ref.watch(restaurantByIdProvider(widget.restaurantId));
 
-    if (restaurant == null) {
-      return Scaffold(
+    return restaurantAsync.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, _) => Scaffold(
         appBar: AppBar(),
-        body: const Padding(
-          padding: EdgeInsets.all(AppSpacing.lg),
+        body: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: AppEmptyState(
-            icon: Icons.storefront_outlined,
-            title: 'Restaurant not found',
-            message: 'This restaurant is no longer available in the current mock data.',
+            icon: Icons.error_outline_rounded,
+            title: 'Unable to load menu',
+            message: error.toString(),
           ),
         ),
-      );
-    }
-
-    final categories = <String>{'Most Selling'}
-      ..addAll(restaurant.menu.map((item) => item.category));
-    final selectedCategory = _selectedCategory ?? categories.first;
-
-    final visibleItems = selectedCategory == 'Most Selling'
-        ? restaurant.menu.where((item) => item.isMostSelling).toList(growable: false)
-        : restaurant.menu
-              .where((item) => item.category == selectedCategory)
-              .toList(growable: false);
-
-    final items = visibleItems.isEmpty ? restaurant.menu : visibleItems;
-
-    return Scaffold(
-      appBar: AppBar(),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        children: [
-          Text(restaurant.name, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            restaurant.tags.join(' · '),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: context.luqmah.mutedText,
+      ),
+      data: (restaurant) {
+        if (restaurant == null) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: const Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: AppEmptyState(
+                icon: Icons.storefront_outlined,
+                title: 'Restaurant not found',
+                message: 'This restaurant is no longer available.',
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
+          );
+        }
+
+        final categories = restaurant.menu.map((item) => item.category).toSet().toList(growable: false);
+        final selectedCategory = _selectedCategory ?? (categories.isEmpty ? null : categories.first);
+        final items = selectedCategory == null
+            ? restaurant.menu
+            : restaurant.menu
+                .where((item) => item.category == selectedCategory)
+                .toList(growable: false);
+
+        return Scaffold(
+          appBar: AppBar(),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             children: [
-              const Icon(Icons.star_rounded, size: 18, color: AppColors.accent),
-              const SizedBox(width: 4),
+              Text(restaurant.name, style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: AppSpacing.sm),
               Text(
-                restaurant.rating,
-                style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.accent),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                restaurant.time,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadii.xl),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.network(
-                restaurant.image,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: AppColors.surfaceAlt,
-                  alignment: Alignment.center,
-                  child: const Icon(Icons.image_not_supported_outlined),
+                restaurant.description,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: context.luqmah.mutedText,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          SizedBox(
-            height: 42,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final category = categories.elementAt(index);
-                final selected = category == selectedCategory;
+              const SizedBox(height: AppSpacing.md),
+              Text(restaurant.time, style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: AppSpacing.lg),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadii.xl),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Image.network(
+                    restaurant.image,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: AppColors.surfaceAlt,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.image_not_supported_outlined),
+                    ),
+                  ),
+                ),
+              ),
+              if (categories.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xl),
+                SizedBox(
+                  height: 42,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: categories.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      final selected = category == selectedCategory;
 
-                return ChoiceChip(
-                  label: Text(category),
-                  selected: selected,
-                  onSelected: (_) {
-                    setState(() => _selectedCategory = category);
-                  },
-                );
-              },
-            ),
+                      return ChoiceChip(
+                        label: Text(category),
+                        selected: selected,
+                        onSelected: (_) {
+                          setState(() => _selectedCategory = category);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xl),
+              if (items.isEmpty)
+                const AppEmptyState(
+                  icon: Icons.no_food_outlined,
+                  title: 'No menu items yet',
+                  message: 'This restaurant has not published any available menu items yet.',
+                )
+              else
+                for (final item in items) ...[
+                  _MenuItemCard(item: item),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+            ],
           ),
-          const SizedBox(height: AppSpacing.xl),
-          for (final item in items) ...[
-            _MenuItemCard(item: item),
-            const SizedBox(height: AppSpacing.lg),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 }

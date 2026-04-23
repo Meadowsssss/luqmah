@@ -21,10 +21,7 @@ class _VendorOrdersPageState extends ConsumerState<VendorOrdersPage> {
 
   @override
   Widget build(BuildContext context) {
-    final orders = ref.watch(vendorDataControllerProvider).orders;
-    final visibleOrders = orders
-        .where((order) => _showPastOrders ? order.status.isPast : !order.status.isPast)
-        .toList(growable: false);
+    final data = ref.watch(vendorDataControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -66,20 +63,43 @@ class _VendorOrdersPageState extends ConsumerState<VendorOrdersPage> {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          if (visibleOrders.isEmpty)
-            const AppEmptyState(
-              icon: Icons.receipt_long_outlined,
-              title: 'No orders in this view',
-              message: 'New orders and completed orders will appear here as the mock data changes.',
-            )
-          else
-            for (final order in visibleOrders) ...[
-              _VendorOrderCard(
-                order: order,
-                onTap: () => context.push('/vendor/orders/${Uri.encodeComponent(order.id)}'),
+          data.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.xl),
+                child: CircularProgressIndicator(),
               ),
-              const SizedBox(height: AppSpacing.lg),
-            ],
+            ),
+            error: (error, _) => AppEmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Unable to load orders',
+              message: error.toString(),
+            ),
+            data: (state) {
+              final visibleOrders = state.orders
+                  .where((order) => _showPastOrders ? order.status.isPast : !order.status.isPast)
+                  .toList(growable: false);
+              if (visibleOrders.isEmpty) {
+                return const AppEmptyState(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'No orders in this view',
+                  message: 'Active and historical orders will appear here as customers place them.',
+                );
+              }
+
+              return Column(
+                children: [
+                  for (final order in visibleOrders) ...[
+                    _VendorOrderCard(
+                      order: order,
+                      onTap: () => context.push('/vendor/orders/${Uri.encodeComponent(order.id)}'),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -102,6 +122,8 @@ class _VendorOrderCard extends StatelessWidget {
         return context.luqmah.info;
       case VendorOrderStatus.completed:
         return context.luqmah.mutedText;
+      case VendorOrderStatus.cancelled:
+        return AppColors.error;
     }
   }
 

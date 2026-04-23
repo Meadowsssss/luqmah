@@ -1,11 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'backend_auth_repository.dart';
 import 'session_models.dart';
 
 class SessionRepository {
-  static const _rolePrefix = 'role:';
-  static const _vendorDemoKey = 'vendor_demo_access';
+  static const _backendSessionKey = 'backend_session';
 
   SharedPreferences? _prefs;
 
@@ -14,63 +16,50 @@ class SessionRepository {
     return _prefs!;
   }
 
-  String _storageKey(String identifier) => '$_rolePrefix$identifier';
-
-  Future<bool> isVendorDemoEnabled() async {
+  Future<void> saveBackendSession(BackendAuthSession session) async {
     final prefs = await _instance;
-    return prefs.getBool(_vendorDemoKey) ?? false;
+    await prefs.setString(_backendSessionKey, jsonEncode(session.toJson()));
   }
 
-  Future<void> enableVendorDemoAccess() async {
+  Future<BackendAuthSession?> loadBackendSession() async {
     final prefs = await _instance;
-    await prefs.setBool(_vendorDemoKey, true);
-  }
-
-  Future<void> clearVendorDemoAccess() async {
-    final prefs = await _instance;
-    await prefs.remove(_vendorDemoKey);
-  }
-
-  Future<void> setRoleForIdentifier(String identifier, AppRole role) async {
-    final prefs = await _instance;
-    await prefs.setString(_storageKey(identifier), role.name);
-  }
-
-  Future<void> setRoleForUser(User user, AppRole role) async {
-    await setRoleForIdentifier(user.uid, role);
-    final email = user.email;
-    if (email != null && email.isNotEmpty) {
-      await setRoleForIdentifier(email, role);
+    final raw = prefs.getString(_backendSessionKey);
+    if (raw == null || raw.isEmpty) {
+      return null;
     }
+    return BackendAuthSession.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
-  Future<AppRole> resolveRole(User user) async {
+  Future<void> clearBackendSession() async {
     final prefs = await _instance;
-    final fromUid = prefs.getString(_storageKey(user.uid));
-    final email = user.email;
-    final fromEmail = email == null ? null : prefs.getString(_storageKey(email));
-    final storedRole = fromUid ?? fromEmail;
-    return storedRole == AppRole.vendor.name ? AppRole.vendor : AppRole.customer;
+    await prefs.remove(_backendSessionKey);
   }
 
   Future<SessionSnapshot> buildSnapshot(User? user) async {
-    final vendorDemoEnabled = await isVendorDemoEnabled();
+    final backendSession = await loadBackendSession();
 
-    if (user == null) {
+    if (backendSession != null) {
       return SessionSnapshot(
-        user: null,
-        role: vendorDemoEnabled ? AppRole.vendor : AppRole.customer,
-        isVendorDemo: vendorDemoEnabled,
+        firebaseUser: null,
+        backendSession: backendSession,
+        role: backendSession.user.role == 'ADMIN' ? AppRole.admin : AppRole.vendor,
         isLoading: false,
       );
     }
 
-    final role = await resolveRole(user);
+    if (user == null) {
+      return const SessionSnapshot(
+        firebaseUser: null,
+        backendSession: null,
+        role: AppRole.customer,
+        isLoading: false,
+      );
+    }
 
     return SessionSnapshot(
-      user: user,
-      role: role,
-      isVendorDemo: false,
+      firebaseUser: user,
+      backendSession: null,
+      role: AppRole.customer,
       isLoading: false,
     );
   }

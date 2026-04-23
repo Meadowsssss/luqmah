@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/customer/data/restaurant_repository.dart';
 import '../../../models/restaurant.dart';
+import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
 class RestaurantsPage extends ConsumerWidget {
@@ -72,15 +73,38 @@ class RestaurantsPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xxl),
-          Text('Choose a restaurant', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
-          for (final restaurant in restaurants) ...[
-            const SizedBox(height: AppSpacing.lg),
-            _RestaurantCard(
-              restaurant: restaurant,
-              onTap: () => context.push('/restaurants/${restaurant.id}'),
+          restaurants.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => AppEmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Unable to load restaurants',
+              message: error.toString(),
             ),
-          ],
+            data: (items) {
+              if (items.isEmpty) {
+                return const AppEmptyState(
+                  icon: Icons.storefront_outlined,
+                  title: 'No restaurants yet',
+                  message: 'Restaurants will appear here after vendors are onboarded and published.',
+                );
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Choose a restaurant', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: AppSpacing.sm),
+                  for (final restaurant in items) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    _RestaurantCard(
+                      restaurant: restaurant,
+                      onTap: () => context.push('/restaurants/${restaurant.id}'),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -142,11 +166,7 @@ class _RestaurantCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded, size: 18, color: AppColors.accent),
-                      const SizedBox(width: 4),
-                      Text(restaurant.rating, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      const SizedBox(width: 16),
-                      const Icon(Icons.timer_outlined, size: 18, color: AppColors.mutedText),
+                      const Icon(Icons.location_on_outlined, size: 18, color: AppColors.accent),
                       const SizedBox(width: 4),
                       Text(
                         restaurant.time,

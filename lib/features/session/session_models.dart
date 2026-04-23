@@ -1,44 +1,49 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
-enum AppRole { customer, vendor }
+import 'backend_auth_repository.dart';
+
+enum AppRole { customer, vendor, admin }
 
 class SessionSnapshot {
   const SessionSnapshot({
-    required this.user,
+    required this.firebaseUser,
+    required this.backendSession,
     required this.role,
-    required this.isVendorDemo,
     required this.isLoading,
   });
 
   factory SessionSnapshot.loading() {
     return const SessionSnapshot(
-      user: null,
+      firebaseUser: null,
+      backendSession: null,
       role: AppRole.customer,
-      isVendorDemo: false,
       isLoading: true,
     );
   }
 
-  final User? user;
+  final User? firebaseUser;
+  final BackendAuthSession? backendSession;
   final AppRole role;
-  final bool isVendorDemo;
   final bool isLoading;
 
-  bool get isSignedIn => user != null;
-  bool get isEmailVerified => user?.emailVerified ?? false;
-  bool get isVendorSurface => isVendorDemo || role == AppRole.vendor;
-  String get email => user?.email ?? '';
+  bool get isSignedIn => firebaseUser != null || backendSession != null;
+  bool get isEmailVerified => backendSession != null || (firebaseUser?.emailVerified ?? false);
+  bool get isVendorSurface => role == AppRole.vendor;
+  bool get isAdminSurface => role == AppRole.admin;
+  String get email => backendSession?.user.email ?? firebaseUser?.email ?? '';
+  String get displayName => backendSession?.user.name ?? firebaseUser?.displayName ?? '';
+  String? get backendToken => backendSession?.token;
 
   SessionSnapshot copyWith({
-    User? user,
+    User? firebaseUser,
+    BackendAuthSession? backendSession,
     AppRole? role,
-    bool? isVendorDemo,
     bool? isLoading,
   }) {
     return SessionSnapshot(
-      user: user ?? this.user,
+      firebaseUser: firebaseUser ?? this.firebaseUser,
+      backendSession: backendSession ?? this.backendSession,
       role: role ?? this.role,
-      isVendorDemo: isVendorDemo ?? this.isVendorDemo,
       isLoading: isLoading ?? this.isLoading,
     );
   }

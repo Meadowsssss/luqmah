@@ -35,7 +35,7 @@ class OrderHistoryPage extends ConsumerWidget {
               child: AppEmptyState(
                 icon: Icons.receipt_long_outlined,
                 title: 'No orders yet',
-                message: 'Once you place a demo order, it will appear here with its latest status.',
+                message: 'Orders saved from checkout will appear here with their latest status.',
               ),
             );
           }
@@ -65,6 +65,7 @@ class _OrderHistoryCard extends StatelessWidget {
       VendorOrderStatus.inProgress => context.luqmah.warning,
       VendorOrderStatus.ready => context.luqmah.info,
       VendorOrderStatus.completed => context.luqmah.mutedText,
+      VendorOrderStatus.cancelled => AppColors.error,
     };
 
     return AppSurfaceCard(

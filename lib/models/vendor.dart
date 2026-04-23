@@ -1,4 +1,4 @@
-enum VendorOrderStatus { accepted, inProgress, ready, completed }
+enum VendorOrderStatus { accepted, inProgress, ready, completed, cancelled }
 
 extension VendorOrderStatusLabel on VendorOrderStatus {
   String get label {
@@ -11,10 +11,44 @@ extension VendorOrderStatusLabel on VendorOrderStatus {
         return 'Ready';
       case VendorOrderStatus.completed:
         return 'Completed';
+      case VendorOrderStatus.cancelled:
+        return 'Cancelled';
     }
   }
 
-  bool get isPast => this == VendorOrderStatus.completed;
+  bool get isPast => this == VendorOrderStatus.completed || this == VendorOrderStatus.cancelled;
+
+  String get apiValue {
+    switch (this) {
+      case VendorOrderStatus.accepted:
+        return 'ACCEPTED';
+      case VendorOrderStatus.inProgress:
+        return 'IN_PROGRESS';
+      case VendorOrderStatus.ready:
+        return 'READY';
+      case VendorOrderStatus.completed:
+        return 'COMPLETED';
+      case VendorOrderStatus.cancelled:
+        return 'CANCELLED';
+    }
+  }
+}
+
+VendorOrderStatus vendorOrderStatusFromApi(String value) {
+  switch (value) {
+    case 'ACCEPTED':
+      return VendorOrderStatus.accepted;
+    case 'IN_PROGRESS':
+      return VendorOrderStatus.inProgress;
+    case 'READY':
+      return VendorOrderStatus.ready;
+    case 'COMPLETED':
+      return VendorOrderStatus.completed;
+    case 'CANCELLED':
+      return VendorOrderStatus.cancelled;
+    default:
+      return VendorOrderStatus.accepted;
+  }
 }
 
 class VendorOrderItem {
@@ -75,23 +109,50 @@ class VendorOrder {
 }
 
 class VendorMenuItem {
+  final String restaurantId;
+  final String restaurantTitle;
+  final String categoryId;
   final String id;
   final String title;
-  final String type;
+  final String description;
   final String category;
   final List<String> ingredients;
   final double price;
   final String image;
+  final bool isAvailable;
   final List<String> customizations;
 
   const VendorMenuItem({
+    required this.restaurantId,
+    required this.restaurantTitle,
+    required this.categoryId,
     required this.id,
     required this.title,
-    required this.type,
+    required this.description,
     required this.category,
     required this.ingredients,
     required this.price,
     required this.image,
+    required this.isAvailable,
     this.customizations = const [],
   });
+}
+
+class VendorRestaurant {
+  const VendorRestaurant({
+    required this.id,
+    required this.title,
+    required this.categories,
+  });
+
+  final String id;
+  final String title;
+  final List<VendorRestaurantCategory> categories;
+}
+
+class VendorRestaurantCategory {
+  const VendorRestaurantCategory({required this.id, required this.title});
+
+  final String id;
+  final String title;
 }

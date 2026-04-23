@@ -13,7 +13,7 @@ const registerSchema = z.object({
     name: z.string().trim().min(2).max(120),
     email: z.string().trim().email(),
     password: z.string().min(8).max(100),
-    role: z.nativeEnum(USER_ROLES),
+    role: z.literal(USER_ROLES.CUSTOMER),
   }),
 });
 

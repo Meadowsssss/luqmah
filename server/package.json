@@ -9,6 +9,7 @@
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "node prisma/seed.js",
+    "admin:bootstrap": "node scripts/bootstrap-admin.js",
     "test": "echo \"No tests configured\""
   },
   "keywords": [],

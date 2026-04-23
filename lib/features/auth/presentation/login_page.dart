@@ -14,17 +14,22 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
+  static const _adminEntryCode = 'luqmah-admin-portal';
+
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _adminCodeController = TextEditingController();
   bool _loading = false;
   bool _obscurePassword = true;
+  bool _vendorMode = false;
   String? _error;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _adminCodeController.dispose();
     super.dispose();
   }
 
@@ -39,10 +44,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     });
 
     try {
-      await ref.read(sessionControllerProvider).login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      if (_vendorMode) {
+        await ref.read(sessionControllerProvider).loginVendor(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+      } else {
+        await ref.read(sessionControllerProvider).login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+      }
     } catch (error) {
       setState(() {
         _error = error.toString().replaceFirst('Exception: ', '');
@@ -54,18 +66,39 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  Future<void> _continueAsVendor() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      await ref.read(sessionControllerProvider).continueAsVendorDemo();
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+  Future<void> _promptAdminCode() async {
+    _adminCodeController.clear();
+    final isMatch = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Admin entry'),
+          content: TextField(
+            controller: _adminCodeController,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'Entry code'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(
+                _adminCodeController.text.trim() == _adminEntryCode,
+              ),
+              child: const Text('Enter'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || isMatch != true) {
+      return;
     }
+
+    context.go('/admin/login');
   }
 
   @override
@@ -111,14 +144,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.xxl),
-                        Text(
-                          'Welcome back to Luqmah',
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(color: Colors.white),
+                        GestureDetector(
+                          onLongPress: _promptAdminCode,
+                          child: Text(
+                            'Welcome back to Luqmah',
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(color: Colors.white),
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
-                          'Browse campus favourites, track your cart, or open the vendor workspace.',
+                          'Sign in as a customer or vendor. Admin access stays hidden behind the private entry code.',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.white70,
                           ),
@@ -135,8 +171,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         children: [
                           Text('Sign in', style: Theme.of(context).textTheme.titleLarge),
                           const SizedBox(height: AppSpacing.xs),
+                          SegmentedButton<bool>(
+                            segments: const [
+                              ButtonSegment<bool>(value: false, label: Text('Customer')),
+                              ButtonSegment<bool>(value: true, label: Text('Vendor')),
+                            ],
+                            selected: <bool>{_vendorMode},
+                            onSelectionChanged: _loading
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      _vendorMode = value.first;
+                                      _error = null;
+                                    });
+                                  },
+                          ),
+                          const SizedBox(height: AppSpacing.md),
                           Text(
-                            'Use your account to continue on the customer side.',
+                            _vendorMode
+                                ? 'Use the backend vendor credentials we assigned to your restaurant.'
+                                : 'Use your customer account to continue on the customer side.',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: context.luqmah.mutedText,
                             ),
@@ -194,19 +248,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text('Sign in'),
+                                : Text(_vendorMode ? 'Sign in as vendor' : 'Sign in'),
                           ),
-                          const SizedBox(height: AppSpacing.md),
-                          OutlinedButton.icon(
-                            onPressed: _loading ? null : _continueAsVendor,
-                            icon: const Icon(Icons.storefront_outlined),
-                            label: const Text('Continue as vendor demo'),
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          TextButton(
-                            onPressed: _loading ? null : () => context.go('/register'),
-                            child: const Text('Need an account? Create one'),
-                          ),
+                          if (!_vendorMode) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            TextButton(
+                              onPressed: _loading ? null : () => context.go('/register'),
+                              child: const Text('Need an account? Create one'),
+                            ),
+                          ],
                         ],
                       ),
                     ),

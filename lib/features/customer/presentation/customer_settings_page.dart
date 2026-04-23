@@ -54,7 +54,7 @@ class CustomerSettingsPage extends ConsumerWidget {
                   data: (orders) {
                     if (orders.isEmpty) {
                       return Text(
-                        'No order history yet. Place a demo order to start tracking status.',
+                        'No order history yet. Orders saved from checkout will appear here.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: context.luqmah.mutedText,
                         ),

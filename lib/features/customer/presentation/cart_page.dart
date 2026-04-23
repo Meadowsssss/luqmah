@@ -137,7 +137,7 @@ class CartPage extends ConsumerWidget {
                                 return AlertDialog(
                                   title: const Text('Order placed'),
                                   content: Text(
-                                    'Demo checkout complete for ${order.restaurantName}. Your order is now tracked in order history.',
+                                    'Checkout saved for ${order.restaurantName}. Your order is now tracked in order history on this device.',
                                   ),
                                   actions: [
                                     TextButton(

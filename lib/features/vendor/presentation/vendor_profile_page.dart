@@ -24,16 +24,12 @@ class VendorProfilePage extends ConsumerWidget {
                 Text('Workspace identity', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  session.isVendorDemo
-                      ? 'Vendor Demo'
-                      : (session.email.isEmpty ? 'Vendor account' : session.email),
+                  session.email.isEmpty ? 'Vendor account' : session.email,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  session.isVendorDemo
-                      ? 'Temporary local vendor session'
-                      : 'Vendor workspace connected through Luqmah session state',
+                  'Vendor workspace connected to the live Luqmah backend.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: context.luqmah.mutedText,
                   ),

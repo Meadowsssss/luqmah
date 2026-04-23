@@ -16,6 +16,26 @@ class MenuItem {
     required this.category,
     this.isMostSelling = false,
   });
+
+  MenuItem copyWith({
+    String? id,
+    String? name,
+    String? description,
+    double? price,
+    String? image,
+    String? category,
+    bool? isMostSelling,
+  }) {
+    return MenuItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      image: image ?? this.image,
+      category: category ?? this.category,
+      isMostSelling: isMostSelling ?? this.isMostSelling,
+    );
+  }
 }
 
 class Restaurant {
@@ -38,4 +58,26 @@ class Restaurant {
     required this.tags,
     required this.menu,
   });
+
+  Restaurant copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? image,
+    String? rating,
+    String? time,
+    List<String>? tags,
+    List<MenuItem>? menu,
+  }) {
+    return Restaurant(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      image: image ?? this.image,
+      rating: rating ?? this.rating,
+      time: time ?? this.time,
+      tags: tags ?? this.tags,
+      menu: menu ?? this.menu,
+    );
+  }
 }
