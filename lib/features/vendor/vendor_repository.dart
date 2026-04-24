@@ -86,6 +86,27 @@ class VendorRepository {
     );
   }
 
+  Future<VendorRestaurantCategory> createMenuCategory({
+    required String token,
+    required String restaurantId,
+    required String title,
+  }) async {
+    final response = await _apiClient.post(
+      '/vendor/menu-categories',
+      token: token,
+      body: {
+        'restaurantId': restaurantId,
+        'title': title,
+      },
+    );
+
+    final category = response['category'] as Map<String, dynamic>;
+    return VendorRestaurantCategory(
+      id: category['id'] as String,
+      title: category['title'] as String,
+    );
+  }
+
   Future<void> updateOrderStatus({
     required String token,
     required String orderId,

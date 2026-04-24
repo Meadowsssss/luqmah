@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/customer_order.dart';
 import '../../../models/vendor.dart';
 import '../cart/cart_controller.dart';
-import '../data/restaurant_repository.dart';
 import 'customer_orders_repository.dart';
 
 final customerOrdersRepositoryProvider = Provider<CustomerOrdersRepository>((ref) {
@@ -24,15 +23,7 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
     required double total,
   }) async {
     final current = state.valueOrNull ?? await _repository.loadOrders();
-    final restaurantRepository = ref.read(restaurantRepositoryProvider);
-    final restaurantNames = <String>{};
-
-    for (final line in lines) {
-      final restaurant = restaurantRepository.findRestaurantForMenuItem(line.item.id);
-      if (restaurant != null) {
-        restaurantNames.add(restaurant.name);
-      }
-    }
+    final restaurantNames = lines.map((line) => line.item.restaurantName).toSet();
 
     final restaurantName = restaurantNames.isEmpty
         ? 'Campus order'
@@ -48,7 +39,7 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
       items: lines
           .map(
             (line) => CustomerOrderItem(
-              itemId: line.item.id,
+              itemId: line.item.itemId,
               name: line.item.name,
               quantity: line.quantity,
               price: line.item.price,

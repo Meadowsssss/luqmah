@@ -41,7 +41,8 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
 
   Future<void> addMenuItem({
     required String restaurantId,
-    required String categoryId,
+    String? categoryId,
+    String? newCategoryTitle,
     required String title,
     required String description,
     required double price,
@@ -54,10 +55,26 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       throw StateError('Vendor session is required');
     }
 
+    var resolvedCategoryId = categoryId;
+    final normalizedNewCategoryTitle = newCategoryTitle?.trim() ?? '';
+
+    if (normalizedNewCategoryTitle.isNotEmpty) {
+      final category = await _repository.createMenuCategory(
+        token: token,
+        restaurantId: restaurantId,
+        title: normalizedNewCategoryTitle,
+      );
+      resolvedCategoryId = category.id;
+    }
+
+    if (resolvedCategoryId == null || resolvedCategoryId.isEmpty) {
+      throw StateError('A category is required');
+    }
+
     await _repository.createMenuItem(
       token: token,
       restaurantId: restaurantId,
-      categoryId: categoryId,
+      categoryId: resolvedCategoryId,
       title: title,
       description: description,
       price: price,

@@ -17,149 +17,165 @@ class CartPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Your cart')),
-      body: lines.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: AppEmptyState(
-                icon: Icons.shopping_bag_outlined,
-                title: 'Your cart is empty',
-                message: 'Add a few favourites from campus restaurants to get started.',
-              ),
-            )
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    itemCount: lines.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
-                    itemBuilder: (context, index) {
-                      final line = lines[index];
-                      return AppSurfaceCard(
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: lines.isEmpty
+            ? const Padding(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                child: AppEmptyState(
+                  icon: Icons.shopping_bag_outlined,
+                  title: 'Your cart is empty',
+                  message: 'Add a few favourites from campus restaurants to get started.',
+                ),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      itemCount: lines.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
+                      itemBuilder: (context, index) {
+                        final line = lines[index];
+                        return AppSurfaceCard(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      line.item.name,
+                                      style: Theme.of(context).textTheme.titleMedium,
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      line.item.restaurantName,
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      '${line.item.price.toStringAsFixed(2)} JD each',
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    const SizedBox(height: AppSpacing.sm),
+                                    Text(
+                                      '${line.lineTotal.toStringAsFixed(2)} JD',
+                                      style: const TextStyle(
+                                        color: AppColors.accent,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    line.item.name,
-                                    style: Theme.of(context).textTheme.titleMedium,
+                                  IconButton(
+                                    onPressed: () {
+                                      ref
+                                          .read(cartControllerProvider.notifier)
+                                          .removeItem(line.item.itemId);
+                                    },
+                                    icon: const Icon(Icons.remove_circle_outline_rounded),
                                   ),
-                                  const SizedBox(height: AppSpacing.xs),
                                   Text(
-                                    '${line.item.price.toStringAsFixed(2)} JD each',
-                                    style: Theme.of(context).textTheme.bodySmall,
+                                    '${line.quantity}',
+                                    style: const TextStyle(fontWeight: FontWeight.w700),
                                   ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  Text(
-                                    '${line.lineTotal.toStringAsFixed(2)} JD',
-                                    style: const TextStyle(
-                                      color: AppColors.accent,
-                                      fontWeight: FontWeight.w800,
+                                  IconButton(
+                                    onPressed: () {
+                                      ref
+                                          .read(cartControllerProvider.notifier)
+                                          .incrementItem(line.item.itemId);
+                                    },
+                                    icon: const Icon(Icons.add_circle_outline_rounded),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      ref
+                                          .read(cartControllerProvider.notifier)
+                                          .deleteItem(line.item.itemId);
+                                    },
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: AppColors.error,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Row(
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: const BoxDecoration(
+                        color: AppColors.surface,
+                        border: Border(top: BorderSide(color: AppColors.border)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
                               mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                IconButton(
-                                  onPressed: () {
-                                    ref
-                                        .read(cartControllerProvider.notifier)
-                                        .removeItem(line.item.id);
-                                  },
-                                  icon: const Icon(Icons.remove_circle_outline_rounded),
-                                ),
+                                Text('Total', style: Theme.of(context).textTheme.bodySmall),
+                                const SizedBox(height: AppSpacing.xs),
                                 Text(
-                                  '${line.quantity}',
-                                  style: const TextStyle(fontWeight: FontWeight.w700),
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    ref.read(cartControllerProvider.notifier).addItem(line.item);
-                                  },
-                                  icon: const Icon(Icons.add_circle_outline_rounded),
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    ref
-                                        .read(cartControllerProvider.notifier)
-                                        .deleteItem(line.item.id);
-                                  },
-                                  icon: const Icon(
-                                    Icons.delete_outline_rounded,
-                                    color: AppColors.error,
-                                  ),
+                                  '${total.toStringAsFixed(2)} JD',
+                                  style: Theme.of(context).textTheme.titleLarge,
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  decoration: const BoxDecoration(
-                    color: AppColors.surface,
-                    border: Border(top: BorderSide(color: AppColors.border)),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Total', style: Theme.of(context).textTheme.bodySmall),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              '${total.toStringAsFixed(2)} JD',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                          ],
-                        ),
-                      ),
-                        ElevatedButton(
-                          onPressed: () async {
-                            final order = await ref
-                                .read(customerOrdersControllerProvider.notifier)
-                                .placeOrder(lines: lines, total: total);
-                            if (!context.mounted) {
-                              return;
-                            }
-                            await showDialog<void>(
-                              context: context,
-                              builder: (dialogContext) {
-                                return AlertDialog(
-                                  title: const Text('Order placed'),
-                                  content: Text(
-                                    'Checkout saved for ${order.restaurantName}. Your order is now tracked in order history on this device.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(dialogContext).pop(),
-                                      child: const Text('OK'),
+                          ),
+                          const SizedBox(width: AppSpacing.lg),
+                          ElevatedButton(
+                            onPressed: () async {
+                              final order = await ref
+                                  .read(customerOrdersControllerProvider.notifier)
+                                  .placeOrder(lines: lines, total: total);
+                              if (!context.mounted) {
+                                return;
+                              }
+                              await showDialog<void>(
+                                context: context,
+                                builder: (dialogContext) {
+                                  return AlertDialog(
+                                    title: const Text('Order placed'),
+                                    content: Text(
+                                      'Checkout saved for ${order.restaurantName}. Your order is now tracked in order history on this device.',
                                     ),
-                                  ],
-                                );
-                              },
-                            );
-                            if (!context.mounted) {
-                              return;
-                            }
-                            ref.read(cartControllerProvider.notifier).clear();
-                          },
-                          child: const Text('Place order'),
-                        ),
-                    ],
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(dialogContext).pop(),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                              if (!context.mounted) {
+                                return;
+                              }
+                              ref.read(cartControllerProvider.notifier).clear();
+                            },
+                            child: const Text('Place order'),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 }

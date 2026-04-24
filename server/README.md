@@ -208,6 +208,18 @@ curl -X POST http://localhost:4000/vendor/menu-items \
   }'
 ```
 
+### Create Vendor Menu Category
+
+```bash
+curl -X POST http://localhost:4000/vendor/menu-categories \
+  -H "Authorization: Bearer <vendor-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "restaurantId": "<restaurantId>",
+    "title": "Wraps"
+  }'
+```
+
 ## Endpoints
 
 - `POST /auth/register`
@@ -229,6 +241,7 @@ curl -X POST http://localhost:4000/vendor/menu-items \
 - `GET /vendor/orders?status=past`
 - `GET /vendor/orders/:id`
 - `PATCH /vendor/orders/:id/status`
+- `POST /vendor/menu-categories`
 - `GET /vendor/menu-items`
 - `POST /vendor/menu-items`
 - `PATCH /vendor/menu-items/:id`

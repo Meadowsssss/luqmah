@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
+import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
@@ -21,8 +22,10 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
   final _priceController = TextEditingController();
   final _imageUrlController = TextEditingController();
   final _customizationsController = TextEditingController();
+  final _newCategoryController = TextEditingController();
   String? _restaurantId;
   String? _categoryId;
+  bool _creatingNewCategory = false;
   bool _submitting = false;
 
   @override
@@ -33,7 +36,39 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
     _priceController.dispose();
     _imageUrlController.dispose();
     _customizationsController.dispose();
+    _newCategoryController.dispose();
     super.dispose();
+  }
+
+  void _syncSelectionState(List<VendorRestaurant> restaurants) {
+    if (restaurants.isEmpty) {
+      return;
+    }
+
+    final fallbackRestaurantId = _restaurantId ?? restaurants.first.id;
+    final selectedRestaurant = restaurants.firstWhere(
+      (item) => item.id == fallbackRestaurantId,
+      orElse: () => restaurants.first,
+    );
+
+    final categories = selectedRestaurant.categories;
+    final nextCategoryId = categories.isEmpty
+        ? null
+        : categories.any((item) => item.id == _categoryId)
+        ? _categoryId
+        : categories.first.id;
+
+    if (_restaurantId != selectedRestaurant.id || _categoryId != nextCategoryId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _restaurantId = selectedRestaurant.id;
+          _categoryId = nextCategoryId;
+        });
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -41,9 +76,16 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
       return;
     }
 
-    if (_restaurantId == null || _categoryId == null) {
+    if (_restaurantId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choose a restaurant and category first.')),
+        const SnackBar(content: Text('Choose a restaurant first.')),
+      );
+      return;
+    }
+
+    if (!_creatingNewCategory && _categoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choose an existing category or create a new one.')),
       );
       return;
     }
@@ -53,7 +95,8 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
     try {
       await ref.read(vendorDataControllerProvider.notifier).addMenuItem(
         restaurantId: _restaurantId!,
-        categoryId: _categoryId!,
+        categoryId: _creatingNewCategory ? null : _categoryId,
+        newCategoryTitle: _creatingNewCategory ? _newCategoryController.text.trim() : null,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         price: double.parse(_priceController.text.trim()),
@@ -126,18 +169,16 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
             ),
           );
         }
-        if (restaurants.isNotEmpty && _restaurantId == null) {
-          _restaurantId = restaurants.first.id;
-        }
+        _syncSelectionState(restaurants);
+        final currentRestaurantId = _restaurantId ?? restaurants.first.id;
         final selectedRestaurant = restaurants.firstWhere(
-          (item) => item.id == _restaurantId,
+          (item) => item.id == currentRestaurantId,
           orElse: () => restaurants.first,
         );
-        _restaurantId = selectedRestaurant.id;
         final categories = selectedRestaurant.categories;
-        if (categories.isNotEmpty && !categories.any((item) => item.id == _categoryId)) {
-          _categoryId = categories.first.id;
-        }
+        final activeCategoryId = categories.any((item) => item.id == _categoryId)
+            ? _categoryId
+            : (categories.isEmpty ? null : categories.first.id);
 
         return Scaffold(
           appBar: AppBar(title: const Text('Add product')),
@@ -153,7 +194,8 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                       Text('Product details', style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: AppSpacing.lg),
                       DropdownButtonFormField<String>(
-                        initialValue: _restaurantId,
+                        key: ValueKey(currentRestaurantId),
+                        initialValue: currentRestaurantId,
                         items: restaurants
                             .map((value) => DropdownMenuItem(value: value.id, child: Text(value.title)))
                             .toList(growable: false),
@@ -165,21 +207,65 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                             _restaurantId = value;
                             final nextRestaurant = restaurants.firstWhere((item) => item.id == value);
                             _categoryId = nextRestaurant.categories.isEmpty ? null : nextRestaurant.categories.first.id;
+                            _creatingNewCategory = false;
+                            _newCategoryController.clear();
                           });
                         },
                         decoration: const InputDecoration(labelText: 'Restaurant'),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      DropdownButtonFormField<String>(
-                        initialValue: _categoryId,
-                        items: categories
-                            .map((value) => DropdownMenuItem(value: value.id, child: Text(value.title)))
-                            .toList(growable: false),
-                        onChanged: (value) {
-                          setState(() => _categoryId = value);
+                      SegmentedButton<bool>(
+                        segments: const [
+                          ButtonSegment<bool>(value: false, label: Text('Use existing')),
+                          ButtonSegment<bool>(value: true, label: Text('Create new')),
+                        ],
+                        selected: <bool>{_creatingNewCategory},
+                        onSelectionChanged: (selection) {
+                          setState(() {
+                            _creatingNewCategory = selection.first;
+                            if (!_creatingNewCategory) {
+                              _newCategoryController.clear();
+                            }
+                          });
                         },
-                        decoration: const InputDecoration(labelText: 'Category'),
                       ),
+                      const SizedBox(height: AppSpacing.lg),
+                      if (_creatingNewCategory)
+                        TextFormField(
+                          controller: _newCategoryController,
+                          decoration: const InputDecoration(
+                            labelText: 'New category name',
+                            hintText: 'Wraps, Breakfast, Signature drinks',
+                          ),
+                          validator: (value) {
+                            if (!_creatingNewCategory) {
+                              return null;
+                            }
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Category name is required';
+                            }
+                            return null;
+                          },
+                        )
+                      else
+                        DropdownButtonFormField<String>(
+                          key: ValueKey('${selectedRestaurant.id}-${activeCategoryId ?? 'none'}'),
+                          initialValue: activeCategoryId,
+                          items: categories
+                              .map((value) => DropdownMenuItem(value: value.id, child: Text(value.title)))
+                              .toList(growable: false),
+                          onChanged: categories.isEmpty
+                              ? null
+                              : (value) {
+                                  setState(() => _categoryId = value);
+                                },
+                          decoration: InputDecoration(
+                            labelText: 'Category',
+                            helperText: categories.isEmpty
+                                ? 'No categories exist yet for this restaurant. Create one below.'
+                                : null,
+                          ),
+                        ),
                       const SizedBox(height: AppSpacing.lg),
                       TextFormField(
                         controller: _titleController,

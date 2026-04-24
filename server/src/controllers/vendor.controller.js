@@ -83,6 +83,41 @@ const getVendorRestaurants = async (req, res) => {
   res.json({ restaurants: serialize(restaurants) });
 };
 
+const createVendorRestaurantCategory = async (req, res) => {
+  const { restaurantId, title } = req.body;
+
+  await ensureVendorRestaurant(req.auth.vendorId, restaurantId);
+
+  const normalizedTitle = title.trim();
+  const existingCategory = await prisma.menuCategory.findFirst({
+    where: {
+      restaurantId,
+      title: {
+        equals: normalizedTitle,
+        mode: "insensitive",
+      },
+    },
+  });
+
+  if (existingCategory) {
+    throw new ApiError(409, "A category with this name already exists for the selected restaurant");
+  }
+
+  const sortOrder = await prisma.menuCategory.count({
+    where: { restaurantId },
+  });
+
+  const category = await prisma.menuCategory.create({
+    data: {
+      restaurantId,
+      title: normalizedTitle,
+      sortOrder,
+    },
+  });
+
+  res.status(201).json({ category: serialize(category) });
+};
+
 const getVendorOrders = async (req, res) => {
   const filter = req.query.status || "new";
   const statuses = VENDOR_ORDER_FILTERS[filter];
@@ -332,6 +367,7 @@ const updateVendorMenuItemAvailability = async (req, res) => {
 
 module.exports = {
   getVendorRestaurants,
+  createVendorRestaurantCategory,
   getVendorOrders,
   getVendorOrderById,
   updateVendorOrderStatus,

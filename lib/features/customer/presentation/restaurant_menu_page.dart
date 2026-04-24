@@ -123,7 +123,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                 )
               else
                 for (final item in items) ...[
-                  _MenuItemCard(item: item),
+                  _MenuItemCard(item: item, restaurantName: restaurant.name),
                   const SizedBox(height: AppSpacing.lg),
                 ],
             ],
@@ -135,14 +135,15 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
 }
 
 class _MenuItemCard extends ConsumerWidget {
-  const _MenuItemCard({required this.item});
+  const _MenuItemCard({required this.item, required this.restaurantName});
 
   final MenuItem item;
+  final String restaurantName;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartControllerProvider);
-    final quantity = cart.quantities[item.id] ?? 0;
+    final quantity = cart.items[item.id]?.quantity ?? 0;
 
     return AppSurfaceCard(
       child: Row(
@@ -174,7 +175,10 @@ class _MenuItemCard extends ConsumerWidget {
                     width: 140,
                     child: ElevatedButton(
                       onPressed: () {
-                        ref.read(cartControllerProvider.notifier).addItem(item);
+                        ref.read(cartControllerProvider.notifier).addItem(
+                          item,
+                          restaurantName: restaurantName,
+                        );
                       },
                       child: const Text('Add to cart'),
                     ),
@@ -193,11 +197,14 @@ class _MenuItemCard extends ConsumerWidget {
                         '$quantity',
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      IconButton(
-                        onPressed: () {
-                          ref.read(cartControllerProvider.notifier).addItem(item);
-                        },
-                        icon: const Icon(Icons.add_circle_outline_rounded),
+                        IconButton(
+                          onPressed: () {
+                            ref.read(cartControllerProvider.notifier).addItem(
+                              item,
+                              restaurantName: restaurantName,
+                            );
+                          },
+                          icon: const Icon(Icons.add_circle_outline_rounded),
                       ),
                     ],
                   ),

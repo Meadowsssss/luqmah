@@ -6,6 +6,7 @@ const { requireAuth, requireRole } = require("../middleware/auth");
 const { USER_ROLES, ORDER_STATUSES } = require("../constants/enums");
 const {
   getVendorRestaurants,
+  createVendorRestaurantCategory,
   getVendorOrders,
   getVendorOrderById,
   updateVendorOrderStatus,
@@ -47,6 +48,13 @@ const menuItemCreateSchema = z.object({
     isAvailable: z.boolean().default(true),
     ingredientNames: z.array(z.string().trim().min(1).max(120)).optional(),
     customizations: z.array(customizationInputSchema).optional(),
+  }),
+});
+
+const menuCategoryCreateSchema = z.object({
+  body: z.object({
+    restaurantId: z.string().cuid(),
+    title: z.string().trim().min(2).max(80),
   }),
 });
 
@@ -92,6 +100,11 @@ const vendorOrderStatusUpdateSchema = z.object({
 router.use(requireAuth, requireRole(USER_ROLES.VENDOR));
 
 router.get("/restaurants/me", asyncHandler(getVendorRestaurants));
+router.post(
+  "/menu-categories",
+  validate(menuCategoryCreateSchema),
+  asyncHandler(createVendorRestaurantCategory),
+);
 router.get("/orders", validate(vendorOrderQuerySchema), asyncHandler(getVendorOrders));
 router.get("/orders/:id", validate(cuidParamSchema), asyncHandler(getVendorOrderById));
 router.patch(

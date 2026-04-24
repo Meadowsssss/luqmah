@@ -1,58 +1,115 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/restaurant.dart';
-import '../data/restaurant_repository.dart';
+
+class CartItemSnapshot {
+  const CartItemSnapshot({
+    required this.itemId,
+    required this.restaurantName,
+    required this.name,
+    required this.description,
+    required this.price,
+    required this.image,
+  });
+
+  final String itemId;
+  final String restaurantName;
+  final String name;
+  final String description;
+  final double price;
+  final String image;
+}
 
 class CartState {
-  const CartState({required this.quantities});
+  const CartState({required this.items});
 
-  final Map<String, int> quantities;
+  final Map<String, CartLine> items;
 
-  int get itemCount => quantities.values.fold(0, (sum, qty) => sum + qty);
+  int get itemCount => items.values.fold(0, (sum, line) => sum + line.quantity);
 }
 
 class CartLine {
   const CartLine({required this.item, required this.quantity});
 
-  final MenuItem item;
+  final CartItemSnapshot item;
   final int quantity;
 
   double get lineTotal => item.price * quantity;
+
+  CartLine copyWith({CartItemSnapshot? item, int? quantity}) {
+    return CartLine(
+      item: item ?? this.item,
+      quantity: quantity ?? this.quantity,
+    );
+  }
 }
 
 class CartController extends Notifier<CartState> {
   @override
-  CartState build() => const CartState(quantities: <String, int>{});
+  CartState build() => const CartState(items: <String, CartLine>{});
 
-  void addItem(MenuItem item) {
-    final next = Map<String, int>.from(state.quantities);
-    next.update(item.id, (qty) => qty + 1, ifAbsent: () => 1);
-    state = CartState(quantities: next);
+  void addItem(MenuItem item, {required String restaurantName}) {
+    final next = Map<String, CartLine>.from(state.items);
+    final existing = next[item.id];
+
+    if (existing != null) {
+      next[item.id] = existing.copyWith(quantity: existing.quantity + 1);
+    } else {
+      next[item.id] = CartLine(
+        item: CartItemSnapshot(
+          itemId: item.id,
+          restaurantName: restaurantName,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          image: item.image,
+        ),
+        quantity: 1,
+      );
+    }
+
+    state = CartState(items: next);
   }
 
-  void removeItem(String itemId) {
-    if (!state.quantities.containsKey(itemId)) {
+  void incrementItem(String itemId) {
+    final next = Map<String, CartLine>.from(state.items);
+    final existing = next[itemId];
+    if (existing == null) {
       return;
     }
 
-    final next = Map<String, int>.from(state.quantities);
-    final updated = (next[itemId] ?? 0) - 1;
-    if (updated <= 0) {
+    next[itemId] = existing.copyWith(quantity: existing.quantity + 1);
+    state = CartState(items: next);
+  }
+
+  void removeItem(String itemId) {
+    if (!state.items.containsKey(itemId)) {
+      return;
+    }
+
+    final next = Map<String, CartLine>.from(state.items);
+    final existing = next[itemId];
+    if (existing == null) {
+      return;
+    }
+
+    final updatedQuantity = existing.quantity - 1;
+    if (updatedQuantity <= 0) {
       next.remove(itemId);
     } else {
-      next[itemId] = updated;
+      next[itemId] = existing.copyWith(quantity: updatedQuantity);
     }
-    state = CartState(quantities: next);
+    state = CartState(items: next);
   }
 
   void deleteItem(String itemId) {
-    final next = Map<String, int>.from(state.quantities);
+    final next = Map<String, CartLine>.from(state.items);
     next.remove(itemId);
-    state = CartState(quantities: next);
+    state = CartState(items: next);
   }
 
   void clear() {
-    state = const CartState(quantities: <String, int>{});
+    state = const CartState(items: <String, CartLine>{});
   }
 }
 
@@ -61,18 +118,7 @@ final cartControllerProvider = NotifierProvider<CartController, CartState>(
 );
 
 final cartLinesProvider = Provider<List<CartLine>>((ref) {
-  final cart = ref.watch(cartControllerProvider);
-  final repository = ref.watch(restaurantRepositoryProvider);
-  final lines = <CartLine>[];
-
-  for (final entry in cart.quantities.entries) {
-    final item = repository.getMenuItemById(entry.key);
-    if (item != null) {
-      lines.add(CartLine(item: item, quantity: entry.value));
-    }
-  }
-
-  return lines;
+  return ref.watch(cartControllerProvider).items.values.toList(growable: false);
 });
 
 final cartTotalProvider = Provider<double>((ref) {
