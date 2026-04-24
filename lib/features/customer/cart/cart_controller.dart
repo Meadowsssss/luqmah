@@ -5,6 +5,7 @@ import '../../../models/restaurant.dart';
 class CartItemSnapshot {
   const CartItemSnapshot({
     required this.itemId,
+    required this.restaurantId,
     required this.restaurantName,
     required this.name,
     required this.description,
@@ -13,6 +14,7 @@ class CartItemSnapshot {
   });
 
   final String itemId;
+  final String restaurantId;
   final String restaurantName;
   final String name;
   final String description;
@@ -26,6 +28,16 @@ class CartState {
   final Map<String, CartLine> items;
 
   int get itemCount => items.values.fold(0, (sum, line) => sum + line.quantity);
+
+  String? get activeRestaurantId =>
+      items.isEmpty ? null : items.values.first.item.restaurantId;
+
+  String? get activeRestaurantName =>
+      items.isEmpty ? null : items.values.first.item.restaurantName;
+
+  bool canAddRestaurant(String restaurantId) {
+    return activeRestaurantId == null || activeRestaurantId == restaurantId;
+  }
 }
 
 class CartLine {
@@ -48,7 +60,15 @@ class CartController extends Notifier<CartState> {
   @override
   CartState build() => const CartState(items: <String, CartLine>{});
 
-  void addItem(MenuItem item, {required String restaurantName}) {
+  bool addItem(
+    MenuItem item, {
+    required String restaurantId,
+    required String restaurantName,
+  }) {
+    if (!state.canAddRestaurant(restaurantId)) {
+      return false;
+    }
+
     final next = Map<String, CartLine>.from(state.items);
     final existing = next[item.id];
 
@@ -58,6 +78,7 @@ class CartController extends Notifier<CartState> {
       next[item.id] = CartLine(
         item: CartItemSnapshot(
           itemId: item.id,
+          restaurantId: restaurantId,
           restaurantName: restaurantName,
           name: item.name,
           description: item.description,
@@ -69,6 +90,20 @@ class CartController extends Notifier<CartState> {
     }
 
     state = CartState(items: next);
+    return true;
+  }
+
+  void replaceWithItem(
+    MenuItem item, {
+    required String restaurantId,
+    required String restaurantName,
+  }) {
+    state = const CartState(items: <String, CartLine>{});
+    addItem(
+      item,
+      restaurantId: restaurantId,
+      restaurantName: restaurantName,
+    );
   }
 
   void incrementItem(String itemId) {

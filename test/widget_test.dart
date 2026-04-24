@@ -87,6 +87,7 @@ void main() {
             image: '',
             category: 'Wraps',
           ),
+          restaurantId: 'al_salam_grill',
           restaurantName: 'Al-Salam Grill',
         );
 

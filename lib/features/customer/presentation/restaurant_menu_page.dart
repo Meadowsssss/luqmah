@@ -123,7 +123,11 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                 )
               else
                 for (final item in items) ...[
-                  _MenuItemCard(item: item, restaurantName: restaurant.name),
+                  _MenuItemCard(
+                    item: item,
+                    restaurantId: restaurant.id,
+                    restaurantName: restaurant.name,
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                 ],
             ],
@@ -135,10 +139,60 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
 }
 
 class _MenuItemCard extends ConsumerWidget {
-  const _MenuItemCard({required this.item, required this.restaurantName});
+  const _MenuItemCard({
+    required this.item,
+    required this.restaurantId,
+    required this.restaurantName,
+  });
 
   final MenuItem item;
+  final String restaurantId;
   final String restaurantName;
+
+  Future<void> _handleAddPressed(BuildContext context, WidgetRef ref) async {
+    final controller = ref.read(cartControllerProvider.notifier);
+    final cart = ref.read(cartControllerProvider);
+    final added = controller.addItem(
+      item,
+      restaurantId: restaurantId,
+      restaurantName: restaurantName,
+    );
+
+    if (added) {
+      return;
+    }
+
+    final existingRestaurantName = cart.activeRestaurantName ?? 'another restaurant';
+    final shouldReplace = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Switch restaurant?'),
+          content: Text(
+            'Your cart already contains items from $existingRestaurantName. Clear the cart and add this item from $restaurantName instead?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Clear cart and add'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldReplace == true) {
+      controller.replaceWithItem(
+        item,
+        restaurantId: restaurantId,
+        restaurantName: restaurantName,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -174,12 +228,7 @@ class _MenuItemCard extends ConsumerWidget {
                   SizedBox(
                     width: 140,
                     child: ElevatedButton(
-                      onPressed: () {
-                        ref.read(cartControllerProvider.notifier).addItem(
-                          item,
-                          restaurantName: restaurantName,
-                        );
-                      },
+                      onPressed: () => _handleAddPressed(context, ref),
                       child: const Text('Add to cart'),
                     ),
                   )
@@ -199,13 +248,10 @@ class _MenuItemCard extends ConsumerWidget {
                       ),
                         IconButton(
                           onPressed: () {
-                            ref.read(cartControllerProvider.notifier).addItem(
-                              item,
-                              restaurantName: restaurantName,
-                            );
+                            _handleAddPressed(context, ref);
                           },
                           icon: const Icon(Icons.add_circle_outline_rounded),
-                      ),
+                        ),
                     ],
                   ),
               ],

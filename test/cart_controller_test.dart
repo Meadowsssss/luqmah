@@ -19,14 +19,23 @@ void main() {
 
     final notifier = container.read(cartControllerProvider.notifier);
 
-    notifier.addItem(item, restaurantName: 'Campus Burger');
-    notifier.addItem(item, restaurantName: 'Campus Burger');
+    notifier.addItem(
+      item,
+      restaurantId: 'campus_burger',
+      restaurantName: 'Campus Burger',
+    );
+    notifier.addItem(
+      item,
+      restaurantId: 'campus_burger',
+      restaurantName: 'Campus Burger',
+    );
 
     final state = container.read(cartControllerProvider);
     final lines = container.read(cartLinesProvider);
     final total = container.read(cartTotalProvider);
 
     expect(state.itemCount, 2);
+    expect(state.activeRestaurantId, 'campus_burger');
     expect(lines, hasLength(1));
     expect(lines.first.item.name, 'Classic Burger');
     expect(lines.first.item.restaurantName, 'Campus Burger');
@@ -46,11 +55,57 @@ void main() {
 
     container
         .read(cartControllerProvider.notifier)
-        .addItem(item, restaurantName: 'Campus Burger');
+        .addItem(
+          item,
+          restaurantId: 'campus_burger',
+          restaurantName: 'Campus Burger',
+        );
 
     final line = container.read(cartLinesProvider).single;
     expect(line.item.itemId, item.id);
+    expect(line.item.restaurantId, 'campus_burger');
     expect(line.item.description, item.description);
     expect(line.item.image, item.image);
+  });
+
+  test('cart rejects items from another restaurant until replaced', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    const secondItem = MenuItem(
+      id: 'wrap_1',
+      name: 'Chicken Wrap',
+      description: 'Fresh wrap',
+      price: 4.0,
+      image: 'https://example.com/wrap.jpg',
+      category: 'Wraps',
+    );
+
+    final notifier = container.read(cartControllerProvider.notifier);
+    notifier.addItem(
+      item,
+      restaurantId: 'campus_burger',
+      restaurantName: 'Campus Burger',
+    );
+
+    final accepted = notifier.addItem(
+      secondItem,
+      restaurantId: 'blockna_express',
+      restaurantName: 'Blockna Express',
+    );
+
+    expect(accepted, isFalse);
+    expect(container.read(cartControllerProvider).activeRestaurantId, 'campus_burger');
+    expect(container.read(cartLinesProvider), hasLength(1));
+
+    notifier.replaceWithItem(
+      secondItem,
+      restaurantId: 'blockna_express',
+      restaurantName: 'Blockna Express',
+    );
+
+    expect(container.read(cartControllerProvider).activeRestaurantId, 'blockna_express');
+    expect(container.read(cartLinesProvider), hasLength(1));
+    expect(container.read(cartLinesProvider).single.item.name, 'Chicken Wrap');
   });
 }
