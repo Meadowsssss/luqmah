@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
+import '../../session/auth_error_formatter.dart';
 import '../../session/session_controller.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
@@ -43,7 +44,7 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
         password: _passwordController.text.trim(),
       );
     } catch (error) {
-      setState(() => _error = error.toString().replaceFirst('Exception: ', ''));
+      setState(() => _error = formatAuthError(error));
     } finally {
       if (mounted) {
         setState(() => _loading = false);

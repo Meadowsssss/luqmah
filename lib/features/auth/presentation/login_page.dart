@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/session/session_controller.dart';
+import '../../../features/session/auth_error_formatter.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -57,7 +58,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
     } catch (error) {
       setState(() {
-        _error = error.toString().replaceFirst('Exception: ', '');
+        _error = formatAuthError(error);
       });
     } finally {
       if (mounted) {
