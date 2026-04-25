@@ -27,7 +27,12 @@ class SessionSnapshot {
   final bool isLoading;
 
   bool get isSignedIn => firebaseUser != null || backendSession != null;
-  bool get isEmailVerified => backendSession != null || (firebaseUser?.emailVerified ?? false);
+  bool get isEmailVerified {
+    if (role == AppRole.customer) {
+      return firebaseUser?.emailVerified ?? false;
+    }
+    return backendSession != null || (firebaseUser?.emailVerified ?? false);
+  }
   bool get isVendorSurface => role == AppRole.vendor;
   bool get isAdminSurface => role == AppRole.admin;
   String get email => backendSession?.user.email ?? firebaseUser?.email ?? '';

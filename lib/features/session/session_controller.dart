@@ -62,8 +62,21 @@ class SessionController extends ChangeNotifier {
 
   Future<void> login({required String email, required String password}) async {
     await _sessionRepository.clearBackendSession();
-    await _authRepository.login(email: email, password: password);
-    await refresh();
+    try {
+      await _authRepository.login(email: email, password: password);
+      final session = await _backendAuthRepository.loginCustomer(
+        email: email,
+        password: password,
+      );
+      await _sessionRepository.saveBackendSession(session);
+      await refresh();
+    } catch (error) {
+      if (_authRepository.currentUser != null) {
+        await _authRepository.logout();
+      }
+      await _sessionRepository.clearBackendSession();
+      rethrow;
+    }
   }
 
   Future<void> loginVendor({required String email, required String password}) async {
@@ -89,12 +102,42 @@ class SessionController extends ChangeNotifier {
     required String password,
   }) async {
     await _sessionRepository.clearBackendSession();
-    final credential = await _authRepository.register(
-      email: email,
-      password: password,
-    );
-    await credential.user?.sendEmailVerification();
-    await refresh();
+    try {
+      final credential = await _authRepository.register(
+        email: email,
+        password: password,
+      );
+      final backendSession = await _backendAuthRepository.registerCustomer(
+        name: _displayNameFromEmail(email),
+        email: email,
+        password: password,
+      );
+      await _sessionRepository.saveBackendSession(backendSession);
+      await credential.user?.sendEmailVerification();
+      await refresh();
+    } catch (error) {
+      final user = _authRepository.currentUser;
+      if (user != null) {
+        await user.delete();
+      }
+      await _sessionRepository.clearBackendSession();
+      rethrow;
+    }
+  }
+
+  String _displayNameFromEmail(String email) {
+    final localPart = email.split('@').first.trim();
+    if (localPart.isEmpty) {
+      return 'Luqmah Student';
+    }
+
+    final words = localPart
+        .split(RegExp(r'[._-]+'))
+        .where((word) => word.isNotEmpty)
+        .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
+        .toList(growable: false);
+
+    return words.isEmpty ? 'Luqmah Student' : words.join(' ');
   }
 
   Future<void> resendVerification() async {

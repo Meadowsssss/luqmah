@@ -64,6 +64,42 @@ class BackendAuthRepository {
 
   final ApiClient _apiClient;
 
+  Future<BackendAuthSession> registerCustomer({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    final response = await _apiClient.post(
+      '/auth/register',
+      body: {
+        'name': name,
+        'email': email,
+        'password': password,
+        'role': 'CUSTOMER',
+      },
+    );
+    final session = BackendAuthSession.fromJson(response);
+    if (session.user.role != 'CUSTOMER') {
+      throw const ApiException('Customer access is required');
+    }
+    return session;
+  }
+
+  Future<BackendAuthSession> loginCustomer({
+    required String email,
+    required String password,
+  }) async {
+    final response = await _apiClient.post(
+      '/auth/login',
+      body: {'email': email, 'password': password},
+    );
+    final session = BackendAuthSession.fromJson(response);
+    if (session.user.role != 'CUSTOMER') {
+      throw const ApiException('Customer access is required');
+    }
+    return session;
+  }
+
   Future<BackendAuthSession> loginVendor({
     required String email,
     required String password,

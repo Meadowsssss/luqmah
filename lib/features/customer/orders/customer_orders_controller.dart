@@ -1,59 +1,63 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../../models/customer_order.dart';
-import '../../../models/vendor.dart';
 import '../cart/cart_controller.dart';
+import '../../session/session_controller.dart';
 import 'customer_orders_repository.dart';
-
-final customerOrdersRepositoryProvider = Provider<CustomerOrdersRepository>((ref) {
-  return CustomerOrdersRepository();
-});
 
 class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
   CustomerOrdersRepository get _repository =>
       ref.read(customerOrdersRepositoryProvider);
 
   @override
-  Future<List<CustomerOrder>> build() {
-    return _repository.loadOrders();
+  Future<List<CustomerOrder>> build() async {
+    final token = ref.watch(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      return const <CustomerOrder>[];
+    }
+    return _repository.loadOrders(token);
   }
 
   Future<CustomerOrder> placeOrder({
     required List<CartLine> lines,
     required double total,
   }) async {
-    final current = state.valueOrNull ?? await _repository.loadOrders();
-    final restaurantNames = lines.map((line) => line.item.restaurantName).toSet();
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw ApiException('Customer backend session is required. Please sign in again.');
+    }
 
-    final restaurantName = restaurantNames.isEmpty
-        ? 'Campus order'
-        : restaurantNames.length == 1
-        ? restaurantNames.first
-        : 'Multiple restaurants';
+    final restaurantId = lines.isEmpty ? null : lines.first.item.restaurantId;
+    if (restaurantId == null || restaurantId.isEmpty) {
+      throw ApiException('A restaurant is required to place an order.');
+    }
 
-    final order = CustomerOrder(
-      id: 'ORD-${DateTime.now().millisecondsSinceEpoch}',
-      restaurantName: restaurantName,
-      placedAt: DateTime.now(),
-      status: VendorOrderStatus.accepted,
+    final invalidLine = lines.any((line) => line.item.restaurantId != restaurantId);
+    if (invalidLine) {
+      throw ApiException('Your cart can only contain items from one restaurant.');
+    }
+
+    final order = await _repository.createOrder(
+      token: token,
+      restaurantId: restaurantId,
       items: lines
           .map(
-            (line) => CustomerOrderItem(
-              itemId: line.item.itemId,
-              name: line.item.name,
+            (line) => CustomerCheckoutItemInput(
+              menuItemId: line.item.itemId,
               quantity: line.quantity,
-              price: line.item.price,
             ),
           )
           .toList(growable: false),
-      total: total,
     );
 
-    final updated = <CustomerOrder>[order, ...current];
-    state = AsyncData(updated);
-    await _repository.saveOrders(updated);
-
+    await refresh();
     return order;
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(build);
   }
 }
 

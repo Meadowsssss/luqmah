@@ -39,10 +39,26 @@ class SessionRepository {
     final backendSession = await loadBackendSession();
 
     if (backendSession != null) {
+      final role = switch (backendSession.user.role) {
+        'ADMIN' => AppRole.admin,
+        'VENDOR' => AppRole.vendor,
+        _ => AppRole.customer,
+      };
+
+      if (role == AppRole.customer && user == null) {
+        await clearBackendSession();
+        return const SessionSnapshot(
+          firebaseUser: null,
+          backendSession: null,
+          role: AppRole.customer,
+          isLoading: false,
+        );
+      }
+
       return SessionSnapshot(
-        firebaseUser: null,
+        firebaseUser: user,
         backendSession: backendSession,
-        role: backendSession.user.role == 'ADMIN' ? AppRole.admin : AppRole.vendor,
+        role: role,
         isLoading: false,
       );
     }
