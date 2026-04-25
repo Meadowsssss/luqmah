@@ -91,8 +91,27 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       throw StateError('Vendor session is required');
     }
 
-    await _repository.updateOrderStatus(token: token, orderId: orderId, status: status);
-    await refresh();
+    final updatedOrder = await _repository.updateOrderStatus(
+      token: token,
+      orderId: orderId,
+      status: status,
+    );
+
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      await refresh();
+      return;
+    }
+
+    state = AsyncData(
+      VendorDataState(
+        orders: currentState.orders
+            .map((order) => order.id == orderId ? updatedOrder : order)
+            .toList(growable: false),
+        menuItems: currentState.menuItems,
+        restaurants: currentState.restaurants,
+      ),
+    );
   }
 }
 

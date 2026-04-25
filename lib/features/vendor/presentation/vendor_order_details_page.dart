@@ -2,20 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
 import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
-class VendorOrderDetailsPage extends ConsumerWidget {
+class VendorOrderDetailsPage extends ConsumerStatefulWidget {
   const VendorOrderDetailsPage({super.key, required this.orderId});
 
   final String orderId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final decodedId = Uri.decodeComponent(orderId);
+  ConsumerState<VendorOrderDetailsPage> createState() => _VendorOrderDetailsPageState();
+}
+
+class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage> {
+  bool _isUpdatingStatus = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final decodedId = Uri.decodeComponent(widget.orderId);
     final orderAsync = ref.watch(vendorOrderByIdProvider(decodedId));
 
     return orderAsync.when(
@@ -47,6 +55,7 @@ class VendorOrderDetailsPage extends ConsumerWidget {
         }
 
         final formatter = DateFormat('dd MMM yyyy, hh:mm a');
+        final allowedTransitions = order.status.allowedTransitions;
 
         return Scaffold(
           appBar: AppBar(title: Text(order.id)),
@@ -84,24 +93,65 @@ class VendorOrderDetailsPage extends ConsumerWidget {
                   children: [
                     Text('Status', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: AppSpacing.md),
-                    DropdownButtonFormField<VendorOrderStatus>(
-                      initialValue: order.status,
-                      items: VendorOrderStatus.values
-                          .map(
-                            (status) => DropdownMenuItem(
-                              value: status,
-                              child: Text(status.label),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: (value) async {
-                        if (value != null) {
-                          await ref
-                              .read(vendorDataControllerProvider.notifier)
-                              .updateOrderStatus(order.id, value);
-                        }
-                      },
-                    ),
+                    if (allowedTransitions.isEmpty)
+                      Text(
+                        'Current status: ${order.status.label}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      )
+                    else
+                      DropdownButtonFormField<VendorOrderStatus>(
+                        key: ValueKey('vendor-order-status-${order.id}-${order.status.name}'),
+                        hint: Text('Current: ${order.status.label}'),
+                        items: allowedTransitions
+                            .map(
+                              (status) => DropdownMenuItem(
+                                value: status,
+                                child: Text(status.label),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onChanged: _isUpdatingStatus
+                            ? null
+                            : (value) async {
+                                if (value == null) {
+                                  return;
+                                }
+
+                                final messenger = ScaffoldMessenger.of(context);
+                                setState(() => _isUpdatingStatus = true);
+                                try {
+                                  await ref
+                                      .read(vendorDataControllerProvider.notifier)
+                                      .updateOrderStatus(order.id, value);
+                                } on ApiException catch (error) {
+                                  if (!mounted) {
+                                    return;
+                                  }
+                                  messenger
+                                    ..hideCurrentSnackBar()
+                                    ..showSnackBar(SnackBar(content: Text(error.message)));
+                                } catch (_) {
+                                  if (!mounted) {
+                                    return;
+                                  }
+                                  messenger
+                                    ..hideCurrentSnackBar()
+                                    ..showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Unable to update the order status right now.'),
+                                      ),
+                                    );
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _isUpdatingStatus = false);
+                                  }
+                                }
+                              },
+                      ),
+                    if (_isUpdatingStatus) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Text('Updating order status...', style: Theme.of(context).textTheme.bodySmall),
+                    ],
                     const SizedBox(height: AppSpacing.lg),
                     _SummaryRow(label: 'Subtotal', value: '${order.subtotal.toStringAsFixed(2)} JD'),
                     const SizedBox(height: AppSpacing.sm),

@@ -107,16 +107,17 @@ class VendorRepository {
     );
   }
 
-  Future<void> updateOrderStatus({
+  Future<VendorOrder> updateOrderStatus({
     required String token,
     required String orderId,
     required VendorOrderStatus status,
   }) async {
-    await _apiClient.patch(
+    final response = await _apiClient.patch(
       '/vendor/orders/$orderId/status',
       token: token,
       body: {'status': status.apiValue},
     );
+    return _vendorOrderFromJson(response['order'] as Map<String, dynamic>);
   }
 
   VendorRestaurant _vendorRestaurantFromJson(Map<String, dynamic> json) {
