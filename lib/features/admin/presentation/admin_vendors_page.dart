@@ -9,11 +9,68 @@ import '../../session/session_controller.dart';
 import '../admin_repository.dart';
 import '../admin_vendors_controller.dart';
 
-class AdminVendorsPage extends ConsumerWidget {
+class AdminVendorsPage extends ConsumerStatefulWidget {
   const AdminVendorsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminVendorsPage> createState() => _AdminVendorsPageState();
+}
+
+class _AdminVendorsPageState extends ConsumerState<AdminVendorsPage> {
+  final Set<String> _deletingVendorIds = <String>{};
+
+  Future<void> _confirmDelete(AdminVendorRecord vendor) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete vendor?'),
+          content: Text(
+            'This will permanently remove ${vendor.name} and their active storefront data if they have no order history.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Delete vendor'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    setState(() => _deletingVendorIds.add(vendor.id));
+    try {
+      final message = await ref.read(adminVendorsControllerProvider.notifier).deleteVendor(vendor.id);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _deletingVendorIds.remove(vendor.id));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(sessionControllerProvider).snapshot;
     final vendors = ref.watch(adminVendorsControllerProvider);
 
@@ -78,7 +135,11 @@ class AdminVendorsPage extends ConsumerWidget {
               return Column(
                 children: [
                   for (final vendor in items) ...[
-                    _VendorCard(vendor: vendor),
+                    _VendorCard(
+                      vendor: vendor,
+                      deleting: _deletingVendorIds.contains(vendor.id),
+                      onDelete: () => _confirmDelete(vendor),
+                    ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
                 ],
@@ -92,9 +153,15 @@ class AdminVendorsPage extends ConsumerWidget {
 }
 
 class _VendorCard extends StatelessWidget {
-  const _VendorCard({required this.vendor});
+  const _VendorCard({
+    required this.vendor,
+    required this.deleting,
+    required this.onDelete,
+  });
 
   final AdminVendorRecord vendor;
+  final bool deleting;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +169,25 @@ class _VendorCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(vendor.name, style: Theme.of(context).textTheme.titleMedium),
+          Row(
+            children: [
+              Expanded(
+                child: Text(vendor.name, style: Theme.of(context).textTheme.titleMedium),
+              ),
+              TextButton.icon(
+                onPressed: deleting ? null : onDelete,
+                icon: deleting
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.delete_outline_rounded),
+                label: Text(deleting ? 'Deleting...' : 'Delete'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(vendor.email, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: AppSpacing.md),

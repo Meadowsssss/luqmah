@@ -44,6 +44,18 @@ class AdminVendorsController extends AsyncNotifier<List<AdminVendorRecord>> {
     ref.invalidateSelf();
     await future;
   }
+
+  Future<String> deleteVendor(String vendorId) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Admin session is required');
+    }
+
+    final message = await _repository.deleteVendor(token: token, vendorId: vendorId);
+    ref.invalidateSelf();
+    await future;
+    return message;
+  }
 }
 
 final adminVendorsControllerProvider =

@@ -63,6 +63,14 @@ class ApiClient {
     return _request('PATCH', path, token: token, body: body);
   }
 
+  Future<Map<String, dynamic>> delete(
+    String path, {
+    String? token,
+    Object? body,
+  }) async {
+    return _request('DELETE', path, token: token, body: body);
+  }
+
   Future<Map<String, dynamic>> _request(
     String method,
     String path, {
@@ -86,6 +94,9 @@ class ApiClient {
         break;
       case 'PATCH':
         response = await _client.patch(uri, headers: headers, body: jsonEncode(body ?? {}));
+        break;
+      case 'DELETE':
+        response = await _client.delete(uri, headers: headers, body: jsonEncode(body ?? {}));
         break;
       default:
         throw UnsupportedError('Unsupported method $method');

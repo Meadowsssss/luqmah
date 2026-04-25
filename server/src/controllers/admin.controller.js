@@ -100,6 +100,46 @@ const getVendors = async (_req, res) => {
   res.json({ vendors: serialize(vendors) });
 };
 
+const deleteVendor = async (req, res) => {
+  const vendor = await prisma.vendor.findUnique({
+    where: { id: req.params.id },
+    include: {
+      restaurants: {
+        select: { id: true },
+      },
+    },
+  });
+
+  if (!vendor) {
+    throw new ApiError(404, "Vendor not found");
+  }
+
+  const restaurantIds = vendor.restaurants.map((restaurant) => restaurant.id);
+  if (restaurantIds.length > 0) {
+    const existingOrder = await prisma.order.findFirst({
+      where: {
+        restaurantId: {
+          in: restaurantIds,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existingOrder) {
+      throw new ApiError(
+        409,
+        "This vendor cannot be deleted because customers have already placed orders from this vendor.",
+      );
+    }
+  }
+
+  await prisma.user.delete({
+    where: { id: vendor.userId },
+  });
+
+  res.json({ message: "Vendor deleted successfully." });
+};
+
 const createVendor = async (req, res) => {
   const {
     name,
@@ -159,4 +199,5 @@ module.exports = {
   getAdminMe,
   getVendors,
   createVendor,
+  deleteVendor,
 };

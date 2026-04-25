@@ -9,6 +9,7 @@ const {
   getAdminMe,
   getVendors,
   createVendor,
+  deleteVendor,
 } = require("../controllers/admin.controller");
 
 const router = express.Router();
@@ -43,6 +44,12 @@ const createVendorSchema = z.object({
   }),
 });
 
+const vendorIdParamSchema = z.object({
+  params: z.object({
+    id: z.string().cuid(),
+  }),
+});
+
 router.post("/login", validate(adminLoginSchema), asyncHandler(loginAdmin));
 router.get("/me", requireAuth, requireRole(USER_ROLES.ADMIN), asyncHandler(getAdminMe));
 router.get("/vendors", requireAuth, requireRole(USER_ROLES.ADMIN), asyncHandler(getVendors));
@@ -52,6 +59,13 @@ router.post(
   requireRole(USER_ROLES.ADMIN),
   validate(createVendorSchema),
   asyncHandler(createVendor),
+);
+router.delete(
+  "/vendors/:id",
+  requireAuth,
+  requireRole(USER_ROLES.ADMIN),
+  validate(vendorIdParamSchema),
+  asyncHandler(deleteVendor),
 );
 
 module.exports = router;

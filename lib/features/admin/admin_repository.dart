@@ -78,6 +78,14 @@ class AdminRepository {
     );
   }
 
+  Future<String> deleteVendor({
+    required String token,
+    required String vendorId,
+  }) async {
+    final response = await _apiClient.delete('/admin/vendors/$vendorId', token: token);
+    return response['message'] as String? ?? 'Vendor deleted successfully.';
+  }
+
   AdminVendorRecord _vendorFromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>;
     return AdminVendorRecord(
