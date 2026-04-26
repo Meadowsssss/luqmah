@@ -18,6 +18,20 @@ extension VendorOrderStatusLabel on VendorOrderStatus {
 
   bool get isPast => this == VendorOrderStatus.completed || this == VendorOrderStatus.cancelled;
 
+  List<VendorOrderStatus> get allowedTransitions {
+    switch (this) {
+      case VendorOrderStatus.accepted:
+        return const [VendorOrderStatus.inProgress, VendorOrderStatus.cancelled];
+      case VendorOrderStatus.inProgress:
+        return const [VendorOrderStatus.ready, VendorOrderStatus.cancelled];
+      case VendorOrderStatus.ready:
+        return const [VendorOrderStatus.completed, VendorOrderStatus.cancelled];
+      case VendorOrderStatus.completed:
+      case VendorOrderStatus.cancelled:
+        return const [];
+    }
+  }
+
   String get apiValue {
     switch (this) {
       case VendorOrderStatus.accepted:
