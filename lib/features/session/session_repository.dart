@@ -1,6 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backend_auth_repository.dart';
@@ -35,35 +35,26 @@ class SessionRepository {
     await prefs.remove(_backendSessionKey);
   }
 
-  Future<SessionSnapshot> buildSnapshot(User? user) async {
+  Future<SessionSnapshot> buildSnapshot(User? firebaseUser) async {
     final backendSession = await loadBackendSession();
 
-    if (backendSession != null) {
-      final role = switch (backendSession.user.role) {
-        'ADMIN' => AppRole.admin,
-        'VENDOR' => AppRole.vendor,
-        _ => AppRole.customer,
-      };
-
-      if (role == AppRole.customer && user == null) {
-        await clearBackendSession();
-        return const SessionSnapshot(
-          firebaseUser: null,
-          backendSession: null,
-          role: AppRole.customer,
-          isLoading: false,
-        );
-      }
-
+    if (backendSession == null) {
       return SessionSnapshot(
-        firebaseUser: user,
-        backendSession: backendSession,
-        role: role,
+        firebaseUser: firebaseUser,
+        backendSession: null,
+        role: AppRole.customer,
         isLoading: false,
       );
     }
 
-    if (user == null) {
+    final role = switch (backendSession.user.role) {
+      'ADMIN' => AppRole.admin,
+      'VENDOR' => AppRole.vendor,
+      _ => AppRole.customer,
+    };
+
+    if (role == AppRole.customer && firebaseUser == null) {
+      await clearBackendSession();
       return const SessionSnapshot(
         firebaseUser: null,
         backendSession: null,
@@ -73,9 +64,9 @@ class SessionRepository {
     }
 
     return SessionSnapshot(
-      firebaseUser: user,
-      backendSession: null,
-      role: AppRole.customer,
+      firebaseUser: firebaseUser,
+      backendSession: backendSession,
+      role: role,
       isLoading: false,
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
+import '../../../features/session/auth_error_formatter.dart';
 import '../../../features/session/session_controller.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
@@ -22,20 +23,35 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
       _message = null;
     });
 
-    await ref.read(sessionControllerProvider).reloadVerification();
+    try {
+      await ref.read(sessionControllerProvider).reloadVerification();
 
-    if (mounted) {
-      setState(() {
-        _checking = false;
-        _message = 'Verification status refreshed.';
-      });
+      if (mounted) {
+        setState(() {
+          _checking = false;
+          _message = 'Verification status refreshed.';
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _checking = false;
+          _message = formatAuthError(error);
+        });
+      }
     }
   }
 
   Future<void> _resend() async {
-    await ref.read(sessionControllerProvider).resendVerification();
-    if (mounted) {
-      setState(() => _message = 'Verification email sent again.');
+    try {
+      await ref.read(sessionControllerProvider).resendVerification();
+      if (mounted) {
+        setState(() => _message = 'Verification email sent again.');
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = formatAuthError(error));
+      }
     }
   }
 
@@ -67,6 +83,13 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
                         color: context.luqmah.mutedText,
                       ),
                     ),
+                    if (snapshot.customerSyncError != null) ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      Text(
+                        snapshot.customerSyncError!,
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.xl),
                     ElevatedButton(
                       onPressed: _checking ? null : _refresh,

@@ -67,6 +67,89 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  Future<void> _showForgotPasswordDialog() async {
+    final controller = TextEditingController(text: _emailController.text.trim());
+    String? error;
+    bool sending = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Reset customer password'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                  ),
+                  if (error != null) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      error!,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: sending ? null : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: sending
+                      ? null
+                      : () async {
+                          setState(() {
+                            sending = true;
+                            error = null;
+                          });
+
+                          try {
+                            await ref
+                                .read(sessionControllerProvider)
+                                .sendCustomerPasswordResetEmail(controller.text.trim());
+                            if (dialogContext.mounted && context.mounted) {
+                              Navigator.of(dialogContext).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Password reset email sent.'),
+                                ),
+                              );
+                            }
+                          } catch (err) {
+                            setState(() {
+                              error = formatAuthError(err);
+                              sending = false;
+                            });
+                          }
+                        },
+                  child: sending
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Send reset email'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    controller.dispose();
+  }
+
   Future<void> _promptAdminCode() async {
     _adminCodeController.clear();
     final isMatch = await showDialog<bool>(
@@ -253,6 +336,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                           if (!_vendorMode) ...[
                             const SizedBox(height: AppSpacing.sm),
+                            TextButton(
+                              onPressed: _loading ? null : _showForgotPasswordDialog,
+                              child: const Text('Forgot password?'),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
                             TextButton(
                               onPressed: _loading ? null : () => context.go('/register'),
                               child: const Text('Need an account? Create one'),

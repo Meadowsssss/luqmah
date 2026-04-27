@@ -17,9 +17,7 @@ final sessionRepositoryProvider = Provider<SessionRepository>((ref) {
   return SessionRepository();
 });
 
-final sessionControllerProvider = ChangeNotifierProvider<SessionController>((
-  ref,
-) {
+final sessionControllerProvider = ChangeNotifierProvider<SessionController>((ref) {
   final controller = SessionController(
     authRepository: ref.watch(authRepositoryProvider),
     backendAuthRepository: ref.watch(backendAuthRepositoryProvider),
@@ -36,7 +34,7 @@ class SessionController extends ChangeNotifier {
     required SessionRepository sessionRepository,
   }) : _authRepository = authRepository,
        _backendAuthRepository = backendAuthRepository,
-        _sessionRepository = sessionRepository {
+       _sessionRepository = sessionRepository {
     _subscription = _authRepository.authStateChanges().listen((_) {
       refresh();
     });
@@ -54,22 +52,35 @@ class SessionController extends ChangeNotifier {
 
   Future<void> refresh() async {
     final previous = _snapshot;
-    _snapshot = previous.copyWith(isLoading: true);
+    _snapshot = previous.copyWith(isLoading: true, clearCustomerSyncError: true);
     notifyListeners();
-    _snapshot = await _sessionRepository.buildSnapshot(_authRepository.currentUser);
+
+    final next = await _sessionRepository.buildSnapshot(_authRepository.currentUser);
+    _snapshot = next;
     notifyListeners();
+
+    await _syncCustomerBackendSessionIfNeeded();
   }
 
   Future<void> login({required String email, required String password}) async {
     await _sessionRepository.clearBackendSession();
+
     try {
+      if (_authRepository.currentUser != null) {
+        await _authRepository.logout();
+      }
+
       await _authRepository.login(email: email, password: password);
-      final session = await _backendAuthRepository.loginCustomer(
-        email: email,
-        password: password,
-      );
-      await _sessionRepository.saveBackendSession(session);
-      await refresh();
+      await _authRepository.reloadCurrentUser();
+
+      if (_authRepository.currentUser?.emailVerified ?? false) {
+        await _syncCustomerBackendSessionIfNeeded(
+          forceRefreshFirebaseToken: true,
+          rethrowOnFailure: true,
+        );
+      } else {
+        await refresh();
+      }
     } catch (error) {
       if (_authRepository.currentUser != null) {
         await _authRepository.logout();
@@ -80,19 +91,29 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> loginVendor({required String email, required String password}) async {
+    await _sessionRepository.clearBackendSession();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
     }
-    final session = await _backendAuthRepository.loginVendor(email: email, password: password);
+
+    final session = await _backendAuthRepository.loginVendor(
+      email: email,
+      password: password,
+    );
     await _sessionRepository.saveBackendSession(session);
     await refresh();
   }
 
   Future<void> loginAdmin({required String email, required String password}) async {
+    await _sessionRepository.clearBackendSession();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
     }
-    final session = await _backendAuthRepository.loginAdmin(email: email, password: password);
+
+    final session = await _backendAuthRepository.loginAdmin(
+      email: email,
+      password: password,
+    );
     await _sessionRepository.saveBackendSession(session);
     await refresh();
   }
@@ -102,17 +123,16 @@ class SessionController extends ChangeNotifier {
     required String password,
   }) async {
     await _sessionRepository.clearBackendSession();
+
     try {
+      if (_authRepository.currentUser != null) {
+        await _authRepository.logout();
+      }
+
       final credential = await _authRepository.register(
         email: email,
         password: password,
       );
-      final backendSession = await _backendAuthRepository.registerCustomer(
-        name: _displayNameFromEmail(email),
-        email: email,
-        password: password,
-      );
-      await _sessionRepository.saveBackendSession(backendSession);
       await credential.user?.sendEmailVerification();
       await refresh();
     } catch (error) {
@@ -125,28 +145,52 @@ class SessionController extends ChangeNotifier {
     }
   }
 
-  String _displayNameFromEmail(String email) {
-    final localPart = email.split('@').first.trim();
-    if (localPart.isEmpty) {
-      return 'Luqmah Student';
-    }
-
-    final words = localPart
-        .split(RegExp(r'[._-]+'))
-        .where((word) => word.isNotEmpty)
-        .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
-        .toList(growable: false);
-
-    return words.isEmpty ? 'Luqmah Student' : words.join(' ');
-  }
-
   Future<void> resendVerification() async {
     await _authRepository.sendEmailVerification();
   }
 
   Future<void> reloadVerification() async {
     await _authRepository.reloadCurrentUser();
+
+    if (_authRepository.currentUser?.emailVerified ?? false) {
+      await _syncCustomerBackendSessionIfNeeded(
+        forceRefreshFirebaseToken: true,
+        rethrowOnFailure: true,
+      );
+      return;
+    }
+
     await refresh();
+  }
+
+  Future<void> sendCustomerPasswordResetEmail(String email) async {
+    await _authRepository.sendPasswordResetEmail(email.trim());
+  }
+
+  Future<void> changeCustomerPassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _authRepository.changeCustomerPassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  }
+
+  Future<void> changeVendorPassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final token = _snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('A backend session is required to change this password.');
+    }
+
+    await _backendAuthRepository.changeBackendPassword(
+      token: token,
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
   }
 
   Future<void> logout() async {
@@ -155,6 +199,64 @@ class SessionController extends ChangeNotifier {
       await _authRepository.logout();
     }
     await refresh();
+  }
+
+  Future<void> _syncCustomerBackendSessionIfNeeded({
+    bool forceRefreshFirebaseToken = false,
+    bool rethrowOnFailure = false,
+  }) async {
+    final firebaseUser = _authRepository.currentUser;
+    if (firebaseUser == null) {
+      return;
+    }
+
+    if (!(firebaseUser.emailVerified)) {
+      await _sessionRepository.clearBackendSession();
+      final next = await _sessionRepository.buildSnapshot(firebaseUser);
+      _snapshot = next.copyWith(clearCustomerSyncError: true);
+      notifyListeners();
+      return;
+    }
+
+    final currentBackendSession = _snapshot.backendSession;
+    if (
+      currentBackendSession != null &&
+      currentBackendSession.user.role == 'CUSTOMER' &&
+      !forceRefreshFirebaseToken
+    ) {
+      return;
+    }
+
+    try {
+      final idToken = await _authRepository.getIdToken(
+        forceRefresh: forceRefreshFirebaseToken,
+      );
+      final backendSession = await _backendAuthRepository.syncCustomerWithFirebase(
+        idToken: idToken,
+      );
+      await _sessionRepository.saveBackendSession(backendSession);
+      _snapshot = SessionSnapshot(
+        firebaseUser: _authRepository.currentUser,
+        backendSession: backendSession,
+        role: AppRole.customer,
+        isLoading: false,
+      );
+      notifyListeners();
+    } catch (error) {
+      await _sessionRepository.clearBackendSession();
+      _snapshot = SessionSnapshot(
+        firebaseUser: _authRepository.currentUser,
+        backendSession: null,
+        role: AppRole.customer,
+        isLoading: false,
+        customerSyncError: error.toString(),
+      );
+      notifyListeners();
+
+      if (rethrowOnFailure) {
+        rethrow;
+      }
+    }
   }
 
   @override

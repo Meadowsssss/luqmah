@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,10 +11,21 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 });
 
 class ApiException implements Exception {
-  const ApiException(this.message, {this.statusCode});
+  const ApiException(
+    this.message, {
+    this.statusCode,
+    this.code,
+    this.method,
+    this.path,
+    this.details,
+  });
 
   final String message;
   final int? statusCode;
+  final String? code;
+  final String? method;
+  final String? path;
+  final Object? details;
 
   @override
   String toString() => message;
@@ -22,6 +35,7 @@ class ApiClient {
   ApiClient({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
+  static const Duration _timeout = Duration(seconds: 15);
 
   static String get _baseUrl {
     const configured = String.fromEnvironment('API_BASE_URL', defaultValue: '');
@@ -84,35 +98,69 @@ class ApiClient {
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
 
-    late final http.Response response;
-    switch (method) {
-      case 'GET':
-        response = await _client.get(uri, headers: headers);
-        break;
-      case 'POST':
-        response = await _client.post(uri, headers: headers, body: jsonEncode(body ?? {}));
-        break;
-      case 'PATCH':
-        response = await _client.patch(uri, headers: headers, body: jsonEncode(body ?? {}));
-        break;
-      case 'DELETE':
-        response = await _client.delete(uri, headers: headers, body: jsonEncode(body ?? {}));
-        break;
-      default:
-        throw UnsupportedError('Unsupported method $method');
+    http.Response response;
+    try {
+      switch (method) {
+        case 'GET':
+          response = await _client.get(uri, headers: headers).timeout(_timeout);
+          break;
+        case 'POST':
+          response = await _client
+              .post(uri, headers: headers, body: jsonEncode(body ?? {}))
+              .timeout(_timeout);
+          break;
+        case 'PATCH':
+          response = await _client
+              .patch(uri, headers: headers, body: jsonEncode(body ?? {}))
+              .timeout(_timeout);
+          break;
+        case 'DELETE':
+          response = await _client
+              .delete(uri, headers: headers, body: jsonEncode(body ?? {}))
+              .timeout(_timeout);
+          break;
+        default:
+          throw UnsupportedError('Unsupported method $method');
+      }
+    } on TimeoutException catch (error) {
+      throw ApiException(
+        'The Luqmah backend timed out. Please try again.',
+        code: 'REQUEST_TIMEOUT',
+        method: method,
+        path: path,
+        details: error.toString(),
+      );
+    } on SocketException catch (error) {
+      throw ApiException(
+        'Cannot reach the Luqmah backend right now.',
+        code: 'NETWORK_UNREACHABLE',
+        method: method,
+        path: path,
+        details: error.message,
+      );
     }
 
-    final dynamic decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+    final dynamic decoded = response.body.isEmpty
+        ? <String, dynamic>{}
+        : jsonDecode(response.body);
 
     if (response.statusCode >= 400) {
-      final message = decoded is Map<String, dynamic>
-          ? (decoded['message'] as String? ?? decoded['error'] as String? ?? 'Request failed')
-          : 'Request failed';
-      throw ApiException(message, statusCode: response.statusCode);
+      final map = decoded is Map<String, dynamic> ? decoded : const <String, dynamic>{};
+      throw ApiException(
+        map['message'] as String? ?? 'Request failed',
+        statusCode: response.statusCode,
+        code: map['code'] as String?,
+        method: method,
+        path: path,
+        details: map['details'] ?? map['errors'] ?? map['debug'],
+      );
     }
 
     if (decoded is! Map<String, dynamic>) {
-      throw const ApiException('Unexpected response format');
+      throw const ApiException(
+        'Unexpected response format',
+        code: 'INVALID_RESPONSE_FORMAT',
+      );
     }
 
     return decoded;

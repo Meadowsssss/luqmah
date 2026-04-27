@@ -14,7 +14,8 @@ Node.js + Express + Prisma + PostgreSQL backend for the Luqmah Flutter food orde
 
 ## Features
 
-- Customer and vendor roles
+- Customer, vendor, and admin roles
+- Customer identity handled by Firebase Authentication plus backend customer sync
 - Admin-managed vendor onboarding
 - Vendor-scoped restaurants, menu items, and order access
 - Customer-scoped order access
@@ -39,7 +40,7 @@ server/
 npm install
 ```
 
-2. Copy the env file and update database credentials if needed:
+2. Copy the env file and update database plus Firebase Admin credentials:
 
 ```bash
 cp .env.example .env
@@ -65,6 +66,12 @@ npm run dev
 
 Server default URL: `http://localhost:4000`
 
+Required Firebase Admin env vars for customer sync:
+
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
+
 ## Admin Bootstrap
 
 1. Copy the admin variables from `.env.example` into `.env`.
@@ -76,12 +83,20 @@ npm run admin:bootstrap
 
 This creates or updates the backend admin account used by the hidden in-app admin portal.
 
+## Auth Modes
+
+- Customers authenticate with Firebase first, then exchange a Firebase ID token at `POST /auth/firebase/customer` for a Luqmah backend JWT.
+- Vendors authenticate with backend credentials at `POST /auth/login`.
+- Admins authenticate with backend credentials at `POST /admin/login`.
+- Customer password reset, email verification, and password change stay in Firebase.
+- Vendor/admin passwords stay in the backend.
+
 ## Seeded Accounts
 
 - Vendor: `vendor@luqmah.app` / `Password123!`
 - Customer: `customer@luqmah.app` / `Password123!`
 
-Public registration only supports customers. Vendor accounts are provisioned manually by an admin.
+Customer sign-up is handled by Firebase. Vendor accounts are provisioned manually by an admin.
 
 ## API Notes
 
@@ -94,26 +109,23 @@ Public registration only supports customers. Vendor accounts are provisioned man
 
 ## Example Requests
 
-### Register
+### Sync Firebase Customer Session
 
 ```bash
-curl -X POST http://localhost:4000/auth/register \
+curl -X POST http://localhost:4000/auth/firebase/customer \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "New Customer",
-    "email": "newcustomer@luqmah.app",
-    "password": "Password123!",
-    "role": "CUSTOMER"
+    "idToken": "<firebase-id-token>"
   }'
 ```
 
-### Login
+### Vendor Login
 
 ```bash
 curl -X POST http://localhost:4000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "customer@luqmah.app",
+    "email": "vendor@luqmah.app",
     "password": "Password123!"
   }'
 ```
@@ -222,8 +234,8 @@ curl -X POST http://localhost:4000/vendor/menu-categories \
 
 ## Endpoints
 
-- `POST /auth/register`
 - `POST /auth/login`
+- `POST /auth/firebase/customer`
 - `GET /auth/me`
 - `POST /admin/login`
 - `GET /admin/me`

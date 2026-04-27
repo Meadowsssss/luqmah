@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
+import '../../../features/session/auth_error_formatter.dart';
 import '../../../features/session/session_controller.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
@@ -47,7 +48,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       );
     } catch (error) {
       setState(() {
-        _error = error.toString().replaceFirst('Exception: ', '');
+        _error = formatAuthError(error);
       });
     } finally {
       if (mounted) {
@@ -78,7 +79,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Join Luqmah with your Hashemite University email.',
+                        'Create your Firebase-backed Luqmah customer account with your Hashemite University email.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: context.luqmah.mutedText,
                         ),

@@ -10,6 +10,7 @@ class SessionSnapshot {
     required this.backendSession,
     required this.role,
     required this.isLoading,
+    this.customerSyncError,
   });
 
   factory SessionSnapshot.loading() {
@@ -25,16 +26,25 @@ class SessionSnapshot {
   final BackendAuthSession? backendSession;
   final AppRole role;
   final bool isLoading;
+  final String? customerSyncError;
 
   bool get isSignedIn => firebaseUser != null || backendSession != null;
   bool get isEmailVerified {
     if (role == AppRole.customer) {
       return firebaseUser?.emailVerified ?? false;
     }
-    return backendSession != null || (firebaseUser?.emailVerified ?? false);
+    return backendSession != null;
   }
+
   bool get isVendorSurface => role == AppRole.vendor;
   bool get isAdminSurface => role == AppRole.admin;
+  bool get hasBackendSession => backendSession != null;
+  bool get needsCustomerBackendSync =>
+      role == AppRole.customer &&
+      firebaseUser != null &&
+      (firebaseUser?.emailVerified ?? false) &&
+      backendSession == null;
+
   String get email => backendSession?.user.email ?? firebaseUser?.email ?? '';
   String get displayName => backendSession?.user.name ?? firebaseUser?.displayName ?? '';
   String? get backendToken => backendSession?.token;
@@ -44,12 +54,17 @@ class SessionSnapshot {
     BackendAuthSession? backendSession,
     AppRole? role,
     bool? isLoading,
+    String? customerSyncError,
+    bool clearCustomerSyncError = false,
   }) {
     return SessionSnapshot(
       firebaseUser: firebaseUser ?? this.firebaseUser,
       backendSession: backendSession ?? this.backendSession,
       role: role ?? this.role,
       isLoading: isLoading ?? this.isLoading,
+      customerSyncError: clearCustomerSyncError
+          ? null
+          : customerSyncError ?? this.customerSyncError,
     );
   }
 }

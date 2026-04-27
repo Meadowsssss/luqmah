@@ -3,7 +3,12 @@ const { z } = require("zod");
 const { asyncHandler } = require("../utils/async-handler");
 const { validate } = require("../middleware/validate");
 const { requireAuth } = require("../middleware/auth");
-const { register, login, me } = require("../controllers/auth.controller");
+const {
+  register,
+  login,
+  syncCustomerWithFirebase,
+  me,
+} = require("../controllers/auth.controller");
 const { USER_ROLES } = require("../constants/enums");
 
 const router = express.Router();
@@ -24,8 +29,19 @@ const loginSchema = z.object({
   }),
 });
 
+const firebaseCustomerSyncSchema = z.object({
+  body: z.object({
+    idToken: z.string().min(1),
+  }),
+});
+
 router.post("/register", validate(registerSchema), asyncHandler(register));
 router.post("/login", validate(loginSchema), asyncHandler(login));
+router.post(
+  "/firebase/customer",
+  validate(firebaseCustomerSyncSchema),
+  asyncHandler(syncCustomerWithFirebase),
+);
 router.get("/me", requireAuth, asyncHandler(me));
 
 module.exports = router;

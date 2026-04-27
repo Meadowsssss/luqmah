@@ -64,38 +64,19 @@ class BackendAuthRepository {
 
   final ApiClient _apiClient;
 
-  Future<BackendAuthSession> registerCustomer({
-    required String name,
-    required String email,
-    required String password,
+  Future<BackendAuthSession> syncCustomerWithFirebase({
+    required String idToken,
   }) async {
     final response = await _apiClient.post(
-      '/auth/register',
-      body: {
-        'name': name,
-        'email': email,
-        'password': password,
-        'role': 'CUSTOMER',
-      },
+      '/auth/firebase/customer',
+      body: {'idToken': idToken},
     );
     final session = BackendAuthSession.fromJson(response);
     if (session.user.role != 'CUSTOMER') {
-      throw const ApiException('Customer access is required');
-    }
-    return session;
-  }
-
-  Future<BackendAuthSession> loginCustomer({
-    required String email,
-    required String password,
-  }) async {
-    final response = await _apiClient.post(
-      '/auth/login',
-      body: {'email': email, 'password': password},
-    );
-    final session = BackendAuthSession.fromJson(response);
-    if (session.user.role != 'CUSTOMER') {
-      throw const ApiException('Customer access is required');
+      throw const ApiException(
+        'Customer access is required',
+        code: 'AUTH_ROLE_MISMATCH',
+      );
     }
     return session;
   }
@@ -110,7 +91,10 @@ class BackendAuthRepository {
     );
     final session = BackendAuthSession.fromJson(response);
     if (session.user.role != 'VENDOR') {
-      throw const ApiException('Vendor access is required');
+      throw const ApiException(
+        'Vendor access is required',
+        code: 'AUTH_ROLE_MISMATCH',
+      );
     }
     return session;
   }
@@ -123,6 +107,28 @@ class BackendAuthRepository {
       '/admin/login',
       body: {'email': email, 'password': password},
     );
-    return BackendAuthSession.fromJson(response);
+    final session = BackendAuthSession.fromJson(response);
+    if (session.user.role != 'ADMIN') {
+      throw const ApiException(
+        'Admin access is required',
+        code: 'AUTH_ROLE_MISMATCH',
+      );
+    }
+    return session;
+  }
+
+  Future<void> changeBackendPassword({
+    required String token,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _apiClient.patch(
+      '/users/me/password',
+      token: token,
+      body: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      },
+    );
   }
 }
