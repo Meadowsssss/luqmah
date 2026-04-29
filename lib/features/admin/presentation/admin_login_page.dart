@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../session/auth_error_formatter.dart';
@@ -43,6 +44,9 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      if (mounted) {
+        context.go('/admin/vendors');
+      }
     } catch (error) {
       setState(() => _error = formatAuthError(error));
     } finally {
@@ -88,6 +92,8 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => _loading ? null : _submit(),
                         decoration: InputDecoration(
                           labelText: 'Password',
                           suffixIcon: IconButton(
