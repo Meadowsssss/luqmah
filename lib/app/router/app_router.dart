@@ -29,11 +29,11 @@ final _customerShellKey = GlobalKey<NavigatorState>();
 final _vendorShellKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final session = ref.watch(sessionControllerProvider);
+  final session = ref.read(sessionControllerProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/restaurants',
+    initialLocation: '/login',
     refreshListenable: session,
     redirect: (context, state) {
       final snapshot = session.snapshot;
@@ -41,8 +41,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isAuthRoute = location == '/login' || location == '/register';
       final isVerifyRoute = location == '/verify-email';
       final isLoadingRoute = location == '/loading';
-      final isBrowseRoute =
-          location == '/restaurants' || location.startsWith('/restaurants/');
       final isVendorRoute = location.startsWith('/vendor');
       final isAdminRoute = location.startsWith('/admin');
       final isAdminLoginRoute = location == '/admin/login';
@@ -52,7 +50,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (!snapshot.isSignedIn) {
-        return (isAuthRoute || isAdminLoginRoute || isBrowseRoute) ? null : '/login';
+        return (isAuthRoute || isAdminLoginRoute) ? null : '/login';
       }
 
       if (!snapshot.isAdminSurface && !snapshot.isVendorSurface && !snapshot.isEmailVerified) {

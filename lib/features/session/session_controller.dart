@@ -38,7 +38,7 @@ class SessionController extends ChangeNotifier {
     _subscription = _authRepository.authStateChanges().listen((_) {
       refresh();
     });
-    refresh();
+    refresh(showLoading: true);
   }
 
   final AuthRepository _authRepository;
@@ -50,10 +50,12 @@ class SessionController extends ChangeNotifier {
 
   SessionSnapshot get snapshot => _snapshot;
 
-  Future<void> refresh() async {
-    final previous = _snapshot;
-    _snapshot = previous.copyWith(isLoading: true, clearCustomerSyncError: true);
-    notifyListeners();
+  Future<void> refresh({bool showLoading = false}) async {
+    if (showLoading) {
+      final previous = _snapshot;
+      _snapshot = previous.copyWith(isLoading: true, clearCustomerSyncError: true);
+      notifyListeners();
+    }
 
     final next = await _sessionRepository.buildSnapshot(_authRepository.currentUser);
     _snapshot = next;
