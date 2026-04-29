@@ -20,6 +20,7 @@ class RestaurantMenuPage extends ConsumerStatefulWidget {
 class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
   static const _busyMessage =
       'This restaurant is busy right now. You can browse the menu, but ordering is temporarily unavailable.';
+  static const _allCategories = 'All';
 
   String? _selectedCategory;
 
@@ -56,8 +57,11 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
         }
 
         final categories = restaurant.menu.map((item) => item.category).toSet().toList(growable: false);
-        final selectedCategory = _selectedCategory ?? (categories.isEmpty ? null : categories.first);
-        final items = selectedCategory == null
+        final categoryOptions = categories.isEmpty
+            ? const <String>[]
+            : <String>[_allCategories, ...categories];
+        final selectedCategory = _selectedCategory ?? (categoryOptions.isEmpty ? null : _allCategories);
+        final items = selectedCategory == null || selectedCategory == _allCategories
             ? restaurant.menu
             : restaurant.menu
                 .where((item) => item.category == selectedCategory)
@@ -65,12 +69,14 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
 
         return Scaffold(
           appBar: AppBar(),
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-            children: [
-              Text(restaurant.name, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
+          body: RefreshIndicator(
+            onRefresh: () => ref.refresh(restaurantByIdProvider(widget.restaurantId).future),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              children: [
+               Text(restaurant.name, style: Theme.of(context).textTheme.headlineMedium),
+               const SizedBox(height: AppSpacing.sm),
+               Text(
                 restaurant.description,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: context.luqmah.mutedText,
@@ -111,16 +117,16 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                   ),
                 ),
               ),
-              if (categories.isNotEmpty) ...[
+              if (categoryOptions.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xl),
                 SizedBox(
                   height: 42,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: categories.length,
+                    itemCount: categoryOptions.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
-                      final category = categories[index];
+                      final category = categoryOptions[index];
                       final selected = category == selectedCategory;
 
                       return ChoiceChip(
@@ -151,7 +157,8 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                 ],
-            ],
+              ],
+            ),
           ),
         );
       },

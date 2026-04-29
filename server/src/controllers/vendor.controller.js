@@ -70,6 +70,9 @@ const getVendorRestaurants = async (req, res) => {
       vendorId: req.auth.vendorId,
     },
     include: {
+      menuCategories: {
+        orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+      },
       _count: {
         select: {
           menuItems: true,

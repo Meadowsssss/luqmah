@@ -142,7 +142,7 @@ final restaurantsProvider = FutureProvider<List<Restaurant>>((ref) {
   return ref.watch(restaurantRepositoryProvider).fetchRestaurants();
 });
 
-final restaurantByIdProvider = FutureProvider.family<Restaurant?, String>((ref, id) {
+final restaurantByIdProvider = FutureProvider.autoDispose.family<Restaurant?, String>((ref, id) {
   return ref.watch(restaurantRepositoryProvider).fetchRestaurantById(id);
 });
 

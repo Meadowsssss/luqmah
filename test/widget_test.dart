@@ -24,7 +24,32 @@ class _FakeRestaurantRepository implements RestaurantRepository {
     time: 'Campus pickup',
     isBusy: isBusy,
     tags: const ['Open now'],
-    menu: const [],
+    menu: const [
+      MenuItem(
+        id: 'm1',
+        name: 'Iced Americano',
+        description: 'Cold coffee',
+        price: 1.5,
+        image: '',
+        category: 'Iced Coffee',
+      ),
+      MenuItem(
+        id: 'm2',
+        name: 'Iced Mocha',
+        description: 'Chocolate coffee',
+        price: 2.0,
+        image: '',
+        category: 'Iced Coffee',
+      ),
+      MenuItem(
+        id: 'm3',
+        name: 'Cheesecake',
+        description: 'Dessert',
+        price: 2.5,
+        image: '',
+        category: 'Desserts',
+      ),
+    ],
   );
 
   @override
