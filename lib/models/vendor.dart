@@ -156,12 +156,23 @@ class VendorRestaurant {
   const VendorRestaurant({
     required this.id,
     required this.title,
+    this.isBusy = false,
     required this.categories,
   });
 
   final String id;
   final String title;
+  final bool isBusy;
   final List<VendorRestaurantCategory> categories;
+
+  VendorRestaurant copyWith({bool? isBusy}) {
+    return VendorRestaurant(
+      id: id,
+      title: title,
+      isBusy: isBusy ?? this.isBusy,
+      categories: categories,
+    );
+  }
 }
 
 class VendorRestaurantCategory {

@@ -86,6 +86,7 @@ const getRestaurantMenu = async (req, res) => {
       description: restaurant.description,
       address: restaurant.address,
       coverImage: restaurant.coverImage,
+      isBusy: restaurant.isBusy,
     }),
     categories: serialize(restaurant.menuCategories),
   });

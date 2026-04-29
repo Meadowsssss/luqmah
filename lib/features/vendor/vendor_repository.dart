@@ -120,10 +120,24 @@ class VendorRepository {
     return _vendorOrderFromJson(response['order'] as Map<String, dynamic>);
   }
 
+  Future<VendorRestaurant> updateRestaurantBusyState({
+    required String token,
+    required String restaurantId,
+    required bool isBusy,
+  }) async {
+    final response = await _apiClient.patch(
+      '/vendor/restaurants/busy',
+      token: token,
+      body: {'restaurantId': restaurantId, 'isBusy': isBusy},
+    );
+    return _vendorRestaurantFromJson(response['restaurant'] as Map<String, dynamic>);
+  }
+
   VendorRestaurant _vendorRestaurantFromJson(Map<String, dynamic> json) {
     return VendorRestaurant(
       id: json['id'] as String,
       title: json['title'] as String,
+      isBusy: json['isBusy'] as bool? ?? false,
       categories: ((json['menuCategories'] as List<dynamic>?) ?? const [])
           .map(
             (category) => VendorRestaurantCategory(

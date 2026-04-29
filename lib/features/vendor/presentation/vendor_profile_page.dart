@@ -4,10 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/session/auth_error_formatter.dart';
 import '../../../features/session/session_controller.dart';
+import '../../../features/vendor/vendor_data_controller.dart';
+import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
 class VendorProfilePage extends ConsumerWidget {
   const VendorProfilePage({super.key});
+
+  static const _busyMessage =
+      'This restaurant is busy right now. You can browse the menu, but ordering is temporarily unavailable.';
 
   Future<void> _showVendorPasswordDialog(BuildContext context, WidgetRef ref) async {
     final currentPasswordController = TextEditingController();
@@ -104,6 +109,7 @@ class VendorProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider).snapshot;
+    final vendorData = ref.watch(vendorDataControllerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Vendor profile')),
@@ -153,6 +159,58 @@ class VendorProfilePage extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           AppSurfaceCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Restaurant availability', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  _busyMessage,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: context.luqmah.mutedText,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                vendorData.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => Text(
+                    error.toString(),
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                  data: (state) => Column(
+                    children: state.restaurants
+                        .map(
+                          (restaurant) => _BusyToggleTile(
+                            restaurant: restaurant,
+                            onChanged: (value) async {
+                              await ref
+                                  .read(vendorDataControllerProvider.notifier)
+                                  .updateRestaurantBusyState(restaurant.id, value);
+                              if (!context.mounted) {
+                                return;
+                              }
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      value
+                                          ? '${restaurant.title} marked busy.'
+                                          : '${restaurant.title} marked available.',
+                                    ),
+                                  ),
+                                );
+                            },
+                          ),
+                        )
+                        .toList(growable: false),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppSurfaceCard(
             child: ElevatedButton.icon(
               onPressed: () => ref.read(sessionControllerProvider).logout(),
               icon: const Icon(Icons.logout_rounded),
@@ -161,6 +219,51 @@ class VendorProfilePage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _BusyToggleTile extends ConsumerStatefulWidget {
+  const _BusyToggleTile({required this.restaurant, required this.onChanged});
+
+  final VendorRestaurant restaurant;
+  final Future<void> Function(bool value) onChanged;
+
+  @override
+  ConsumerState<_BusyToggleTile> createState() => _BusyToggleTileState();
+}
+
+class _BusyToggleTileState extends ConsumerState<_BusyToggleTile> {
+  bool _saving = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile.adaptive(
+      contentPadding: EdgeInsets.zero,
+      title: Text(widget.restaurant.title),
+      subtitle: Text(widget.restaurant.isBusy ? 'Busy' : 'Available'),
+      value: widget.restaurant.isBusy,
+      onChanged: _saving
+          ? null
+          : (value) async {
+              setState(() => _saving = true);
+              try {
+                await widget.onChanged(value);
+              } catch (error) {
+                if (!context.mounted) {
+                  return;
+                }
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(content: Text(formatAuthError(error))),
+                  );
+              } finally {
+                if (mounted) {
+                  setState(() => _saving = false);
+                }
+              }
+            },
     );
   }
 }

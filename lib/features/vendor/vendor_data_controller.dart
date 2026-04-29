@@ -113,6 +113,35 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       ),
     );
   }
+
+  Future<void> updateRestaurantBusyState(String restaurantId, bool isBusy) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Vendor session is required');
+    }
+
+    final updatedRestaurant = await _repository.updateRestaurantBusyState(
+      token: token,
+      restaurantId: restaurantId,
+      isBusy: isBusy,
+    );
+
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      await refresh();
+      return;
+    }
+
+    state = AsyncData(
+      VendorDataState(
+        orders: currentState.orders,
+        menuItems: currentState.menuItems,
+        restaurants: currentState.restaurants
+            .map((restaurant) => restaurant.id == restaurantId ? updatedRestaurant : restaurant)
+            .toList(growable: false),
+      ),
+    );
+  }
 }
 
 final vendorDataControllerProvider =

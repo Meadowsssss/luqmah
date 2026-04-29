@@ -43,6 +43,7 @@ class ApiRestaurantRepository implements RestaurantRepository {
       image: restaurantJson['coverImage'] as String? ?? '',
       rating: 'Live',
       time: 'See menu',
+      isBusy: restaurantJson['isBusy'] as bool? ?? false,
       tags: tags.isEmpty ? <String>['Open now'] : tags,
       menu: menu,
     );
@@ -115,6 +116,7 @@ class ApiRestaurantRepository implements RestaurantRepository {
       image: json['coverImage'] as String? ?? '',
       rating: 'Live',
       time: (json['address'] as String?) ?? 'Campus pickup',
+      isBusy: json['isBusy'] as bool? ?? false,
       tags: tags.isEmpty ? <String>['Open now'] : tags,
       menu: const [],
     );

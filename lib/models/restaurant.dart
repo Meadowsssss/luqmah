@@ -45,6 +45,7 @@ class Restaurant {
   final String image;
   final String rating;
   final String time;
+  final bool isBusy;
   final List<String> tags;
   final List<MenuItem> menu;
 
@@ -55,6 +56,7 @@ class Restaurant {
     required this.image,
     required this.rating,
     required this.time,
+    this.isBusy = false,
     required this.tags,
     required this.menu,
   });
@@ -66,6 +68,7 @@ class Restaurant {
     String? image,
     String? rating,
     String? time,
+    bool? isBusy,
     List<String>? tags,
     List<MenuItem>? menu,
   }) {
@@ -76,6 +79,7 @@ class Restaurant {
       image: image ?? this.image,
       rating: rating ?? this.rating,
       time: time ?? this.time,
+      isBusy: isBusy ?? this.isBusy,
       tags: tags ?? this.tags,
       menu: menu ?? this.menu,
     );

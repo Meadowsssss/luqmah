@@ -44,6 +44,13 @@ const createOrder = async (req, res) => {
     throw new ApiError(404, "Restaurant not found");
   }
 
+  if (restaurant.isBusy) {
+    throw new ApiError(
+      409,
+      "This restaurant is busy right now. You can browse the menu, but ordering is temporarily unavailable.",
+    );
+  }
+
   const menuItemIds = [...new Set(items.map((item) => item.menuItemId))];
   const menuItems = await prisma.menuItem.findMany({
     where: {

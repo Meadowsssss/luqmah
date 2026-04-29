@@ -18,6 +18,9 @@ class RestaurantMenuPage extends ConsumerStatefulWidget {
 }
 
 class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
+  static const _busyMessage =
+      'This restaurant is busy right now. You can browse the menu, but ordering is temporarily unavailable.';
+
   String? _selectedCategory;
 
   @override
@@ -75,6 +78,23 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               Text(restaurant.time, style: Theme.of(context).textTheme.bodySmall),
+              if (restaurant.isBusy) ...[
+                const SizedBox(height: AppSpacing.lg),
+                AppSurfaceCard(
+                  child: Row(
+                    children: [
+                      Icon(Icons.schedule_rounded, color: context.luqmah.warning),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          _busyMessage,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadii.xl),
@@ -127,6 +147,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                     item: item,
                     restaurantId: restaurant.id,
                     restaurantName: restaurant.name,
+                    restaurantIsBusy: restaurant.isBusy,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                 ],
@@ -143,13 +164,39 @@ class _MenuItemCard extends ConsumerWidget {
     required this.item,
     required this.restaurantId,
     required this.restaurantName,
+    required this.restaurantIsBusy,
   });
 
   final MenuItem item;
   final String restaurantId;
   final String restaurantName;
+  final bool restaurantIsBusy;
+
+  static const _busyMessage =
+      'This restaurant is busy right now. You can browse the menu, but ordering is temporarily unavailable.';
+
+  Future<void> _showBusyMessage(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Restaurant busy'),
+        content: const Text(_busyMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _handleAddPressed(BuildContext context, WidgetRef ref) async {
+    if (restaurantIsBusy) {
+      await _showBusyMessage(context);
+      return;
+    }
+
     final controller = ref.read(cartControllerProvider.notifier);
     final cart = ref.read(cartControllerProvider);
     final added = controller.addItem(
@@ -229,7 +276,7 @@ class _MenuItemCard extends ConsumerWidget {
                     width: 140,
                     child: ElevatedButton(
                       onPressed: () => _handleAddPressed(context, ref),
-                      child: const Text('Add to cart'),
+                      child: Text(restaurantIsBusy ? 'Restaurant busy' : 'Add to cart'),
                     ),
                   )
                 else
@@ -247,9 +294,7 @@ class _MenuItemCard extends ConsumerWidget {
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                         IconButton(
-                          onPressed: () {
-                            _handleAddPressed(context, ref);
-                          },
+                          onPressed: () => _handleAddPressed(context, ref),
                           icon: const Icon(Icons.add_circle_outline_rounded),
                         ),
                     ],

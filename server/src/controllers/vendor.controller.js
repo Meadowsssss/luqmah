@@ -83,6 +83,19 @@ const getVendorRestaurants = async (req, res) => {
   res.json({ restaurants: serialize(restaurants) });
 };
 
+const updateVendorRestaurantBusyState = async (req, res) => {
+  const { restaurantId, isBusy } = req.body;
+
+  await ensureVendorRestaurant(req.auth.vendorId, restaurantId);
+
+  const restaurant = await prisma.restaurant.update({
+    where: { id: restaurantId },
+    data: { isBusy },
+  });
+
+  res.json({ restaurant: serialize(restaurant) });
+};
+
 const createVendorRestaurantCategory = async (req, res) => {
   const { restaurantId, title } = req.body;
 
@@ -367,6 +380,7 @@ const updateVendorMenuItemAvailability = async (req, res) => {
 
 module.exports = {
   getVendorRestaurants,
+  updateVendorRestaurantBusyState,
   createVendorRestaurantCategory,
   getVendorOrders,
   getVendorOrderById,

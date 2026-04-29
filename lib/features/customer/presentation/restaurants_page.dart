@@ -157,6 +157,23 @@ class _RestaurantCard extends StatelessWidget {
                 children: [
                   Text(restaurant.name, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: AppSpacing.xs),
+                  if (restaurant.isBusy) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: context.luqmah.warning.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Busy',
+                        style: TextStyle(
+                          color: context.luqmah.warning,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
                   Text(
                     restaurant.description,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(

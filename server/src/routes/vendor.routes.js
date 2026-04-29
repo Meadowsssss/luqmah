@@ -6,6 +6,7 @@ const { requireAuth, requireRole } = require("../middleware/auth");
 const { USER_ROLES, ORDER_STATUSES } = require("../constants/enums");
 const {
   getVendorRestaurants,
+  updateVendorRestaurantBusyState,
   createVendorRestaurantCategory,
   getVendorOrders,
   getVendorOrderById,
@@ -58,6 +59,13 @@ const menuCategoryCreateSchema = z.object({
   }),
 });
 
+const restaurantBusyUpdateSchema = z.object({
+  body: z.object({
+    restaurantId: z.string().cuid(),
+    isBusy: z.boolean(),
+  }),
+});
+
 const menuItemUpdateSchema = z.object({
   params: z.object({
     id: z.string().cuid(),
@@ -100,6 +108,11 @@ const vendorOrderStatusUpdateSchema = z.object({
 router.use(requireAuth, requireRole(USER_ROLES.VENDOR));
 
 router.get("/restaurants/me", asyncHandler(getVendorRestaurants));
+router.patch(
+  "/restaurants/busy",
+  validate(restaurantBusyUpdateSchema),
+  asyncHandler(updateVendorRestaurantBusyState),
+);
 router.post(
   "/menu-categories",
   validate(menuCategoryCreateSchema),

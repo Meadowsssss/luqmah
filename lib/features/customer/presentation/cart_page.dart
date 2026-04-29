@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/customer/cart/cart_controller.dart';
+import '../../../features/customer/data/restaurant_repository.dart';
 import '../../../features/customer/orders/customer_orders_controller.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_surface_card.dart';
@@ -10,10 +12,17 @@ import '../../../shared/widgets/app_surface_card.dart';
 class CartPage extends ConsumerWidget {
   const CartPage({super.key});
 
+  static const _busyMessage =
+      'This restaurant is busy right now. You can browse the menu, but ordering is temporarily unavailable.';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lines = ref.watch(cartLinesProvider);
     final total = ref.watch(cartTotalProvider);
+    final restaurantAsync = lines.isEmpty
+        ? null
+        : ref.watch(restaurantByIdProvider(lines.first.item.restaurantId));
+    final isBusy = restaurantAsync?.valueOrNull?.isBusy ?? false;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Your cart')),
@@ -139,33 +148,53 @@ class CartPage extends ConsumerWidget {
                           const SizedBox(width: AppSpacing.lg),
                           ElevatedButton(
                             onPressed: () async {
-                              final order = await ref
-                                  .read(customerOrdersControllerProvider.notifier)
-                                  .placeOrder(lines: lines, total: total);
-                              if (!context.mounted) {
+                              if (isBusy) {
+                                ScaffoldMessenger.of(context)
+                                  ..hideCurrentSnackBar()
+                                  ..showSnackBar(const SnackBar(content: Text(_busyMessage)));
                                 return;
                               }
-                              await showDialog<void>(
-                                context: context,
-                                builder: (dialogContext) {
-                                  return AlertDialog(
-                                    title: const Text('Order placed'),
-                                    content: Text(
-                                      'Checkout saved for ${order.restaurantName}. Your order is now tracked in order history on this device.',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.of(dialogContext).pop(),
-                                        child: const Text('OK'),
+
+                              try {
+                                final order = await ref
+                                    .read(customerOrdersControllerProvider.notifier)
+                                    .placeOrder(lines: lines, total: total);
+                                if (!context.mounted) {
+                                  return;
+                                }
+
+                                await showDialog<void>(
+                                  context: context,
+                                  builder: (dialogContext) {
+                                    return AlertDialog(
+                                      title: const Text('Order placed'),
+                                      content: Text(
+                                        'Checkout saved for ${order.restaurantName}. Your order is now tracked in order history on this device.',
                                       ),
-                                    ],
-                                  );
-                                },
-                              );
-                              if (!context.mounted) {
-                                return;
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(dialogContext).pop(),
+                                          child: const Text('OK'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                                if (!context.mounted) {
+                                  return;
+                                }
+                                ref.read(cartControllerProvider.notifier).clear();
+                              } catch (error) {
+                                if (!context.mounted) {
+                                  return;
+                                }
+                                final message = error is ApiException
+                                    ? error.message
+                                    : error.toString().replaceFirst('Exception: ', '');
+                                ScaffoldMessenger.of(context)
+                                  ..hideCurrentSnackBar()
+                                  ..showSnackBar(SnackBar(content: Text(message)));
                               }
-                              ref.read(cartControllerProvider.notifier).clear();
                             },
                             child: const Text('Place order'),
                           ),
