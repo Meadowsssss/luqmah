@@ -26,10 +26,14 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
 
   @override
   Widget build(BuildContext context) {
-    final restaurantAsync = ref.watch(restaurantByIdProvider(widget.restaurantId));
+    final restaurantAsync = ref.watch(
+      restaurantByIdProvider(widget.restaurantId),
+    );
+    final textTheme = Theme.of(context).textTheme;
 
     return restaurantAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
         appBar: AppBar(),
         body: Padding(
@@ -56,107 +60,205 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
           );
         }
 
-        final categories = restaurant.menu.map((item) => item.category).toSet().toList(growable: false);
+        final categories = restaurant.menu
+            .map((item) => item.category)
+            .toSet()
+            .toList(growable: false);
         final categoryOptions = categories.isEmpty
             ? const <String>[]
             : <String>[_allCategories, ...categories];
-        final selectedCategory = _selectedCategory ?? (categoryOptions.isEmpty ? null : _allCategories);
-        final items = selectedCategory == null || selectedCategory == _allCategories
+        final selectedCategory =
+            _selectedCategory ??
+            (categoryOptions.isEmpty ? null : _allCategories);
+        final items =
+            selectedCategory == null || selectedCategory == _allCategories
             ? restaurant.menu
             : restaurant.menu
-                .where((item) => item.category == selectedCategory)
-                .toList(growable: false);
+                  .where((item) => item.category == selectedCategory)
+                  .toList(growable: false);
 
         return Scaffold(
           appBar: AppBar(),
           body: RefreshIndicator(
-            onRefresh: () => ref.refresh(restaurantByIdProvider(widget.restaurantId).future),
+            onRefresh: () =>
+                ref.refresh(restaurantByIdProvider(widget.restaurantId).future),
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               children: [
-               Text(restaurant.name, style: Theme.of(context).textTheme.headlineMedium),
-               const SizedBox(height: AppSpacing.sm),
-               Text(
-                restaurant.description,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: context.luqmah.mutedText,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(restaurant.time, style: Theme.of(context).textTheme.bodySmall),
-              if (restaurant.isBusy) ...[
-                const SizedBox(height: AppSpacing.lg),
-                AppSurfaceCard(
-                  child: Row(
-                    children: [
-                      Icon(Icons.schedule_rounded, color: context.luqmah.warning),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Text(
-                          _busyMessage,
-                          style: Theme.of(context).textTheme.bodyMedium,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadii.hero),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 11,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          restaurant.image,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: AppColors.surfaceAlt,
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.image_not_supported_outlined,
+                                ),
+                              ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadii.xl),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Image.network(
-                    restaurant.image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: AppColors.surfaceAlt,
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.image_not_supported_outlined),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.06),
+                                Colors.black.withValues(alpha: 0.62),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: AppSpacing.xl,
+                          right: AppSpacing.xl,
+                          bottom: AppSpacing.xl,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.92,
+                                      ),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      restaurant.isBusy
+                                          ? 'Busy now'
+                                          : 'Open now',
+                                      style: TextStyle(
+                                        color: restaurant.isBusy
+                                            ? context.luqmah.warning
+                                            : AppColors.primary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                restaurant.name,
+                                style: textTheme.headlineMedium?.copyWith(
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                restaurant.description,
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.86),
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                restaurant.time,
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.82),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              if (categoryOptions.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xl),
-                SizedBox(
-                  height: 42,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: categoryOptions.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final category = categoryOptions[index];
-                      final selected = category == selectedCategory;
-
-                      return ChoiceChip(
-                        label: Text(category),
-                        selected: selected,
-                        onSelected: (_) {
-                          setState(() => _selectedCategory = category);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.xl),
-              if (items.isEmpty)
-                const AppEmptyState(
-                  icon: Icons.no_food_outlined,
-                  title: 'No menu items yet',
-                  message: 'This restaurant has not published any available menu items yet.',
-                )
-              else
-                for (final item in items) ...[
-                  _MenuItemCard(
-                    item: item,
-                    restaurantId: restaurant.id,
-                    restaurantName: restaurant.name,
-                    restaurantIsBusy: restaurant.isBusy,
-                  ),
+                if (restaurant.isBusy) ...[
                   const SizedBox(height: AppSpacing.lg),
+                  AppSurfaceCard(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.schedule_rounded,
+                          color: context.luqmah.warning,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            _busyMessage,
+                            style: textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
+                if (categoryOptions.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  SizedBox(
+                    height: 42,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categoryOptions.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final category = categoryOptions[index];
+                        final selected = category == selectedCategory;
+
+                        return ChoiceChip(
+                          label: Text(category),
+                          selected: selected,
+                          onSelected: (_) {
+                            setState(() => _selectedCategory = category);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.xl),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Menu', style: textTheme.titleLarge),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Prepared fresh for today\'s service.',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: context.luqmah.mutedText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                if (items.isEmpty)
+                  const AppEmptyState(
+                    icon: Icons.no_food_outlined,
+                    title: 'No menu items yet',
+                    message:
+                        'This restaurant has not published any available menu items yet.',
+                  )
+                else
+                  for (final item in items) ...[
+                    _MenuItemCard(
+                      item: item,
+                      restaurantId: restaurant.id,
+                      restaurantName: restaurant.name,
+                      restaurantIsBusy: restaurant.isBusy,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
               ],
             ),
           ),
@@ -216,7 +318,8 @@ class _MenuItemCard extends ConsumerWidget {
       return;
     }
 
-    final existingRestaurantName = cart.activeRestaurantName ?? 'another restaurant';
+    final existingRestaurantName =
+        cart.activeRestaurantName ?? 'another restaurant';
     final shouldReplace = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -252,69 +355,16 @@ class _MenuItemCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartControllerProvider);
     final quantity = cart.items[item.id]?.quantity ?? 0;
+    final textTheme = Theme.of(context).textTheme;
 
     return AppSurfaceCard(
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.name, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  item.description,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: context.luqmah.mutedText,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  '${item.price.toStringAsFixed(2)} JD',
-                  style: const TextStyle(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                if (quantity == 0)
-                  SizedBox(
-                    width: 140,
-                    child: ElevatedButton(
-                      onPressed: () => _handleAddPressed(context, ref),
-                      child: Text(restaurantIsBusy ? 'Restaurant busy' : 'Add to cart'),
-                    ),
-                  )
-                else
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          ref.read(cartControllerProvider.notifier).removeItem(item.id);
-                        },
-                        icon: const Icon(Icons.remove_circle_outline_rounded),
-                      ),
-                      Text(
-                        '$quantity',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                        IconButton(
-                          onPressed: () => _handleAddPressed(context, ref),
-                          icon: const Icon(Icons.add_circle_outline_rounded),
-                        ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.lg),
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadii.lg),
             child: SizedBox(
-              height: 96,
-              width: 96,
+              height: 88,
+              width: 88,
               child: Image.network(
                 item.image,
                 fit: BoxFit.cover,
@@ -326,6 +376,81 @@ class _MenuItemCard extends ConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.name, style: textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  item.category,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  item.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: context.luqmah.mutedText,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  '${item.price.toStringAsFixed(2)} JD',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          if (quantity == 0)
+            IconButton.filled(
+              onPressed: () => _handleAddPressed(context, ref),
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              icon: Icon(
+                restaurantIsBusy ? Icons.schedule_rounded : Icons.add_rounded,
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      ref
+                          .read(cartControllerProvider.notifier)
+                          .removeItem(item.id);
+                    },
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.remove_rounded),
+                  ),
+                  Text(
+                    '$quantity',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  IconButton(
+                    onPressed: () => _handleAddPressed(context, ref),
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.add_rounded),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

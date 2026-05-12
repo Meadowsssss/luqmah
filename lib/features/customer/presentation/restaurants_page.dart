@@ -14,16 +14,20 @@ class RestaurantsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final restaurants = ref.watch(restaurantsProvider);
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Luqmah', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Luqmah',
+              style: textTheme.titleLarge?.copyWith(color: AppColors.primary),
+            ),
             Text(
               'Campus favourites, ready when you are',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: textTheme.bodySmall,
             ),
           ],
         ),
@@ -34,40 +38,82 @@ class RestaurantsPage extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.xxl),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, AppColors.primaryAlt],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(AppRadii.hero),
+              border: Border.all(color: AppColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.06),
+                  blurRadius: 30,
+                  offset: const Offset(0, 14),
+                ),
+              ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'Open now',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                Text(
-                  'Discover restaurants around campus',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
+                Positioned(
+                  top: -16,
+                  right: -12,
+                  child: Container(
+                    height: 150,
+                    width: 150,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Fast bites, hot meals, and drinks from the spots students order most.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
+                Positioned(
+                  right: 18,
+                  bottom: -18,
+                  child: Container(
+                    height: 88,
+                    width: 88,
+                    decoration: const BoxDecoration(
+                      color: AppColors.surfaceAlt,
+                      shape: BoxShape.circle,
+                    ),
                   ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        'On campus now',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 290),
+                      child: Text(
+                        'Good food. Great mood. On campus.',
+                        style: textTheme.headlineMedium,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 300),
+                      child: Text(
+                        'Discover warm bowls, quick bites, and all-day favorites from nearby restaurant partners.',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: context.luqmah.mutedText,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -85,20 +131,46 @@ class RestaurantsPage extends ConsumerWidget {
                 return const AppEmptyState(
                   icon: Icons.storefront_outlined,
                   title: 'No restaurants yet',
-                  message: 'Restaurants will appear here after vendors are onboarded and published.',
+                  message:
+                      'Restaurants will appear here after vendors are onboarded and published.',
                 );
               }
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Choose a restaurant', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Popular restaurants',
+                              style: textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              'Premium campus picks curated for quick ordering.',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: context.luqmah.mutedText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {},
+                        child: const Text('See all'),
+                      ),
+                    ],
+                  ),
                   for (final restaurant in items) ...[
                     const SizedBox(height: AppSpacing.lg),
                     _RestaurantCard(
                       restaurant: restaurant,
-                      onTap: () => context.push('/restaurants/${restaurant.id}'),
+                      onTap: () =>
+                          context.push('/restaurants/${restaurant.id}'),
                     ),
                   ],
                 ],
@@ -119,6 +191,9 @@ class _RestaurantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final detailColor = context.luqmah.mutedText;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadii.xl),
@@ -132,21 +207,85 @@ class _RestaurantCard extends StatelessWidget {
                 top: Radius.circular(AppRadii.xl),
               ),
               child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Image.network(
-                  restaurant.image,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: AppColors.surfaceAlt,
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.restaurant_rounded,
-                        size: 38,
-                        color: AppColors.mutedText,
+                aspectRatio: 16 / 10,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      restaurant.image,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: AppColors.surfaceAlt,
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.restaurant_rounded,
+                            size: 38,
+                            color: AppColors.mutedText,
+                          ),
+                        );
+                      },
+                    ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.04),
+                            Colors.black.withValues(alpha: 0.58),
+                          ],
+                        ),
                       ),
-                    );
-                  },
+                    ),
+                    Positioned(
+                      left: AppSpacing.lg,
+                      right: AppSpacing.lg,
+                      bottom: AppSpacing.lg,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            restaurant.name,
+                            style: textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            restaurant.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.86),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (restaurant.isBusy)
+                      Positioned(
+                        top: AppSpacing.lg,
+                        left: AppSpacing.lg,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.92),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            'Busy now',
+                            style: TextStyle(
+                              color: context.luqmah.warning,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -155,39 +294,33 @@ class _RestaurantCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(restaurant.name, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: AppSpacing.xs),
-                  if (restaurant.isBusy) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: context.luqmah.warning.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        'Busy',
-                        style: TextStyle(
-                          color: context.luqmah.warning,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                  ],
-                  Text(
-                    restaurant.description,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: context.luqmah.mutedText,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 18, color: AppColors.accent),
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          restaurant.time,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: detailColor,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 18,
+                        color: Color(0xFFD1A340),
+                      ),
                       const SizedBox(width: 4),
                       Text(
-                        restaurant.time,
-                        style: Theme.of(context).textTheme.bodySmall,
+                        restaurant.rating,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: detailColor,
+                        ),
                       ),
                     ],
                   ),
@@ -196,10 +329,12 @@ class _RestaurantCard extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: restaurant.tags
+                        .take(2)
                         .map(
                           (tag) => Chip(
                             label: Text(tag),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
                             visualDensity: VisualDensity.compact,
                           ),
                         )

@@ -23,16 +23,16 @@ class AppEmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.10),
-            child: const SizedBox.shrink(),
-          ),
-          Transform.translate(
-            offset: const Offset(0, -42),
+          Container(
+            height: 64,
+            width: 64,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, size: 28, color: AppColors.primary),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             title,
             textAlign: TextAlign.center,
@@ -42,14 +42,11 @@ class AppEmptyState extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: context.luqmah.mutedText,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: context.luqmah.mutedText),
           ),
-          if (action != null) ...[
-            const SizedBox(height: 16),
-            action!,
-          ],
+          if (action != null) ...[const SizedBox(height: 16), action!],
         ],
       ),
     );
