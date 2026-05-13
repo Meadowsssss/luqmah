@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/customer/cart/cart_controller.dart';
@@ -76,15 +77,26 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
             : restaurant.menu
                   .where((item) => item.category == selectedCategory)
                   .toList(growable: false);
+        final cart = ref.watch(cartControllerProvider);
+        final cartTotal = ref.watch(cartTotalProvider);
+        final showCheckoutButton =
+            cart.itemCount > 0 && cart.activeRestaurantId == restaurant.id;
 
         return Scaffold(
           appBar: AppBar(),
-          body: RefreshIndicator(
-            onRefresh: () =>
-                ref.refresh(restaurantByIdProvider(widget.restaurantId).future),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              children: [
+          body: Stack(
+            children: [
+              RefreshIndicator(
+                onRefresh: () =>
+                    ref.refresh(restaurantByIdProvider(widget.restaurantId).future),
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    showCheckoutButton ? 112 : 24,
+                  ),
+                  children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadii.hero),
                   child: AspectRatio(
@@ -259,11 +271,67 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
-              ],
-            ),
+                  ],
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _CheckoutFloatingButton(
+                  total: cartTotal,
+                  visible: showCheckoutButton,
+                ),
+              ),
+            ],
           ),
         );
       },
+    );
+  }
+}
+
+class _CheckoutFloatingButton extends StatelessWidget {
+  const _CheckoutFloatingButton({required this.total, required this.visible});
+
+  final double total;
+  final bool visible;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: IgnorePointer(
+        ignoring: !visible,
+        child: AnimatedSlide(
+          offset: visible ? Offset.zero : const Offset(0, 0.08),
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: AnimatedOpacity(
+            opacity: visible ? 1 : 0,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => context.push('/cart'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  elevation: 12,
+                  shadowColor: AppColors.success.withValues(alpha: 0.28),
+                  minimumSize: const Size.fromHeight(58),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                icon: const Icon(Icons.shopping_bag_rounded),
+                label: Text('Checkout • ${total.toStringAsFixed(2)} JD'),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
