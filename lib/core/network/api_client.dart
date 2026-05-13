@@ -53,12 +53,19 @@ class ApiClient {
     }
   }
 
+  static String get baseUrl => _baseUrl;
+
   Future<Map<String, dynamic>> get(
     String path, {
     String? token,
     Map<String, String>? queryParameters,
   }) async {
-    return _request('GET', path, token: token, queryParameters: queryParameters);
+    return _request(
+      'GET',
+      path,
+      token: token,
+      queryParameters: queryParameters,
+    );
   }
 
   Future<Map<String, dynamic>> post(
@@ -92,7 +99,9 @@ class ApiClient {
     Map<String, String>? queryParameters,
     Object? body,
   }) async {
-    final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: queryParameters);
+    final uri = Uri.parse(
+      '$_baseUrl$path',
+    ).replace(queryParameters: queryParameters);
     final headers = <String, String>{
       'Content-Type': 'application/json',
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
@@ -145,7 +154,9 @@ class ApiClient {
         : jsonDecode(response.body);
 
     if (response.statusCode >= 400) {
-      final map = decoded is Map<String, dynamic> ? decoded : const <String, dynamic>{};
+      final map = decoded is Map<String, dynamic>
+          ? decoded
+          : const <String, dynamic>{};
       throw ApiException(
         map['message'] as String? ?? 'Request failed',
         statusCode: response.statusCode,
