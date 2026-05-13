@@ -125,11 +125,6 @@ class CustomerSettingsPage extends ConsumerWidget {
                   label: 'Signed in as',
                   value: session.email.isEmpty ? 'No email available' : session.email,
                 ),
-                const SizedBox(height: AppSpacing.md),
-                _SettingRow(
-                  label: 'Auth source',
-                  value: 'Firebase identity + Luqmah backend session',
-                ),
               ],
             ),
           ),
