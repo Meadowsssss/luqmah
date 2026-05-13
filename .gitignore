@@ -45,14 +45,6 @@ app.*.map.json
 /android/app/release
 
 # Backend / server
-server/node_modules/
-server/dist/
-server/build/
-server/coverage/
-server/.env
-server/.env.*
-!server/.env.example
-server/generated/
 
 # Local secrets
 .env
