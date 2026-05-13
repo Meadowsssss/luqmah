@@ -159,7 +159,7 @@ class CustomerSettingsPage extends ConsumerWidget {
                 Text('Security', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Customer passwords and email verification are managed through Firebase.',
+                  'Manage your password to help keep your account secure.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: context.luqmah.mutedText,
                   ),
@@ -167,7 +167,7 @@ class CustomerSettingsPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 OutlinedButton(
                   onPressed: () => _showCustomerPasswordDialog(context, ref),
-                  child: const Text('Change Firebase password'),
+                  child: const Text('Change password'),
                 ),
               ],
             ),
