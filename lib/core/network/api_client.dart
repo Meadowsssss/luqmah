@@ -43,13 +43,13 @@ class ApiClient {
       return configured;
     }
     if (kIsWeb) {
-      return 'http://localhost:4000';
+      return 'https://luqmah.meadows.lol';
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return 'http://10.0.2.2:4000';
+        return 'https://luqmah.meadows.lol';
       default:
-        return 'http://localhost:4000';
+        return 'https://luqmah.meadows.lol';
     }
   }
 
