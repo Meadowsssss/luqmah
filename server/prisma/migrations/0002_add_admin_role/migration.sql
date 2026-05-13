@@ -1,1 +1,0 @@
-ALTER TYPE "public"."UserRole" ADD VALUE IF NOT EXISTS 'ADMIN';
