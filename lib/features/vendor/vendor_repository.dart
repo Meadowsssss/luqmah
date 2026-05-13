@@ -86,6 +86,32 @@ class VendorRepository {
     );
   }
 
+  Future<void> updateMenuItem({
+    required String token,
+    required String itemId,
+    required String categoryId,
+    required String title,
+    required String description,
+    required double price,
+    required String imageUrl,
+    required List<String> ingredientNames,
+    required List<Map<String, Object?>> customizations,
+  }) async {
+    await _apiClient.patch(
+      '/vendor/menu-items/$itemId',
+      token: token,
+      body: {
+        'categoryId': categoryId,
+        'title': title,
+        'description': description,
+        'price': price,
+        'imageUrl': imageUrl.isEmpty ? null : imageUrl,
+        'ingredientNames': ingredientNames,
+        'customizations': customizations,
+      },
+    );
+  }
+
   Future<VendorRestaurantCategory> createMenuCategory({
     required String token,
     required String restaurantId,
@@ -133,6 +159,26 @@ class VendorRepository {
     return _vendorRestaurantFromJson(response['restaurant'] as Map<String, dynamic>);
   }
 
+  Future<VendorMenuItem> updateMenuItemAvailability({
+    required String token,
+    required String itemId,
+    required bool isAvailable,
+  }) async {
+    final response = await _apiClient.patch(
+      '/vendor/menu-items/$itemId/availability',
+      token: token,
+      body: {'isAvailable': isAvailable},
+    );
+    return _vendorMenuItemFromJson(response['menuItem'] as Map<String, dynamic>);
+  }
+
+  Future<void> deleteMenuItem({
+    required String token,
+    required String itemId,
+  }) async {
+    await _apiClient.delete('/vendor/menu-items/$itemId', token: token);
+  }
+
   VendorRestaurant _vendorRestaurantFromJson(Map<String, dynamic> json) {
     return VendorRestaurant(
       id: json['id'] as String,
@@ -151,7 +197,12 @@ class VendorRepository {
 
   VendorMenuItem _vendorMenuItemFromJson(Map<String, dynamic> json) {
     final customizations = ((json['customizations'] as List<dynamic>?) ?? const [])
-        .map((item) => (item as Map<String, dynamic>)['title'] as String)
+        .map(
+          (item) => VendorMenuItemCustomization(
+            title: (item as Map<String, dynamic>)['title'] as String,
+            priceDelta: ((item['priceDelta'] as num?) ?? 0).toDouble(),
+          ),
+        )
         .toList(growable: false);
     final ingredients = ((json['ingredients'] as List<dynamic>?) ?? const [])
         .map((item) => (item as Map<String, dynamic>)['name'] as String)

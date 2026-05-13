@@ -134,7 +134,7 @@ class VendorMenuItem {
   final double price;
   final String image;
   final bool isAvailable;
-  final List<String> customizations;
+  final List<VendorMenuItemCustomization> customizations;
 
   const VendorMenuItem({
     required this.restaurantId,
@@ -150,6 +150,24 @@ class VendorMenuItem {
     required this.isAvailable,
     this.customizations = const [],
   });
+}
+
+class VendorMenuItemCustomization {
+  const VendorMenuItemCustomization({
+    required this.title,
+    required this.priceDelta,
+  });
+
+  final String title;
+  final double priceDelta;
+
+  String get label {
+    if (priceDelta == 0) {
+      return title;
+    }
+
+    return '$title:${priceDelta.toStringAsFixed(2)}';
+  }
 }
 
 class VendorRestaurant {

@@ -94,7 +94,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Luqmah'), findsOneWidget);
-    expect(find.text('Choose a restaurant'), findsOneWidget);
+    expect(find.text('Good food. Great mood. On campus.'), findsOneWidget);
   });
 
   testWidgets('restaurants screen shows busy badge', (WidgetTester tester) async {
@@ -114,7 +114,7 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Busy'), findsOneWidget);
+    expect(find.text('Busy now'), findsOneWidget);
   });
 
   testWidgets('cart page renders non-empty cart content', (

@@ -85,6 +85,77 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     await refresh();
   }
 
+  Future<void> editMenuItem({
+    required String itemId,
+    required String restaurantId,
+    String? categoryId,
+    String? newCategoryTitle,
+    required String title,
+    required String description,
+    required double price,
+    required String imageUrl,
+    required List<String> ingredientNames,
+    required List<Map<String, Object?>> customizations,
+  }) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Vendor session is required');
+    }
+
+    var resolvedCategoryId = categoryId;
+    final normalizedNewCategoryTitle = newCategoryTitle?.trim() ?? '';
+
+    if (normalizedNewCategoryTitle.isNotEmpty) {
+      final category = await _repository.createMenuCategory(
+        token: token,
+        restaurantId: restaurantId,
+        title: normalizedNewCategoryTitle,
+      );
+      resolvedCategoryId = category.id;
+    }
+
+    if (resolvedCategoryId == null || resolvedCategoryId.isEmpty) {
+      throw StateError('A category is required');
+    }
+
+    await _repository.updateMenuItem(
+      token: token,
+      itemId: itemId,
+      categoryId: resolvedCategoryId,
+      title: title,
+      description: description,
+      price: price,
+      imageUrl: imageUrl,
+      ingredientNames: ingredientNames,
+      customizations: customizations,
+    );
+    await refresh();
+  }
+
+  Future<void> toggleMenuItemAvailability(String itemId, bool isAvailable) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Vendor session is required');
+    }
+
+    await _repository.updateMenuItemAvailability(
+      token: token,
+      itemId: itemId,
+      isAvailable: isAvailable,
+    );
+    await refresh();
+  }
+
+  Future<void> deleteMenuItem(String itemId) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Vendor session is required');
+    }
+
+    await _repository.deleteMenuItem(token: token, itemId: itemId);
+    await refresh();
+  }
+
   Future<void> updateOrderStatus(String orderId, VendorOrderStatus status) async {
     final token = ref.read(sessionControllerProvider).snapshot.backendToken;
     if (token == null || token.isEmpty) {

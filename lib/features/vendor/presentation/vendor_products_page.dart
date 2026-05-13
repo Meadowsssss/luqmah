@@ -10,6 +10,77 @@ import '../../../shared/widgets/app_surface_card.dart';
 class VendorProductsPage extends ConsumerWidget {
   const VendorProductsPage({super.key});
 
+  Future<void> _toggleAvailability(
+    BuildContext context,
+    WidgetRef ref,
+    String itemId,
+    bool isAvailable,
+  ) async {
+    try {
+      await ref.read(vendorDataControllerProvider.notifier).toggleMenuItemAvailability(
+            itemId,
+            !isAvailable,
+          );
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(!isAvailable ? 'Product is now visible.' : 'Product hidden from customers.')),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
+  }
+
+  Future<void> _deleteItem(BuildContext context, WidgetRef ref, String itemId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete product?'),
+        content: const Text(
+          'This permanently removes the product from your menu. Past orders keep their saved item snapshot.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: context.luqmah.warning),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      await ref.read(vendorDataControllerProvider.notifier).deleteMenuItem(itemId);
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Product deleted permanently.')),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(vendorDataControllerProvider);
@@ -71,20 +142,66 @@ class VendorProductsPage extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(item.title, style: Theme.of(context).textTheme.titleMedium),
-                              ),
-                              Text(
-                                '${item.price.toStringAsFixed(2)} JD',
-                                style: const TextStyle(
-                                  color: AppColors.accent,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
-                          ),
+                           Row(
+                             children: [
+                               Expanded(
+                                 child: Text(item.title, style: Theme.of(context).textTheme.titleMedium),
+                               ),
+                               Container(
+                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                 decoration: BoxDecoration(
+                                   color: item.isAvailable
+                                       ? AppColors.primary.withValues(alpha: 0.08)
+                                       : AppColors.surfaceAlt,
+                                   borderRadius: BorderRadius.circular(999),
+                                 ),
+                                 child: Text(
+                                   item.isAvailable ? 'Available' : 'Hidden',
+                                   style: TextStyle(
+                                     color: item.isAvailable ? AppColors.primary : context.luqmah.mutedText,
+                                     fontWeight: FontWeight.w700,
+                                   ),
+                                 ),
+                               ),
+                               const SizedBox(width: AppSpacing.sm),
+                               Text(
+                                 '${item.price.toStringAsFixed(2)} JD',
+                                 style: const TextStyle(
+                                   color: AppColors.accent,
+                                   fontWeight: FontWeight.w800,
+                                 ),
+                               ),
+                               PopupMenuButton<String>(
+                                 onSelected: (value) async {
+                                   switch (value) {
+                                     case 'edit':
+                                       await context.push('/vendor/products/${item.id}/edit');
+                                       break;
+                                     case 'availability':
+                                       await _toggleAvailability(context, ref, item.id, item.isAvailable);
+                                       break;
+                                     case 'delete':
+                                       await _deleteItem(context, ref, item.id);
+                                       break;
+                                   }
+                                 },
+                                 itemBuilder: (context) => [
+                                   const PopupMenuItem<String>(
+                                     value: 'edit',
+                                     child: Text('Edit'),
+                                   ),
+                                   PopupMenuItem<String>(
+                                     value: 'availability',
+                                     child: Text(item.isAvailable ? 'Hide' : 'Show'),
+                                   ),
+                                   const PopupMenuItem<String>(
+                                     value: 'delete',
+                                     child: Text('Delete'),
+                                   ),
+                                 ],
+                               ),
+                             ],
+                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
                             '${item.restaurantTitle} · ${item.category}${item.isAvailable ? '' : ' · Unavailable'}',
@@ -97,6 +214,15 @@ class VendorProductsPage extends ConsumerWidget {
                           if (item.ingredients.isNotEmpty) ...[
                             const SizedBox(height: AppSpacing.sm),
                             Text(item.ingredients.join(', ')),
+                          ],
+                          if (item.customizations.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              item.customizations.map((customization) => customization.label).join(', '),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: context.luqmah.mutedText,
+                              ),
+                            ),
                           ],
                         ],
                       ),

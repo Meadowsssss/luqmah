@@ -188,6 +188,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'new',
                     builder: (context, state) => const VendorProductFormPage(),
                   ),
+                  GoRoute(
+                    path: ':itemId/edit',
+                    builder: (context, state) {
+                      final itemId = state.pathParameters['itemId']!;
+                      return VendorProductFormPage(itemId: itemId);
+                    },
+                  ),
                 ],
               ),
             ],

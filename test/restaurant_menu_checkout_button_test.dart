@@ -16,7 +16,8 @@ void main() {
 
     await _pumpMenu(tester, container);
 
-    expect(find.textContaining('Checkout'), findsNothing);
+    expect(find.textContaining('Checkout'), findsOneWidget);
+    expect(_checkoutIgnorePointer(tester).ignoring, isTrue);
   });
 
   testWidgets('checkout button appears for this restaurant cart', (tester) async {
@@ -36,7 +37,8 @@ void main() {
 
     await _pumpMenu(tester, container);
 
-    expect(find.textContaining('Checkout'), findsNothing);
+    expect(find.textContaining('Checkout'), findsOneWidget);
+    expect(_checkoutIgnorePointer(tester).ignoring, isTrue);
   });
 
   testWidgets('checkout button opens the cart screen', (tester) async {
@@ -91,6 +93,14 @@ Future<void> _pumpMenu(WidgetTester tester, ProviderContainer container) async {
     ),
   );
   await tester.pumpAndSettle();
+}
+
+IgnorePointer _checkoutIgnorePointer(WidgetTester tester) {
+  final checkoutIgnorePointer = find.ancestor(
+    of: find.textContaining('Checkout'),
+    matching: find.byType(IgnorePointer),
+  );
+  return tester.widget<IgnorePointer>(checkoutIgnorePointer.first);
 }
 
 void _addCartItem(ProviderContainer container, {required String restaurantId}) {

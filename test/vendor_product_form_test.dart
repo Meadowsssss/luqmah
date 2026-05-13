@@ -7,13 +7,31 @@ import 'package:luqmah/features/vendor/vendor_data_controller.dart';
 import 'package:luqmah/models/vendor.dart';
 
 class _FakeVendorDataController extends VendorDataController {
-  static final calls = <Map<String, Object?>>[];
+  static final addCalls = <Map<String, Object?>>[];
+  static final editCalls = <Map<String, Object?>>[];
 
   @override
   Future<VendorDataState> build() async {
     return const VendorDataState(
       orders: [],
-      menuItems: [],
+      menuItems: [
+        VendorMenuItem(
+          restaurantId: 'rest_1',
+          restaurantTitle: 'Blockna Express',
+          categoryId: 'cat_2',
+          id: 'item_1',
+          title: 'Iced Latte',
+          description: 'Cold coffee',
+          category: 'Drinks',
+          ingredients: ['Milk', 'Espresso'],
+          price: 2.75,
+          image: 'https://example.com/latte.png',
+          isAvailable: true,
+          customizations: [
+            VendorMenuItemCustomization(title: 'Extra shot', priceDelta: 0.50),
+          ],
+        ),
+      ],
       restaurants: [
         VendorRestaurant(
           id: 'rest_1',
@@ -39,18 +57,42 @@ class _FakeVendorDataController extends VendorDataController {
     required List<String> ingredientNames,
     required List<Map<String, Object?>> customizations,
   }) async {
-    calls.add({
+    addCalls.add({
       'restaurantId': restaurantId,
       'categoryId': categoryId,
       'newCategoryTitle': newCategoryTitle,
       'title': title,
     });
   }
+
+  @override
+  Future<void> editMenuItem({
+    required String itemId,
+    required String restaurantId,
+    String? categoryId,
+    String? newCategoryTitle,
+    required String title,
+    required String description,
+    required double price,
+    required String imageUrl,
+    required List<String> ingredientNames,
+    required List<Map<String, Object?>> customizations,
+  }) async {
+    editCalls.add({
+      'itemId': itemId,
+      'restaurantId': restaurantId,
+      'categoryId': categoryId,
+      'newCategoryTitle': newCategoryTitle,
+      'title': title,
+      'price': price,
+    });
+  }
 }
 
 void main() {
   setUp(() {
-    _FakeVendorDataController.calls.clear();
+    _FakeVendorDataController.addCalls.clear();
+    _FakeVendorDataController.editCalls.clear();
   });
 
   testWidgets('vendor form shows existing category dropdown by default', (
@@ -121,10 +163,65 @@ void main() {
       customizations: const [],
     );
 
-    expect(_FakeVendorDataController.calls, hasLength(1));
-    expect(_FakeVendorDataController.calls.first['restaurantId'], 'rest_1');
-    expect(_FakeVendorDataController.calls.first['categoryId'], isNull);
-    expect(_FakeVendorDataController.calls.first['newCategoryTitle'], 'Signature Wraps');
-    expect(_FakeVendorDataController.calls.first['title'], 'Falafel Wrap');
+    expect(_FakeVendorDataController.addCalls, hasLength(1));
+    expect(_FakeVendorDataController.addCalls.first['restaurantId'], 'rest_1');
+    expect(_FakeVendorDataController.addCalls.first['categoryId'], isNull);
+    expect(_FakeVendorDataController.addCalls.first['newCategoryTitle'], 'Signature Wraps');
+    expect(_FakeVendorDataController.addCalls.first['title'], 'Falafel Wrap');
+  });
+
+  testWidgets('vendor edit form prefills the existing product and locks restaurant', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vendorDataControllerProvider.overrideWith(_FakeVendorDataController.new),
+        ],
+        child: MaterialApp(
+          theme: buildLuqmahTheme(),
+          home: const VendorProductFormPage(itemId: 'item_1'),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit product'), findsOneWidget);
+    expect(find.text('Blockna Express'), findsOneWidget);
+    expect(find.text('Iced Latte'), findsOneWidget);
+    expect(find.text('Cold coffee'), findsOneWidget);
+  });
+
+  test('vendor controller can edit a product in the same restaurant', () async {
+    final container = ProviderContainer(
+      overrides: [
+        vendorDataControllerProvider.overrideWith(_FakeVendorDataController.new),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(vendorDataControllerProvider.future);
+    final notifier = container.read(vendorDataControllerProvider.notifier);
+
+    await notifier.editMenuItem(
+      itemId: 'item_1',
+      restaurantId: 'rest_1',
+      categoryId: 'cat_2',
+      newCategoryTitle: null,
+      title: 'Iced Latte XL',
+      description: 'Cold coffee',
+      price: 3.25,
+      imageUrl: '',
+      ingredientNames: const ['Milk', 'Espresso'],
+      customizations: const [],
+    );
+
+    expect(_FakeVendorDataController.editCalls, hasLength(1));
+    expect(_FakeVendorDataController.editCalls.first['itemId'], 'item_1');
+    expect(_FakeVendorDataController.editCalls.first['restaurantId'], 'rest_1');
+    expect(_FakeVendorDataController.editCalls.first['categoryId'], 'cat_2');
+    expect(_FakeVendorDataController.editCalls.first['title'], 'Iced Latte XL');
+    expect(_FakeVendorDataController.editCalls.first['price'], 3.25);
   });
 }
