@@ -40,17 +40,19 @@ class CustomerOrder {
     this.restaurantId = '',
     required this.restaurantName,
     required this.placedAt,
+    DateTime? updatedAt,
     required this.status,
     required this.items,
     required this.total,
     this.ratingScore,
     this.ratingPromptDismissedAt,
-  });
+  }) : updatedAt = updatedAt ?? placedAt;
 
   final String id;
   final String restaurantId;
   final String restaurantName;
   final DateTime placedAt;
+  final DateTime updatedAt;
   final VendorOrderStatus status;
   final List<CustomerOrderItem> items;
   final double total;
@@ -67,6 +69,7 @@ class CustomerOrder {
       'restaurantId': restaurantId,
       'restaurantName': restaurantName,
       'placedAt': placedAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
       'status': status.name,
       'items': items.map((item) => item.toJson()).toList(growable: false),
       'total': total,
@@ -81,6 +84,9 @@ class CustomerOrder {
       restaurantId: json['restaurantId'] as String? ?? '',
       restaurantName: json['restaurantName'] as String,
       placedAt: DateTime.parse(json['placedAt'] as String),
+      updatedAt: json['updatedAt'] == null
+          ? null
+          : DateTime.parse(json['updatedAt'] as String),
       status: VendorOrderStatus.values.byName(json['status'] as String),
       items: (json['items'] as List<dynamic>)
           .map(

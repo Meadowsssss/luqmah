@@ -6,6 +6,7 @@ import '../../../app/theme/luqmah_theme.dart';
 import '../../../models/customer_order.dart';
 import '../cart/cart_controller.dart';
 import '../orders/customer_orders_controller.dart';
+import '../orders/rating_prompt_selector.dart';
 import 'order_rating_dialog.dart';
 
 class CustomerShell extends ConsumerStatefulWidget {
@@ -21,19 +22,9 @@ class _CustomerShellState extends ConsumerState<CustomerShell> {
   final Set<String> _handledPromptOrderIds = <String>{};
   bool _ratingDialogOpen = false;
 
-  CustomerOrder? _latestCompletedOrder(List<CustomerOrder> orders) {
-    final completed =
-        orders
-            .where((order) => order.status.name == 'completed')
-            .toList(growable: false)
-          ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-    return completed.isEmpty ? null : completed.first;
-  }
-
   void _maybePromptForRating(List<CustomerOrder> orders) {
-    final latest = _latestCompletedOrder(orders);
+    final latest = latestCompletedOrderForRatingPrompt(orders);
     if (latest == null ||
-        !latest.needsRatingPrompt ||
         _ratingDialogOpen ||
         _handledPromptOrderIds.contains(latest.id)) {
       return;

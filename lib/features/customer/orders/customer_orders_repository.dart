@@ -102,6 +102,9 @@ class CustomerOrdersRepository {
       restaurantId: restaurantJson?['id'] as String? ?? '',
       restaurantName: restaurantJson?['title'] as String? ?? 'Campus order',
       placedAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: json['updatedAt'] == null
+          ? null
+          : DateTime.parse(json['updatedAt'] as String),
       status: vendorOrderStatusFromApi(json['status'] as String),
       items: items,
       total: (json['totalAmount'] as num).toDouble(),
