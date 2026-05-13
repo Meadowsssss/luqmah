@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const primary = Color(0xFF15343A);
-  static const primaryAlt = Color(0xFF214D4A);
-  static const accent = Color(0xFFFF6B57);
-  static const background = Color(0xFFF6F7F9);
-  static const surface = Color(0xFFFFFFFF);
-  static const surfaceAlt = Color(0xFFEFF3F3);
-  static const strongText = Color(0xFF122429);
-  static const mutedText = Color(0xFF5F6B70);
-  static const border = Color(0xFFD8E0E1);
-  static const success = Color(0xFF1D8F55);
-  static const warning = Color(0xFFC97A10);
-  static const info = Color(0xFF0C87A8);
-  static const error = Color(0xFFC2483C);
+  static const primary = Color(0xFF1D5A3A);
+  static const primaryAlt = Color(0xFF2C6B46);
+  static const accent = Color(0xFF3D7D56);
+  static const background = Color(0xFFF6F1E6);
+  static const surface = Color(0xFFFFFCF6);
+  static const surfaceAlt = Color(0xFFEEE7D7);
+  static const strongText = Color(0xFF193126);
+  static const mutedText = Color(0xFF6A756B);
+  static const border = Color(0xFFE2D8C6);
+  static const success = Color(0xFF2C7A4A);
+  static const warning = Color(0xFFB78A2B);
+  static const info = Color(0xFF3E7B76);
+  static const error = Color(0xFFB65448);
 }
 
 class AppSpacing {
@@ -29,9 +29,9 @@ class AppSpacing {
 class AppRadii {
   static const sm = 12.0;
   static const md = 16.0;
-  static const lg = 20.0;
-  static const xl = 24.0;
-  static const hero = 28.0;
+  static const lg = 22.0;
+  static const xl = 28.0;
+  static const hero = 36.0;
 }
 
 class LuqmahThemeTokens extends ThemeExtension<LuqmahThemeTokens> {
@@ -105,6 +105,7 @@ ThemeData buildLuqmahTheme() {
     primary: AppColors.primary,
     secondary: AppColors.accent,
     surface: AppColors.surface,
+    surfaceContainerHighest: AppColors.surfaceAlt,
     error: AppColors.error,
     onPrimary: Colors.white,
     onSecondary: Colors.white,
@@ -125,13 +126,13 @@ ThemeData buildLuqmahTheme() {
         fontSize: 32,
         fontWeight: FontWeight.w800,
         color: AppColors.strongText,
-        height: 1.1,
+        height: 1.08,
       ),
       headlineMedium: const TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.w800,
         color: AppColors.strongText,
-        height: 1.15,
+        height: 1.12,
       ),
       titleLarge: const TextStyle(
         fontSize: 22,
@@ -152,7 +153,7 @@ ThemeData buildLuqmahTheme() {
         fontSize: 14,
         fontWeight: FontWeight.w500,
         color: AppColors.strongText,
-        height: 1.4,
+        height: 1.45,
       ),
       bodySmall: const TextStyle(
         fontSize: 12,
@@ -160,10 +161,7 @@ ThemeData buildLuqmahTheme() {
         color: AppColors.mutedText,
         height: 1.35,
       ),
-      labelLarge: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-      ),
+      labelLarge: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.background,
@@ -174,10 +172,13 @@ ThemeData buildLuqmahTheme() {
       centerTitle: false,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.surface,
-      height: 72,
+      backgroundColor: AppColors.surface.withValues(alpha: 0.94),
+      height: 78,
       elevation: 0,
-      indicatorColor: AppColors.primary.withValues(alpha: 0.12),
+      shadowColor: AppColors.primary.withValues(alpha: 0.06),
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: AppColors.primary.withValues(alpha: 0.10),
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       iconTheme: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
         return IconThemeData(
@@ -188,7 +189,7 @@ ThemeData buildLuqmahTheme() {
         final selected = states.contains(WidgetState.selected);
         return TextStyle(
           fontSize: 12,
-          fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           color: selected ? AppColors.primary : AppColors.mutedText,
         );
       }),
@@ -199,17 +200,15 @@ ThemeData buildLuqmahTheme() {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
+        borderRadius: BorderRadius.circular(AppRadii.xl),
         side: const BorderSide(color: AppColors.border),
       ),
     ),
     chipTheme: base.chipTheme.copyWith(
-      backgroundColor: AppColors.surfaceAlt,
+      backgroundColor: AppColors.surface,
       selectedColor: AppColors.accent.withValues(alpha: 0.12),
       side: const BorderSide(color: AppColors.border),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(999),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       labelStyle: const TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w600,
@@ -221,9 +220,11 @@ ThemeData buildLuqmahTheme() {
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        minimumSize: const Size(0, 52),
+        minimumSize: const Size(0, 54),
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
         ),
         textStyle: const TextStyle(fontWeight: FontWeight.w700),
       ),
@@ -234,7 +235,7 @@ ThemeData buildLuqmahTheme() {
         minimumSize: const Size(0, 48),
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
         ),
         textStyle: const TextStyle(fontWeight: FontWeight.w700),
       ),
@@ -244,25 +245,27 @@ ThemeData buildLuqmahTheme() {
       fillColor: AppColors.surface,
       labelStyle: const TextStyle(color: AppColors.mutedText),
       hintStyle: const TextStyle(color: AppColors.mutedText),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      prefixIconColor: AppColors.mutedText,
+      suffixIconColor: AppColors.mutedText,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         borderSide: const BorderSide(color: AppColors.border),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         borderSide: const BorderSide(color: AppColors.border),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         borderSide: const BorderSide(color: AppColors.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         borderSide: const BorderSide(color: AppColors.error, width: 1.4),
       ),
     ),
