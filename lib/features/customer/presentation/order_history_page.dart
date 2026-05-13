@@ -8,6 +8,7 @@ import '../../../models/customer_order.dart';
 import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_surface_card.dart';
+import 'order_rating_dialog.dart';
 
 class OrderHistoryPage extends ConsumerWidget {
   const OrderHistoryPage({super.key});
@@ -35,14 +36,16 @@ class OrderHistoryPage extends ConsumerWidget {
               child: AppEmptyState(
                 icon: Icons.receipt_long_outlined,
                 title: 'No orders yet',
-                message: 'Orders saved from checkout will appear here with their latest status.',
+                message:
+                    'Orders saved from checkout will appear here with their latest status.',
               ),
             );
           }
 
           return ListView.separated(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            itemBuilder: (context, index) => _OrderHistoryCard(order: data[index]),
+            itemBuilder: (context, index) =>
+                _OrderHistoryCard(order: data[index]),
             separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
             itemCount: data.length,
           );
@@ -52,13 +55,44 @@ class OrderHistoryPage extends ConsumerWidget {
   }
 }
 
-class _OrderHistoryCard extends StatelessWidget {
+class _OrderHistoryCard extends ConsumerWidget {
   const _OrderHistoryCard({required this.order});
 
   final CustomerOrder order;
 
+  Future<void> _rateOrder(BuildContext context, WidgetRef ref) async {
+    final result = await showOrderRatingDialog(
+      context: context,
+      order: order,
+      allowLater: false,
+    );
+
+    if (result?.score == null) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(customerOrdersControllerProvider.notifier)
+          .rateOrder(order: order, score: result!.score!);
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Rating saved.')));
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final formatter = DateFormat('dd MMM yyyy, hh:mm a');
     final statusColor = switch (order.status) {
       VendorOrderStatus.accepted => context.luqmah.success,
@@ -78,27 +112,42 @@ class _OrderHistoryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(order.restaurantName, style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      order.restaurantName,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(order.id, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      order.id,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   order.status.label,
-                  style: TextStyle(color: statusColor, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(formatter.format(order.placedAt), style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            formatter.format(order.placedAt),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
           const SizedBox(height: AppSpacing.lg),
           for (final item in order.items) ...[
             Row(
@@ -115,19 +164,59 @@ class _OrderHistoryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Total',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               Text(
                 '${order.total.toStringAsFixed(2)} JD',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.accent,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(color: AppColors.accent),
               ),
             ],
           ),
+          if (order.status == VendorOrderStatus.completed) ...[
+            const SizedBox(height: AppSpacing.lg),
+            if (order.hasRating)
+              _SavedRating(score: order.ratingScore!)
+            else
+              OutlinedButton.icon(
+                onPressed: () => _rateOrder(context, ref),
+                icon: const Icon(Icons.star_border_rounded),
+                label: const Text('Rate order'),
+              ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _SavedRating extends StatelessWidget {
+  const _SavedRating({required this.score});
+
+  final int score;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          'Your rating',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        for (var index = 1; index <= 5; index++)
+          Icon(
+            index <= score ? Icons.star_rounded : Icons.star_border_rounded,
+            size: 18,
+            color: const Color(0xFFD1A340),
+          ),
+      ],
     );
   }
 }

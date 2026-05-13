@@ -16,6 +16,8 @@ void main() {
             'description': 'Coffee and dessert',
             'coverImage': '',
             'isBusy': false,
+            'averageRating': 4.5,
+            'ratingCount': 2,
           },
           'categories': [
             {
@@ -59,12 +61,13 @@ void main() {
     final restaurant = await repository.fetchRestaurantById('r1');
 
     expect(restaurant, isNotNull);
-    expect(restaurant!.menu, hasLength(3));
-    expect(restaurant.menu.map((item) => item.name), containsAll(<String>[
-      'Iced Americano',
-      'Iced Mocha',
-      'Cheesecake',
-    ]));
+    expect(restaurant!.rating, '4.5');
+    expect(restaurant.ratingCount, 2);
+    expect(restaurant.menu, hasLength(3));
+    expect(
+      restaurant.menu.map((item) => item.name),
+      containsAll(<String>['Iced Americano', 'Iced Mocha', 'Cheesecake']),
+    );
   });
 }
 

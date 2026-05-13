@@ -317,7 +317,9 @@ class _RestaurantCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        restaurant.rating,
+                        restaurant.ratingCount > 0
+                            ? '${restaurant.rating} (${restaurant.ratingCount})'
+                            : restaurant.rating,
                         style: textTheme.bodySmall?.copyWith(
                           color: detailColor,
                         ),

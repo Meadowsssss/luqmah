@@ -44,6 +44,8 @@ class Restaurant {
   final String description;
   final String image;
   final String rating;
+  final double? averageRating;
+  final int ratingCount;
   final String time;
   final bool isBusy;
   final List<String> tags;
@@ -55,6 +57,8 @@ class Restaurant {
     required this.description,
     required this.image,
     required this.rating,
+    this.averageRating,
+    this.ratingCount = 0,
     required this.time,
     this.isBusy = false,
     required this.tags,
@@ -67,6 +71,8 @@ class Restaurant {
     String? description,
     String? image,
     String? rating,
+    double? averageRating,
+    int? ratingCount,
     String? time,
     bool? isBusy,
     List<String>? tags,
@@ -78,6 +84,8 @@ class Restaurant {
       description: description ?? this.description,
       image: image ?? this.image,
       rating: rating ?? this.rating,
+      averageRating: averageRating ?? this.averageRating,
+      ratingCount: ratingCount ?? this.ratingCount,
       time: time ?? this.time,
       isBusy: isBusy ?? this.isBusy,
       tags: tags ?? this.tags,

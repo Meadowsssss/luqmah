@@ -4,7 +4,9 @@ import '../../../core/network/api_client.dart';
 import '../../../models/customer_order.dart';
 import '../../../models/vendor.dart';
 
-final customerOrdersRepositoryProvider = Provider<CustomerOrdersRepository>((ref) {
+final customerOrdersRepositoryProvider = Provider<CustomerOrdersRepository>((
+  ref,
+) {
   return CustomerOrdersRepository(ref.watch(apiClientProvider));
 });
 
@@ -60,6 +62,25 @@ class CustomerOrdersRepository {
     return _customerOrderFromJson(response['order'] as Map<String, dynamic>);
   }
 
+  Future<void> rateOrder({
+    required String token,
+    required String orderId,
+    required int score,
+  }) async {
+    await _apiClient.post(
+      '/orders/$orderId/rating',
+      token: token,
+      body: {'score': score},
+    );
+  }
+
+  Future<void> dismissRatingPrompt({
+    required String token,
+    required String orderId,
+  }) async {
+    await _apiClient.post('/orders/$orderId/rating-dismiss', token: token);
+  }
+
   CustomerOrder _customerOrderFromJson(Map<String, dynamic> json) {
     final items = (json['orderItems'] as List<dynamic>? ?? const [])
         .map((item) {
@@ -73,14 +94,21 @@ class CustomerOrdersRepository {
         })
         .toList(growable: false);
 
+    final restaurantJson = json['restaurant'] as Map<String, dynamic>?;
+    final ratingJson = json['rating'] as Map<String, dynamic>?;
+
     return CustomerOrder(
       id: json['id'] as String,
-      restaurantName: ((json['restaurant'] as Map<String, dynamic>?)?['title'] as String?) ??
-          'Campus order',
+      restaurantId: restaurantJson?['id'] as String? ?? '',
+      restaurantName: restaurantJson?['title'] as String? ?? 'Campus order',
       placedAt: DateTime.parse(json['createdAt'] as String),
       status: vendorOrderStatusFromApi(json['status'] as String),
       items: items,
       total: (json['totalAmount'] as num).toDouble(),
+      ratingScore: (ratingJson?['score'] as num?)?.toInt(),
+      ratingPromptDismissedAt: json['ratingPromptDismissedAt'] == null
+          ? null
+          : DateTime.parse(json['ratingPromptDismissedAt'] as String),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../features/customer/data/restaurant_repository.dart';
 import '../../../models/customer_order.dart';
 import '../cart/cart_controller.dart';
 import '../../session/session_controller.dart';
@@ -25,7 +26,9 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
   }) async {
     final token = ref.read(sessionControllerProvider).snapshot.backendToken;
     if (token == null || token.isEmpty) {
-      throw ApiException('Customer backend session is required. Please sign in again.');
+      throw ApiException(
+        'Customer backend session is required. Please sign in again.',
+      );
     }
 
     final restaurantId = lines.isEmpty ? null : lines.first.item.restaurantId;
@@ -33,9 +36,13 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
       throw ApiException('A restaurant is required to place an order.');
     }
 
-    final invalidLine = lines.any((line) => line.item.restaurantId != restaurantId);
+    final invalidLine = lines.any(
+      (line) => line.item.restaurantId != restaurantId,
+    );
     if (invalidLine) {
-      throw ApiException('Your cart can only contain items from one restaurant.');
+      throw ApiException(
+        'Your cart can only contain items from one restaurant.',
+      );
     }
 
     final order = await _repository.createOrder(
@@ -58,6 +65,37 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
   Future<void> refresh() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(build);
+  }
+
+  Future<void> rateOrder({
+    required CustomerOrder order,
+    required int score,
+  }) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw ApiException(
+        'Customer backend session is required. Please sign in again.',
+      );
+    }
+
+    await _repository.rateOrder(token: token, orderId: order.id, score: score);
+    await refresh();
+    ref.invalidate(restaurantsProvider);
+    if (order.restaurantId.isNotEmpty) {
+      ref.invalidate(restaurantByIdProvider(order.restaurantId));
+    }
+  }
+
+  Future<void> dismissRatingPrompt(CustomerOrder order) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw ApiException(
+        'Customer backend session is required. Please sign in again.',
+      );
+    }
+
+    await _repository.dismissRatingPrompt(token: token, orderId: order.id);
+    await refresh();
   }
 }
 

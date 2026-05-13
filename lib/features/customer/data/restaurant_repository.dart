@@ -29,8 +29,12 @@ class ApiRestaurantRepository implements RestaurantRepository {
     for (final category in categories) {
       final categoryJson = category as Map<String, dynamic>;
       tags.add(categoryJson['title'] as String);
-      for (final item in (categoryJson['menuItems'] as List<dynamic>? ?? const [])) {
-        final mapped = _menuItemFromJson(item as Map<String, dynamic>, categoryJson['title'] as String);
+      for (final item
+          in (categoryJson['menuItems'] as List<dynamic>? ?? const [])) {
+        final mapped = _menuItemFromJson(
+          item as Map<String, dynamic>,
+          categoryJson['title'] as String,
+        );
         menu.add(mapped);
         _itemRestaurantIds[mapped.id] = id;
       }
@@ -39,9 +43,13 @@ class ApiRestaurantRepository implements RestaurantRepository {
     final nextRestaurant = Restaurant(
       id: restaurantJson['id'] as String,
       name: restaurantJson['title'] as String,
-      description: restaurantJson['description'] as String? ?? 'Freshly managed on Luqmah.',
+      description:
+          restaurantJson['description'] as String? ??
+          'Freshly managed on Luqmah.',
       image: restaurantJson['coverImage'] as String? ?? '',
-      rating: 'Live',
+      rating: _ratingLabel(restaurantJson),
+      averageRating: (restaurantJson['averageRating'] as num?)?.toDouble(),
+      ratingCount: (restaurantJson['ratingCount'] as num?)?.toInt() ?? 0,
       time: 'See menu',
       isBusy: restaurantJson['isBusy'] as bool? ?? false,
       tags: tags.isEmpty ? <String>['Open now'] : tags,
@@ -55,9 +63,13 @@ class ApiRestaurantRepository implements RestaurantRepository {
   @override
   Future<List<Restaurant>> fetchRestaurants() async {
     final response = await _apiClient.get('/restaurants');
-    final restaurants = ((response['restaurants'] as List<dynamic>?) ?? const [])
-        .map((json) => _restaurantSummaryFromJson(json as Map<String, dynamic>))
-        .toList(growable: false);
+    final restaurants =
+        ((response['restaurants'] as List<dynamic>?) ?? const [])
+            .map(
+              (json) =>
+                  _restaurantSummaryFromJson(json as Map<String, dynamic>),
+            )
+            .toList(growable: false);
 
     for (final restaurant in restaurants) {
       _restaurants[restaurant.id] = restaurant;
@@ -100,7 +112,8 @@ class ApiRestaurantRepository implements RestaurantRepository {
   Restaurant _restaurantSummaryFromJson(Map<String, dynamic> json) {
     final tags = <String>[];
     final vendor = json['vendor'] as Map<String, dynamic>?;
-    final vendorName = (vendor?['user'] as Map<String, dynamic>?)?['name'] as String?;
+    final vendorName =
+        (vendor?['user'] as Map<String, dynamic>?)?['name'] as String?;
     final menuCount = (json['_count'] as Map<String, dynamic>?)?['menuItems'];
     if (vendorName != null && vendorName.isNotEmpty) {
       tags.add(vendorName);
@@ -112,9 +125,12 @@ class ApiRestaurantRepository implements RestaurantRepository {
     return Restaurant(
       id: json['id'] as String,
       name: json['title'] as String,
-      description: json['description'] as String? ?? 'Freshly managed on Luqmah.',
+      description:
+          json['description'] as String? ?? 'Freshly managed on Luqmah.',
       image: json['coverImage'] as String? ?? '',
-      rating: 'Live',
+      rating: _ratingLabel(json),
+      averageRating: (json['averageRating'] as num?)?.toDouble(),
+      ratingCount: (json['ratingCount'] as num?)?.toInt() ?? 0,
       time: (json['address'] as String?) ?? 'Campus pickup',
       isBusy: json['isBusy'] as bool? ?? false,
       tags: tags.isEmpty ? <String>['Open now'] : tags,
@@ -126,11 +142,21 @@ class ApiRestaurantRepository implements RestaurantRepository {
     return MenuItem(
       id: json['id'] as String,
       name: json['title'] as String,
-      description: json['description'] as String? ?? 'Prepared fresh for this menu.',
+      description:
+          json['description'] as String? ?? 'Prepared fresh for this menu.',
       price: (json['price'] as num).toDouble(),
       image: json['imageUrl'] as String? ?? '',
       category: categoryTitle,
     );
+  }
+
+  String _ratingLabel(Map<String, dynamic> json) {
+    final average = (json['averageRating'] as num?)?.toDouble();
+    final count = (json['ratingCount'] as num?)?.toInt() ?? 0;
+    if (average == null || count == 0) {
+      return 'New';
+    }
+    return average.toStringAsFixed(1);
   }
 }
 
@@ -142,9 +168,10 @@ final restaurantsProvider = FutureProvider<List<Restaurant>>((ref) {
   return ref.watch(restaurantRepositoryProvider).fetchRestaurants();
 });
 
-final restaurantByIdProvider = FutureProvider.autoDispose.family<Restaurant?, String>((ref, id) {
-  return ref.watch(restaurantRepositoryProvider).fetchRestaurantById(id);
-});
+final restaurantByIdProvider = FutureProvider.autoDispose
+    .family<Restaurant?, String>((ref, id) {
+      return ref.watch(restaurantRepositoryProvider).fetchRestaurantById(id);
+    });
 
 final menuItemByIdProvider = Provider.family<MenuItem?, String>((ref, id) {
   return ref.watch(restaurantRepositoryProvider).getMenuItemById(id);
