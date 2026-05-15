@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/realtime/realtime_event.dart';
 import '../../../features/customer/data/restaurant_repository.dart';
 import '../../../models/customer_order.dart';
+import '../../../models/vendor.dart';
 import '../cart/cart_controller.dart';
 import '../../session/session_controller.dart';
 import 'customer_orders_repository.dart';
@@ -18,6 +20,52 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
       return const <CustomerOrder>[];
     }
     return _repository.loadOrders(token);
+  }
+
+  void _replaceOrder(CustomerOrder order) {
+    final currentOrders = state.valueOrNull;
+    if (currentOrders == null) {
+      return;
+    }
+
+    final exists = currentOrders.any((item) => item.id == order.id);
+    state = AsyncData(
+      exists
+          ? currentOrders
+              .map((item) => item.id == order.id ? order : item)
+              .toList(growable: false)
+          : <CustomerOrder>[order, ...currentOrders],
+    );
+  }
+
+  void _patchOrderStatus(String orderId, VendorOrderStatus status) {
+    final currentOrders = state.valueOrNull;
+    if (currentOrders == null) {
+      return;
+    }
+
+    state = AsyncData(
+      currentOrders
+          .map((order) => order.id == orderId ? order.copyWith(status: status) : order)
+          .toList(growable: false),
+    );
+  }
+
+  Future<void> applyRealtimeEvent(RealtimeEvent event) async {
+    final orderJson = event.order;
+    if (orderJson != null) {
+      _replaceOrder(_repository.orderFromJson(orderJson));
+      return;
+    }
+
+    final orderId = event.orderId;
+    final status = event.status;
+    if (orderId != null && status != null) {
+      _patchOrderStatus(orderId, vendorOrderStatusFromApi(status));
+      return;
+    }
+
+    await refreshSilently();
   }
 
   Future<CustomerOrder> placeOrder({
@@ -58,13 +106,22 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
           .toList(growable: false),
     );
 
-    await refresh();
+    _replaceOrder(order);
     return order;
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(build);
+  }
+
+  Future<void> refreshSilently() async {
+    final previous = state.valueOrNull;
+    final next = await AsyncValue.guard(build);
+    if (previous != null && next.hasError) {
+      return;
+    }
+    state = next;
   }
 
   Future<void> rateOrder({
@@ -79,10 +136,10 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
     }
 
     await _repository.rateOrder(token: token, orderId: order.id, score: score);
-    await refresh();
-    ref.invalidate(restaurantsProvider);
+    _replaceOrder(order.copyWith(ratingScore: score));
+    await ref.read(restaurantsProvider.notifier).refreshSilently();
     if (order.restaurantId.isNotEmpty) {
-      ref.invalidate(restaurantByIdProvider(order.restaurantId));
+      await ref.read(restaurantByIdProvider(order.restaurantId).notifier).refreshSilently();
     }
   }
 
@@ -94,8 +151,8 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
       );
     }
 
-    await _repository.dismissRatingPrompt(token: token, orderId: order.id);
-    await refresh();
+    final updatedOrder = await _repository.dismissRatingPrompt(token: token, orderId: order.id);
+    _replaceOrder(updatedOrder ?? order.copyWith(ratingPromptDismissedAt: DateTime.now()));
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/realtime/realtime_event.dart';
 import '../../models/vendor.dart';
 import '../session/session_controller.dart';
 import 'vendor_repository.dart';
@@ -39,6 +40,180 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     state = await AsyncValue.guard(build);
   }
 
+  void _replaceMenuItem(VendorMenuItem item) {
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      return;
+    }
+
+    final exists = currentState.menuItems.any((menuItem) => menuItem.id == item.id);
+    final nextMenuItems = exists
+        ? currentState.menuItems
+            .map((menuItem) => menuItem.id == item.id ? item : menuItem)
+            .toList(growable: false)
+        : <VendorMenuItem>[item, ...currentState.menuItems];
+
+    state = AsyncData(
+      VendorDataState(
+        orders: currentState.orders,
+        menuItems: nextMenuItems,
+        restaurants: currentState.restaurants,
+      ),
+    );
+  }
+
+  void _removeMenuItem(String itemId) {
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      return;
+    }
+
+    state = AsyncData(
+      VendorDataState(
+        orders: currentState.orders,
+        menuItems: currentState.menuItems
+            .where((menuItem) => menuItem.id != itemId)
+            .toList(growable: false),
+        restaurants: currentState.restaurants,
+      ),
+    );
+  }
+
+  void _replaceOrder(VendorOrder order) {
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      return;
+    }
+
+    final exists = currentState.orders.any((item) => item.id == order.id);
+    final nextOrders = exists
+        ? currentState.orders
+            .map((item) => item.id == order.id ? order : item)
+            .toList(growable: false)
+        : <VendorOrder>[order, ...currentState.orders];
+
+    state = AsyncData(
+      VendorDataState(
+        orders: nextOrders,
+        menuItems: currentState.menuItems,
+        restaurants: currentState.restaurants,
+      ),
+    );
+  }
+
+  void _patchOrderStatus(String orderId, VendorOrderStatus status) {
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      return;
+    }
+
+    state = AsyncData(
+      VendorDataState(
+        orders: currentState.orders
+            .map((order) => order.id == orderId ? order.copyWith(status: status) : order)
+            .toList(growable: false),
+        menuItems: currentState.menuItems,
+        restaurants: currentState.restaurants,
+      ),
+    );
+  }
+
+  void _patchRestaurantBusyState(String restaurantId, bool isBusy) {
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      return;
+    }
+
+    state = AsyncData(
+      VendorDataState(
+        orders: currentState.orders,
+        menuItems: currentState.menuItems,
+        restaurants: currentState.restaurants
+            .map((restaurant) => restaurant.id == restaurantId ? restaurant.copyWith(isBusy: isBusy) : restaurant)
+            .toList(growable: false),
+      ),
+    );
+  }
+
+  Future<void> applyRealtimeEvent(RealtimeEvent event) async {
+    switch (event.type) {
+      case RealtimeEventTypes.orderCreated:
+      case RealtimeEventTypes.orderUpdated:
+        final orderJson = event.order;
+        if (orderJson != null) {
+          _replaceOrder(_repository.orderFromJson(orderJson));
+          return;
+        }
+
+        final orderId = event.orderId;
+        final status = event.status;
+        if (orderId != null && status != null) {
+          _patchOrderStatus(orderId, vendorOrderStatusFromApi(status));
+          return;
+        }
+        await refreshSilently();
+        return;
+      case RealtimeEventTypes.restaurantUpdated:
+        final restaurantId = event.restaurantId;
+        final isBusy = event.isBusy;
+        if (restaurantId != null && isBusy != null) {
+          _patchRestaurantBusyState(restaurantId, isBusy);
+          return;
+        }
+        await refreshSilently();
+        return;
+      case RealtimeEventTypes.menuUpdated:
+        if (event.action == 'deleted' && event.menuItemId != null) {
+          _removeMenuItem(event.menuItemId!);
+          return;
+        }
+
+        final menuItemJson = event.menuItem;
+        if (menuItemJson != null) {
+          _replaceMenuItem(_repository.menuItemFromJson(menuItemJson));
+          return;
+        }
+        await refreshSilently();
+        return;
+    }
+  }
+
+  Future<void> refreshSilently() async {
+    final previous = state.valueOrNull;
+    final next = await AsyncValue.guard(build);
+    if (previous != null && next.hasError) {
+      return;
+    }
+    state = next;
+  }
+
+  void _appendRestaurantCategory(String restaurantId, VendorRestaurantCategory category) {
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      return;
+    }
+
+    state = AsyncData(
+      VendorDataState(
+        orders: currentState.orders,
+        menuItems: currentState.menuItems,
+        restaurants: currentState.restaurants.map((restaurant) {
+          if (restaurant.id != restaurantId ||
+              restaurant.categories.any((item) => item.id == category.id)) {
+            return restaurant;
+          }
+
+          return VendorRestaurant(
+            id: restaurant.id,
+            title: restaurant.title,
+            isBusy: restaurant.isBusy,
+            categories: [...restaurant.categories, category],
+          );
+        }).toList(growable: false),
+      ),
+    );
+  }
+
   Future<void> addMenuItem({
     required String restaurantId,
     String? categoryId,
@@ -57,21 +232,22 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
 
     var resolvedCategoryId = categoryId;
     final normalizedNewCategoryTitle = newCategoryTitle?.trim() ?? '';
+    VendorRestaurantCategory? createdCategory;
 
     if (normalizedNewCategoryTitle.isNotEmpty) {
-      final category = await _repository.createMenuCategory(
+      createdCategory = await _repository.createMenuCategory(
         token: token,
         restaurantId: restaurantId,
         title: normalizedNewCategoryTitle,
       );
-      resolvedCategoryId = category.id;
+      resolvedCategoryId = createdCategory.id;
     }
 
     if (resolvedCategoryId == null || resolvedCategoryId.isEmpty) {
       throw StateError('A category is required');
     }
 
-    await _repository.createMenuItem(
+    final menuItem = await _repository.createMenuItem(
       token: token,
       restaurantId: restaurantId,
       categoryId: resolvedCategoryId,
@@ -82,7 +258,10 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       ingredientNames: ingredientNames,
       customizations: customizations,
     );
-    await refresh();
+    if (createdCategory != null) {
+      _appendRestaurantCategory(restaurantId, createdCategory);
+    }
+    _replaceMenuItem(menuItem);
   }
 
   Future<void> editMenuItem({
@@ -104,21 +283,22 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
 
     var resolvedCategoryId = categoryId;
     final normalizedNewCategoryTitle = newCategoryTitle?.trim() ?? '';
+    VendorRestaurantCategory? createdCategory;
 
     if (normalizedNewCategoryTitle.isNotEmpty) {
-      final category = await _repository.createMenuCategory(
+      createdCategory = await _repository.createMenuCategory(
         token: token,
         restaurantId: restaurantId,
         title: normalizedNewCategoryTitle,
       );
-      resolvedCategoryId = category.id;
+      resolvedCategoryId = createdCategory.id;
     }
 
     if (resolvedCategoryId == null || resolvedCategoryId.isEmpty) {
       throw StateError('A category is required');
     }
 
-    await _repository.updateMenuItem(
+    final menuItem = await _repository.updateMenuItem(
       token: token,
       itemId: itemId,
       categoryId: resolvedCategoryId,
@@ -129,7 +309,10 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       ingredientNames: ingredientNames,
       customizations: customizations,
     );
-    await refresh();
+    if (createdCategory != null) {
+      _appendRestaurantCategory(restaurantId, createdCategory);
+    }
+    _replaceMenuItem(menuItem);
   }
 
   Future<void> toggleMenuItemAvailability(String itemId, bool isAvailable) async {
@@ -138,12 +321,12 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       throw StateError('Vendor session is required');
     }
 
-    await _repository.updateMenuItemAvailability(
+    final menuItem = await _repository.updateMenuItemAvailability(
       token: token,
       itemId: itemId,
       isAvailable: isAvailable,
     );
-    await refresh();
+    _replaceMenuItem(menuItem);
   }
 
   Future<void> deleteMenuItem(String itemId) async {
@@ -152,8 +335,8 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       throw StateError('Vendor session is required');
     }
 
-    await _repository.deleteMenuItem(token: token, itemId: itemId);
-    await refresh();
+    final deletedItemId = await _repository.deleteMenuItem(token: token, itemId: itemId);
+    _removeMenuItem(deletedItemId);
   }
 
   Future<void> updateOrderStatus(String orderId, VendorOrderStatus status) async {

@@ -59,7 +59,7 @@ class VendorRepository {
     );
   }
 
-  Future<void> createMenuItem({
+  Future<VendorMenuItem> createMenuItem({
     required String token,
     required String restaurantId,
     required String categoryId,
@@ -70,7 +70,7 @@ class VendorRepository {
     required List<String> ingredientNames,
     required List<Map<String, Object?>> customizations,
   }) async {
-    await _apiClient.post(
+    final response = await _apiClient.post(
       '/vendor/menu-items',
       token: token,
       body: {
@@ -84,9 +84,19 @@ class VendorRepository {
         'customizations': customizations,
       },
     );
+
+    return _vendorMenuItemFromJson(response['menuItem'] as Map<String, dynamic>);
   }
 
-  Future<void> updateMenuItem({
+  VendorMenuItem menuItemFromJson(Map<String, dynamic> json) {
+    return _vendorMenuItemFromJson(json);
+  }
+
+  VendorOrder orderFromJson(Map<String, dynamic> json) {
+    return _vendorOrderFromJson(json);
+  }
+
+  Future<VendorMenuItem> updateMenuItem({
     required String token,
     required String itemId,
     required String categoryId,
@@ -97,7 +107,7 @@ class VendorRepository {
     required List<String> ingredientNames,
     required List<Map<String, Object?>> customizations,
   }) async {
-    await _apiClient.patch(
+    final response = await _apiClient.patch(
       '/vendor/menu-items/$itemId',
       token: token,
       body: {
@@ -110,6 +120,8 @@ class VendorRepository {
         'customizations': customizations,
       },
     );
+
+    return _vendorMenuItemFromJson(response['menuItem'] as Map<String, dynamic>);
   }
 
   Future<VendorRestaurantCategory> createMenuCategory({
@@ -172,11 +184,12 @@ class VendorRepository {
     return _vendorMenuItemFromJson(response['menuItem'] as Map<String, dynamic>);
   }
 
-  Future<void> deleteMenuItem({
+  Future<String> deleteMenuItem({
     required String token,
     required String itemId,
   }) async {
-    await _apiClient.delete('/vendor/menu-items/$itemId', token: token);
+    final response = await _apiClient.delete('/vendor/menu-items/$itemId', token: token);
+    return response['deletedItemId'] as String? ?? itemId;
   }
 
   VendorRestaurant _vendorRestaurantFromJson(Map<String, dynamic> json) {

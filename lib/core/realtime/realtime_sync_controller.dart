@@ -74,18 +74,32 @@ void handleRealtimeEvent(Ref ref, RealtimeEvent event) {
   }
 
   if (actions.contains(RealtimeSyncAction.refreshCustomerOrders)) {
-    unawaited(ref.read(customerOrdersControllerProvider.notifier).refresh());
+    unawaited(ref.read(customerOrdersControllerProvider.notifier).applyRealtimeEvent(event));
   }
   if (actions.contains(RealtimeSyncAction.refreshVendorData)) {
-    unawaited(ref.read(vendorDataControllerProvider.notifier).refresh());
+    unawaited(ref.read(vendorDataControllerProvider.notifier).applyRealtimeEvent(event));
   }
   if (actions.contains(RealtimeSyncAction.refreshRestaurants)) {
-    ref.invalidate(restaurantsProvider);
+    final restaurantId = event.restaurantId;
+    final isBusy = event.isBusy;
+    if (event.type == RealtimeEventTypes.restaurantUpdated &&
+        restaurantId != null &&
+        isBusy != null) {
+      ref.read(restaurantsProvider.notifier).patchBusyState(restaurantId, isBusy);
+    } else {
+      unawaited(ref.read(restaurantsProvider.notifier).refreshSilently());
+    }
   }
   if (actions.contains(RealtimeSyncAction.refreshRestaurantDetail)) {
     final restaurantId = event.restaurantId;
     if (restaurantId != null && restaurantId.isNotEmpty) {
-      ref.invalidate(restaurantByIdProvider(restaurantId));
+      final isBusy = event.isBusy;
+      final detailController = ref.read(restaurantByIdProvider(restaurantId).notifier);
+      if (event.type == RealtimeEventTypes.restaurantUpdated && isBusy != null) {
+        detailController.patchBusyState(isBusy);
+      } else {
+        unawaited(detailController.refreshSilently());
+      }
     }
   }
 }

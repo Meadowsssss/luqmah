@@ -43,6 +43,10 @@ class CustomerOrdersRepository {
         .toList(growable: false);
   }
 
+  CustomerOrder orderFromJson(Map<String, dynamic> json) {
+    return _customerOrderFromJson(json);
+  }
+
   Future<CustomerOrder> createOrder({
     required String token,
     required String restaurantId,
@@ -74,11 +78,16 @@ class CustomerOrdersRepository {
     );
   }
 
-  Future<void> dismissRatingPrompt({
+  Future<CustomerOrder?> dismissRatingPrompt({
     required String token,
     required String orderId,
   }) async {
-    await _apiClient.post('/orders/$orderId/rating-dismiss', token: token);
+    final response = await _apiClient.post('/orders/$orderId/rating-dismiss', token: token);
+    final order = response['order'];
+    if (order is! Map<String, dynamic> || order['id'] == null) {
+      return null;
+    }
+    return _customerOrderFromJson(order);
   }
 
   CustomerOrder _customerOrderFromJson(Map<String, dynamic> json) {

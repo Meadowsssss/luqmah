@@ -63,6 +63,25 @@ class CustomerOrder {
   bool get canRate => status == VendorOrderStatus.completed && !hasRating;
   bool get needsRatingPrompt => canRate && ratingPromptDismissedAt == null;
 
+  CustomerOrder copyWith({
+    VendorOrderStatus? status,
+    int? ratingScore,
+    DateTime? ratingPromptDismissedAt,
+  }) {
+    return CustomerOrder(
+      id: id,
+      restaurantId: restaurantId,
+      restaurantName: restaurantName,
+      placedAt: placedAt,
+      updatedAt: DateTime.now(),
+      status: status ?? this.status,
+      items: items,
+      total: total,
+      ratingScore: ratingScore ?? this.ratingScore,
+      ratingPromptDismissedAt: ratingPromptDismissedAt ?? this.ratingPromptDismissedAt,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

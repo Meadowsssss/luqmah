@@ -81,6 +81,19 @@ class ApiRestaurantRepository implements RestaurantRepository {
   @override
   Restaurant? getRestaurantById(String id) => _restaurants[id];
 
+  void cacheRestaurant(Restaurant restaurant) {
+    _restaurants[restaurant.id] = restaurant;
+  }
+
+  void patchRestaurantBusyState(String id, bool isBusy) {
+    final restaurant = _restaurants[id];
+    if (restaurant == null) {
+      return;
+    }
+
+    _restaurants[id] = restaurant.copyWith(isBusy: isBusy);
+  }
+
   @override
   MenuItem? getMenuItemById(String id) {
     for (final restaurant in _restaurants.values) {
@@ -164,14 +177,85 @@ final restaurantRepositoryProvider = Provider<RestaurantRepository>((ref) {
   return ApiRestaurantRepository(ref.watch(apiClientProvider));
 });
 
-final restaurantsProvider = FutureProvider<List<Restaurant>>((ref) {
-  return ref.watch(restaurantRepositoryProvider).fetchRestaurants();
-});
+final restaurantsProvider = AsyncNotifierProvider<RestaurantsController, List<Restaurant>>(
+  RestaurantsController.new,
+);
 
-final restaurantByIdProvider = FutureProvider.autoDispose
-    .family<Restaurant?, String>((ref, id) {
-      return ref.watch(restaurantRepositoryProvider).fetchRestaurantById(id);
-    });
+class RestaurantsController extends AsyncNotifier<List<Restaurant>> {
+  RestaurantRepository get _repository => ref.read(restaurantRepositoryProvider);
+
+  @override
+  Future<List<Restaurant>> build() {
+    return _repository.fetchRestaurants();
+  }
+
+  Future<void> refreshSilently() async {
+    final previous = state.valueOrNull;
+    final next = await AsyncValue.guard(build);
+    if (previous != null && next.hasError) {
+      return;
+    }
+    state = next;
+  }
+
+  void patchBusyState(String restaurantId, bool isBusy) {
+    final current = state.valueOrNull;
+    if (current == null) {
+      return;
+    }
+
+    state = AsyncData(
+      current
+          .map((restaurant) => restaurant.id == restaurantId
+              ? restaurant.copyWith(isBusy: isBusy)
+              : restaurant)
+          .toList(growable: false),
+    );
+
+    final repository = _repository;
+    if (repository is ApiRestaurantRepository) {
+      repository.patchRestaurantBusyState(restaurantId, isBusy);
+    }
+  }
+}
+
+final restaurantByIdProvider = AsyncNotifierProvider.autoDispose
+    .family<RestaurantDetailController, Restaurant?, String>(
+      RestaurantDetailController.new,
+    );
+
+class RestaurantDetailController extends AutoDisposeFamilyAsyncNotifier<Restaurant?, String> {
+  RestaurantRepository get _repository => ref.read(restaurantRepositoryProvider);
+
+  @override
+  Future<Restaurant?> build(String id) {
+    return _repository.fetchRestaurantById(id);
+  }
+
+  Future<void> refreshSilently() async {
+    final previous = state.valueOrNull;
+    final next = await AsyncValue.guard(() => build(arg));
+    if (previous != null && next.hasError) {
+      return;
+    }
+    state = next;
+  }
+
+  void patchBusyState(bool isBusy) {
+    final restaurant = state.valueOrNull;
+    if (restaurant == null) {
+      return;
+    }
+
+    final nextRestaurant = restaurant.copyWith(isBusy: isBusy);
+    state = AsyncData(nextRestaurant);
+
+    final repository = _repository;
+    if (repository is ApiRestaurantRepository) {
+      repository.cacheRestaurant(nextRestaurant);
+    }
+  }
+}
 
 final menuItemByIdProvider = Provider.family<MenuItem?, String>((ref, id) {
   return ref.watch(restaurantRepositoryProvider).getMenuItemById(id);
