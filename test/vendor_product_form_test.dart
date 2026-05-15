@@ -152,6 +152,29 @@ void main() {
     expect(find.text('New category name'), findsOneWidget);
   });
 
+  testWidgets('option group helper copy and labels are explicit', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vendorDataControllerProvider.overrideWith(_FakeVendorDataController.new),
+        ],
+        child: MaterialApp(
+          theme: buildLuqmahTheme(),
+          home: const VendorProductFormPage(itemId: 'item_1'),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView).first, const Offset(0, -1000));
+    await tester.pumpAndSettle();
+    expect(find.text('Single choice (radio buttons)'), findsOneWidget);
+    expect(find.text('Multiple choice (checkboxes)'), findsOneWidget);
+  });
+
   test('vendor controller can create a product with a new category name', () async {
     final container = ProviderContainer(
       overrides: [

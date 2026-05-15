@@ -494,7 +494,7 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Use groups for size, milk type, sugar level, extras, or any other choices.',
+                        'Use groups for size, milk type, sugar level, extras, or any other choices. New groups start as single choice.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: context.luqmah.mutedText,
                         ),
@@ -585,11 +585,11 @@ class _OptionGroupEditor extends StatelessWidget {
             segments: const [
               ButtonSegment(
                 value: VendorMenuItemOptionSelectionType.single,
-                label: Text('Single choice'),
+                label: Text('Single choice (radio buttons)'),
               ),
               ButtonSegment(
                 value: VendorMenuItemOptionSelectionType.multiple,
-                label: Text('Multiple choice'),
+                label: Text('Multiple choice (checkboxes)'),
               ),
             ],
             selected: <VendorMenuItemOptionSelectionType>{group.selectionType},
