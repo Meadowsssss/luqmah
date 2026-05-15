@@ -407,6 +407,9 @@ class _MenuItemCard extends ConsumerWidget {
     if (selectedOptions == null) {
       return;
     }
+    if (!context.mounted) {
+      return;
+    }
 
     final controller = ref.read(cartControllerProvider.notifier);
     final cart = ref.read(cartControllerProvider);
@@ -455,7 +458,9 @@ class _MenuItemCard extends ConsumerWidget {
     }
   }
 
-  Future<List<CartItemOptionSnapshot>?> _selectOptionsIfNeeded(BuildContext context) async {
+  Future<List<CartItemOptionSnapshot>?> _selectOptionsIfNeeded(
+    BuildContext context,
+  ) async {
     if (item.optionGroups.isEmpty) {
       return const <CartItemOptionSnapshot>[];
     }
@@ -599,7 +604,8 @@ class _MenuItemOptionSheetState extends State<_MenuItemOptionSheet> {
   double get _unitPrice {
     var total = widget.item.price;
     for (final group in widget.item.optionGroups) {
-      final selectedIds = _selectedOptionIdsByGroup[group.id] ?? const <String>{};
+      final selectedIds =
+          _selectedOptionIdsByGroup[group.id] ?? const <String>{};
       for (final option in group.options) {
         if (selectedIds.contains(option.id)) {
           total += option.priceDelta;
@@ -611,7 +617,8 @@ class _MenuItemOptionSheetState extends State<_MenuItemOptionSheet> {
 
   String? _validate() {
     for (final group in widget.item.optionGroups) {
-      if (group.isRequired && (_selectedOptionIdsByGroup[group.id]?.isEmpty ?? true)) {
+      if (group.isRequired &&
+          (_selectedOptionIdsByGroup[group.id]?.isEmpty ?? true)) {
         return 'Choose ${group.title.toLowerCase()} before adding this item.';
       }
     }
@@ -621,7 +628,8 @@ class _MenuItemOptionSheetState extends State<_MenuItemOptionSheet> {
   List<CartItemOptionSnapshot> _buildSelections() {
     final selections = <CartItemOptionSnapshot>[];
     for (final group in widget.item.optionGroups) {
-      final selectedIds = _selectedOptionIdsByGroup[group.id] ?? const <String>{};
+      final selectedIds =
+          _selectedOptionIdsByGroup[group.id] ?? const <String>{};
       for (final option in group.options) {
         if (selectedIds.contains(option.id)) {
           selections.add(
@@ -652,7 +660,10 @@ class _MenuItemOptionSheetState extends State<_MenuItemOptionSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.item.name, style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              widget.item.name,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Base price ${widget.item.price.toStringAsFixed(2)} JD',
@@ -671,27 +682,40 @@ class _MenuItemOptionSheetState extends State<_MenuItemOptionSheet> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       if (group.isSingleChoice)
-                        ...group.options.map((option) {
-                          final selectedIds = _selectedOptionIdsByGroup[group.id] ?? const <String>{};
-                          return RadioListTile<String>(
-                            contentPadding: EdgeInsets.zero,
-                            value: option.id,
-                            groupValue: selectedIds.isEmpty ? null : selectedIds.first,
-                            title: Text(option.title),
-                            subtitle: Text(_priceDeltaLabel(option.priceDelta)),
-                            onChanged: (value) {
-                              if (value == null) {
-                                return;
-                              }
-                              setState(() {
-                                _selectedOptionIdsByGroup[group.id] = {value};
-                              });
-                            },
-                          );
-                        })
+                        RadioGroup<String>(
+                          groupValue:
+                              (_selectedOptionIdsByGroup[group.id] ??
+                                      const <String>{})
+                                  .firstOrNull,
+                          onChanged: (value) {
+                            if (value == null) {
+                              return;
+                            }
+                            setState(() {
+                              _selectedOptionIdsByGroup[group.id] = {value};
+                            });
+                          },
+                          child: Column(
+                            children: [
+                              for (final option in group.options)
+                                RadioListTile<String>(
+                                  contentPadding: EdgeInsets.zero,
+                                  value: option.id,
+                                  title: Text(option.title),
+                                  subtitle: Text(
+                                    _priceDeltaLabel(option.priceDelta),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
                       else
                         ...group.options.map((option) {
-                          final selected = _selectedOptionIdsByGroup[group.id]?.contains(option.id) ?? false;
+                          final selected =
+                              _selectedOptionIdsByGroup[group.id]?.contains(
+                                option.id,
+                              ) ??
+                              false;
                           return CheckboxListTile(
                             contentPadding: EdgeInsets.zero,
                             value: selected,
@@ -699,7 +723,10 @@ class _MenuItemOptionSheetState extends State<_MenuItemOptionSheet> {
                             subtitle: Text(_priceDeltaLabel(option.priceDelta)),
                             onChanged: (value) {
                               setState(() {
-                                final next = {...(_selectedOptionIdsByGroup[group.id] ?? <String>{})};
+                                final next = {
+                                  ...(_selectedOptionIdsByGroup[group.id] ??
+                                      <String>{}),
+                                };
                                 if (value == true) {
                                   next.add(option.id);
                                 } else {
@@ -729,7 +756,9 @@ class _MenuItemOptionSheetState extends State<_MenuItemOptionSheet> {
                   onPressed: () {
                     final error = _validate();
                     if (error != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(error)));
                       return;
                     }
                     Navigator.of(context).pop(_buildSelections());
