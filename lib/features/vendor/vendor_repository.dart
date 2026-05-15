@@ -68,7 +68,7 @@ class VendorRepository {
     required double price,
     required String imageUrl,
     required List<String> ingredientNames,
-    required List<Map<String, Object?>> customizations,
+    required List<Map<String, Object?>> optionGroups,
   }) async {
     final response = await _apiClient.post(
       '/vendor/menu-items',
@@ -81,7 +81,7 @@ class VendorRepository {
         'price': price,
         if (imageUrl.isNotEmpty) 'imageUrl': imageUrl,
         'ingredientNames': ingredientNames,
-        'customizations': customizations,
+        'optionGroups': optionGroups,
       },
     );
 
@@ -105,7 +105,7 @@ class VendorRepository {
     required double price,
     required String imageUrl,
     required List<String> ingredientNames,
-    required List<Map<String, Object?>> customizations,
+    required List<Map<String, Object?>> optionGroups,
   }) async {
     final response = await _apiClient.patch(
       '/vendor/menu-items/$itemId',
@@ -117,7 +117,7 @@ class VendorRepository {
         'price': price,
         'imageUrl': imageUrl.isEmpty ? null : imageUrl,
         'ingredientNames': ingredientNames,
-        'customizations': customizations,
+        'optionGroups': optionGroups,
       },
     );
 
@@ -209,16 +209,30 @@ class VendorRepository {
   }
 
   VendorMenuItem _vendorMenuItemFromJson(Map<String, dynamic> json) {
-    final customizations = ((json['customizations'] as List<dynamic>?) ?? const [])
-        .map(
-          (item) => VendorMenuItemCustomization(
-            title: (item as Map<String, dynamic>)['title'] as String,
-            priceDelta: ((item['priceDelta'] as num?) ?? 0).toDouble(),
-          ),
-        )
-        .toList(growable: false);
     final ingredients = ((json['ingredients'] as List<dynamic>?) ?? const [])
         .map((item) => (item as Map<String, dynamic>)['name'] as String)
+        .toList(growable: false);
+    final optionGroups = ((json['optionGroups'] as List<dynamic>?) ?? const [])
+        .map((group) {
+          final groupJson = group as Map<String, dynamic>;
+          return VendorMenuItemOptionGroup(
+            id: groupJson['id'] as String,
+            title: groupJson['title'] as String,
+            selectionType: (groupJson['selectionType'] as String) == 'SINGLE'
+                ? VendorMenuItemOptionSelectionType.single
+                : VendorMenuItemOptionSelectionType.multiple,
+            isRequired: groupJson['isRequired'] as bool? ?? false,
+            options: ((groupJson['options'] as List<dynamic>?) ?? const [])
+                .map(
+                  (item) => VendorMenuItemCustomization(
+                    id: (item as Map<String, dynamic>)['id'] as String,
+                    title: item['title'] as String,
+                    priceDelta: ((item['priceDelta'] as num?) ?? 0).toDouble(),
+                  ),
+                )
+                .toList(growable: false),
+          );
+        })
         .toList(growable: false);
 
     return VendorMenuItem(
@@ -233,7 +247,7 @@ class VendorRepository {
       price: (json['price'] as num).toDouble(),
       image: json['imageUrl'] as String? ?? '',
       isAvailable: json['isAvailable'] as bool? ?? true,
-      customizations: customizations,
+      optionGroups: optionGroups,
     );
   }
 

@@ -108,4 +108,43 @@ void main() {
     expect(container.read(cartLinesProvider), hasLength(1));
     expect(container.read(cartLinesProvider).single.item.name, 'Chicken Wrap');
   });
+
+  test('cart keeps separate lines for the same item with different options', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    final notifier = container.read(cartControllerProvider.notifier);
+    notifier.addItem(
+      item,
+      restaurantId: 'campus_burger',
+      restaurantName: 'Campus Burger',
+      selectedOptions: const [
+        CartItemOptionSnapshot(
+          id: 'opt_small',
+          groupTitle: 'Size',
+          title: 'Small',
+          priceDelta: 0,
+        ),
+      ],
+    );
+    notifier.addItem(
+      item,
+      restaurantId: 'campus_burger',
+      restaurantName: 'Campus Burger',
+      selectedOptions: const [
+        CartItemOptionSnapshot(
+          id: 'opt_large',
+          groupTitle: 'Size',
+          title: 'Large',
+          priceDelta: 1,
+        ),
+      ],
+    );
+
+    final lines = container.read(cartLinesProvider);
+    expect(lines, hasLength(2));
+    expect(lines.first.item.itemId, item.id);
+    expect(lines.last.item.itemId, item.id);
+    expect(lines.first.item.selectedOptions.single.title, isNot(lines.last.item.selectedOptions.single.title));
+  });
 }

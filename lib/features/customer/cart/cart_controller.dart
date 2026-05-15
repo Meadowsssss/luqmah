@@ -4,6 +4,7 @@ import '../../../models/restaurant.dart';
 
 class CartItemSnapshot {
   const CartItemSnapshot({
+    required this.lineId,
     required this.itemId,
     required this.restaurantId,
     required this.restaurantName,
@@ -11,8 +12,10 @@ class CartItemSnapshot {
     required this.description,
     required this.price,
     required this.image,
+    this.selectedOptions = const [],
   });
 
+  final String lineId;
   final String itemId;
   final String restaurantId;
   final String restaurantName;
@@ -20,6 +23,21 @@ class CartItemSnapshot {
   final String description;
   final double price;
   final String image;
+  final List<CartItemOptionSnapshot> selectedOptions;
+}
+
+class CartItemOptionSnapshot {
+  const CartItemOptionSnapshot({
+    required this.id,
+    required this.groupTitle,
+    required this.title,
+    required this.priceDelta,
+  });
+
+  final String id;
+  final String groupTitle;
+  final String title;
+  final double priceDelta;
 }
 
 class CartState {
@@ -64,26 +82,31 @@ class CartController extends Notifier<CartState> {
     MenuItem item, {
     required String restaurantId,
     required String restaurantName,
+    List<CartItemOptionSnapshot> selectedOptions = const [],
   }) {
     if (!state.canAddRestaurant(restaurantId)) {
       return false;
     }
 
     final next = Map<String, CartLine>.from(state.items);
-    final existing = next[item.id];
+    final lineId = _lineIdFor(item.id, selectedOptions);
+    final existing = next[lineId];
+    final unitPrice = item.price + selectedOptions.fold(0.0, (sum, option) => sum + option.priceDelta);
 
     if (existing != null) {
-      next[item.id] = existing.copyWith(quantity: existing.quantity + 1);
+      next[lineId] = existing.copyWith(quantity: existing.quantity + 1);
     } else {
-      next[item.id] = CartLine(
+      next[lineId] = CartLine(
         item: CartItemSnapshot(
+          lineId: lineId,
           itemId: item.id,
           restaurantId: restaurantId,
           restaurantName: restaurantName,
           name: item.name,
           description: item.description,
-          price: item.price,
+          price: unitPrice,
           image: item.image,
+          selectedOptions: selectedOptions,
         ),
         quantity: 1,
       );
@@ -97,54 +120,71 @@ class CartController extends Notifier<CartState> {
     MenuItem item, {
     required String restaurantId,
     required String restaurantName,
+    List<CartItemOptionSnapshot> selectedOptions = const [],
   }) {
     state = const CartState(items: <String, CartLine>{});
     addItem(
       item,
       restaurantId: restaurantId,
       restaurantName: restaurantName,
+      selectedOptions: selectedOptions,
     );
   }
 
-  void incrementItem(String itemId) {
+  void incrementItem(String lineId) {
     final next = Map<String, CartLine>.from(state.items);
-    final existing = next[itemId];
+    final existing = next[lineId];
     if (existing == null) {
       return;
     }
 
-    next[itemId] = existing.copyWith(quantity: existing.quantity + 1);
+    next[lineId] = existing.copyWith(quantity: existing.quantity + 1);
     state = CartState(items: next);
   }
 
-  void removeItem(String itemId) {
-    if (!state.items.containsKey(itemId)) {
+  void removeItem(String lineId) {
+    if (!state.items.containsKey(lineId)) {
       return;
     }
 
     final next = Map<String, CartLine>.from(state.items);
-    final existing = next[itemId];
+    final existing = next[lineId];
     if (existing == null) {
       return;
     }
 
     final updatedQuantity = existing.quantity - 1;
     if (updatedQuantity <= 0) {
-      next.remove(itemId);
+      next.remove(lineId);
     } else {
-      next[itemId] = existing.copyWith(quantity: updatedQuantity);
+      next[lineId] = existing.copyWith(quantity: updatedQuantity);
     }
     state = CartState(items: next);
   }
 
-  void deleteItem(String itemId) {
+  void deleteItem(String lineId) {
     final next = Map<String, CartLine>.from(state.items);
-    next.remove(itemId);
+    next.remove(lineId);
     state = CartState(items: next);
   }
 
   void clear() {
     state = const CartState(items: <String, CartLine>{});
+  }
+
+  int quantityForMenuItem(String itemId) {
+    return state.items.values
+        .where((line) => line.item.itemId == itemId)
+        .fold(0, (sum, line) => sum + line.quantity);
+  }
+
+  String _lineIdFor(String itemId, List<CartItemOptionSnapshot> selectedOptions) {
+    if (selectedOptions.isEmpty) {
+      return itemId;
+    }
+
+    final sortedOptionIds = selectedOptions.map((option) => option.id).toList(growable: false)..sort();
+    return '$itemId::${sortedOptionIds.join('|')}';
   }
 }
 

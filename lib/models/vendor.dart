@@ -1,5 +1,7 @@
 enum VendorOrderStatus { accepted, inProgress, ready, completed, cancelled }
 
+enum VendorMenuItemOptionSelectionType { single, multiple }
+
 extension VendorOrderStatusLabel on VendorOrderStatus {
   String get label {
     switch (this) {
@@ -134,7 +136,7 @@ class VendorMenuItem {
   final double price;
   final String image;
   final bool isAvailable;
-  final List<VendorMenuItemCustomization> customizations;
+  final List<VendorMenuItemOptionGroup> optionGroups;
 
   const VendorMenuItem({
     required this.restaurantId,
@@ -148,16 +150,36 @@ class VendorMenuItem {
     required this.price,
     required this.image,
     required this.isAvailable,
-    this.customizations = const [],
+    this.optionGroups = const [],
   });
+}
+
+class VendorMenuItemOptionGroup {
+  const VendorMenuItemOptionGroup({
+    required this.id,
+    required this.title,
+    required this.selectionType,
+    required this.isRequired,
+    required this.options,
+  });
+
+  final String id;
+  final String title;
+  final VendorMenuItemOptionSelectionType selectionType;
+  final bool isRequired;
+  final List<VendorMenuItemCustomization> options;
+
+  bool get isSingleChoice => selectionType == VendorMenuItemOptionSelectionType.single;
 }
 
 class VendorMenuItemCustomization {
   const VendorMenuItemCustomization({
+    required this.id,
     required this.title,
     required this.priceDelta,
   });
 
+  final String id;
   final String title;
   final double priceDelta;
 

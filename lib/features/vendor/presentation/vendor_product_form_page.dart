@@ -25,7 +25,6 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
   final _ingredientsController = TextEditingController();
   final _priceController = TextEditingController();
   final _imageUrlController = TextEditingController();
-  final _customizationsController = TextEditingController();
   final _newCategoryController = TextEditingController();
 
   String? _restaurantId;
@@ -33,6 +32,7 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
   bool _creatingNewCategory = false;
   bool _submitting = false;
   bool _didInitializeForm = false;
+  List<_OptionGroupDraft> _optionGroups = <_OptionGroupDraft>[];
 
   @override
   void dispose() {
@@ -41,7 +41,6 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
     _ingredientsController.dispose();
     _priceController.dispose();
     _imageUrlController.dispose();
-    _customizationsController.dispose();
     _newCategoryController.dispose();
     super.dispose();
   }
@@ -90,9 +89,23 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
     _ingredientsController.text = item.ingredients.join(', ');
     _priceController.text = item.price.toStringAsFixed(2);
     _imageUrlController.text = item.image;
-    _customizationsController.text = item.customizations
-        .map((customization) => customization.label)
-        .join(', ');
+    _optionGroups = item.optionGroups
+        .map(
+          (group) => _OptionGroupDraft(
+            title: group.title,
+            selectionType: group.selectionType,
+            isRequired: group.isRequired,
+            options: group.options
+                .map(
+                  (option) => _OptionValueDraft(
+                    title: option.title,
+                    priceDeltaText: option.priceDelta.toStringAsFixed(2),
+                  ),
+                )
+                .toList(growable: true),
+          ),
+        )
+        .toList(growable: true);
   }
 
   List<String> _parseCsv(TextEditingController controller) {
@@ -103,23 +116,56 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
         .toList(growable: false);
   }
 
-  List<Map<String, Object?>> _parseCustomizations() {
-    return _customizationsController.text
-        .split(',')
-        .map((value) => value.trim())
-        .where((value) => value.isNotEmpty)
-        .map((value) {
-          final parts = value.split(':');
-          final title = parts.first.trim();
-          final priceDelta = parts.length > 1 ? double.tryParse(parts.last.trim()) ?? 0 : 0;
-          return <String, Object?>{'title': title, 'priceDelta': priceDelta};
-        })
-        .where((value) => (value['title'] as String).isNotEmpty)
-        .toList(growable: false);
+  String? _validateOptionGroups() {
+    for (final group in _optionGroups) {
+      if (group.title.trim().isEmpty) {
+        return 'Each option group needs a title.';
+      }
+      if (group.options.isEmpty) {
+        return 'Each option group needs at least one option.';
+      }
+      for (final option in group.options) {
+        if (option.title.trim().isEmpty) {
+          return 'Each option needs a title.';
+        }
+        if (double.tryParse(option.priceDeltaText.trim()) == null) {
+          return 'Each option needs a valid price delta.';
+        }
+      }
+    }
+    return null;
+  }
+
+  List<Map<String, Object?>> _serializeOptionGroups() {
+    return _optionGroups.asMap().entries.map((groupEntry) {
+      final group = groupEntry.value;
+      return <String, Object?>{
+        'title': group.title.trim(),
+        'selectionType': group.selectionType == VendorMenuItemOptionSelectionType.single
+            ? 'single'
+            : 'multiple',
+        'isRequired': group.isRequired,
+        'sortOrder': groupEntry.key,
+        'options': group.options.asMap().entries.map((optionEntry) {
+          final option = optionEntry.value;
+          return <String, Object?>{
+            'title': option.title.trim(),
+            'priceDelta': double.parse(option.priceDeltaText.trim()),
+            'sortOrder': optionEntry.key,
+          };
+        }).toList(growable: false),
+      };
+    }).toList(growable: false);
   }
 
   Future<void> _submit({required bool isEditMode, required VendorMenuItem? editingItem}) async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final optionGroupsError = _validateOptionGroups();
+    if (optionGroupsError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(optionGroupsError)));
       return;
     }
 
@@ -150,6 +196,7 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
       final notifier = ref.read(vendorDataControllerProvider.notifier);
       final categoryId = _creatingNewCategory ? null : _categoryId;
       final newCategoryTitle = _creatingNewCategory ? _newCategoryController.text.trim() : null;
+      final optionGroups = _serializeOptionGroups();
 
       if (isEditMode) {
         await notifier.editMenuItem(
@@ -162,7 +209,7 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
           price: double.parse(_priceController.text.trim()),
           imageUrl: _imageUrlController.text.trim(),
           ingredientNames: _parseCsv(_ingredientsController),
-          customizations: _parseCustomizations(),
+          optionGroups: optionGroups,
         );
       } else {
         await notifier.addMenuItem(
@@ -174,7 +221,7 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
           price: double.parse(_priceController.text.trim()),
           imageUrl: _imageUrlController.text.trim(),
           ingredientNames: _parseCsv(_ingredientsController),
-          customizations: _parseCustomizations(),
+          optionGroups: optionGroups,
         );
       }
 
@@ -397,7 +444,7 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                       TextFormField(
                         controller: _priceController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(labelText: 'Price in JD'),
+                        decoration: const InputDecoration(labelText: 'Base price in JD'),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Price is required';
@@ -413,14 +460,63 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                         controller: _imageUrlController,
                         decoration: const InputDecoration(labelText: 'Image URL'),
                       ),
-                      const SizedBox(height: AppSpacing.lg),
-                      TextFormField(
-                        controller: _customizationsController,
-                        decoration: const InputDecoration(
-                          labelText: 'Customizations',
-                          hintText: 'Extra cheese:0.50, Extra sauce:0.25',
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                AppSurfaceCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text('Option groups', style: Theme.of(context).textTheme.titleLarge),
+                          ),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _optionGroups.add(
+                                  _OptionGroupDraft(
+                                    title: '',
+                                    selectionType: VendorMenuItemOptionSelectionType.single,
+                                    options: [
+                                      _OptionValueDraft(title: '', priceDeltaText: '0'),
+                                    ],
+                                  ),
+                                );
+                              });
+                            },
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Add group'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Use groups for size, milk type, sugar level, extras, or any other choices.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: context.luqmah.mutedText,
                         ),
                       ),
+                      const SizedBox(height: AppSpacing.lg),
+                      if (_optionGroups.isEmpty)
+                        Text(
+                          'No option groups yet. Leave this empty for a simple product, or add a group for choices like size.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        )
+                      else
+                        for (final entry in _optionGroups.asMap().entries) ...[
+                          _OptionGroupEditor(
+                            key: ValueKey('option-group-${entry.key}'),
+                            group: entry.value,
+                            onRemove: () {
+                              setState(() => _optionGroups.removeAt(entry.key));
+                            },
+                            onChanged: () => setState(() {}),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                        ],
                     ],
                   ),
                 ),
@@ -444,4 +540,139 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
       },
     );
   }
+}
+
+class _OptionGroupEditor extends StatelessWidget {
+  const _OptionGroupEditor({
+    super.key,
+    required this.group,
+    required this.onRemove,
+    required this.onChanged,
+  });
+
+  final _OptionGroupDraft group;
+  final VoidCallback onRemove;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: group.title,
+                  decoration: const InputDecoration(labelText: 'Group title'),
+                  onChanged: (value) => group.title = value,
+                ),
+              ),
+              IconButton(
+                onPressed: onRemove,
+                icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SegmentedButton<VendorMenuItemOptionSelectionType>(
+            segments: const [
+              ButtonSegment(
+                value: VendorMenuItemOptionSelectionType.single,
+                label: Text('Single choice'),
+              ),
+              ButtonSegment(
+                value: VendorMenuItemOptionSelectionType.multiple,
+                label: Text('Multiple choice'),
+              ),
+            ],
+            selected: <VendorMenuItemOptionSelectionType>{group.selectionType},
+            onSelectionChanged: (value) {
+              group.selectionType = value.first;
+              onChanged();
+            },
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: group.isRequired,
+            title: const Text('Required'),
+            subtitle: const Text('Customers must choose from this group before adding to cart.'),
+            onChanged: (value) {
+              group.isRequired = value;
+              onChanged();
+            },
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          for (final optionEntry in group.options.asMap().entries) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    initialValue: optionEntry.value.title,
+                    decoration: const InputDecoration(labelText: 'Option title'),
+                    onChanged: (value) => optionEntry.value.title = value,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                SizedBox(
+                  width: 120,
+                  child: TextFormField(
+                    initialValue: optionEntry.value.priceDeltaText,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(labelText: 'Price delta'),
+                    onChanged: (value) => optionEntry.value.priceDeltaText = value,
+                  ),
+                ),
+                IconButton(
+                  onPressed: group.options.length == 1
+                      ? null
+                      : () {
+                          group.options.removeAt(optionEntry.key);
+                          onChanged();
+                        },
+                  icon: const Icon(Icons.remove_circle_outline_rounded),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+          TextButton.icon(
+            onPressed: () {
+              group.options.add(_OptionValueDraft(title: '', priceDeltaText: '0'));
+              onChanged();
+            },
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Add option'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OptionGroupDraft {
+  _OptionGroupDraft({
+    required this.title,
+    required this.selectionType,
+    this.isRequired = false,
+    List<_OptionValueDraft>? options,
+  }) : options = options ?? <_OptionValueDraft>[];
+
+  String title;
+  VendorMenuItemOptionSelectionType selectionType;
+  bool isRequired;
+  List<_OptionValueDraft> options;
+}
+
+class _OptionValueDraft {
+  _OptionValueDraft({required this.title, required this.priceDeltaText});
+
+  String title;
+  String priceDeltaText;
 }

@@ -27,8 +27,20 @@ class _FakeVendorDataController extends VendorDataController {
           price: 2.75,
           image: 'https://example.com/latte.png',
           isAvailable: true,
-          customizations: [
-            VendorMenuItemCustomization(title: 'Extra shot', priceDelta: 0.50),
+          optionGroups: [
+            VendorMenuItemOptionGroup(
+              id: 'group_1',
+              title: 'Milk',
+              selectionType: VendorMenuItemOptionSelectionType.single,
+              isRequired: false,
+              options: [
+                VendorMenuItemCustomization(
+                  id: 'opt_1',
+                  title: 'Extra shot',
+                  priceDelta: 0.50,
+                ),
+              ],
+            ),
           ],
         ),
       ],
@@ -55,7 +67,7 @@ class _FakeVendorDataController extends VendorDataController {
     required double price,
     required String imageUrl,
     required List<String> ingredientNames,
-    required List<Map<String, Object?>> customizations,
+    required List<Map<String, Object?>> optionGroups,
   }) async {
     addCalls.add({
       'restaurantId': restaurantId,
@@ -76,7 +88,7 @@ class _FakeVendorDataController extends VendorDataController {
     required double price,
     required String imageUrl,
     required List<String> ingredientNames,
-    required List<Map<String, Object?>> customizations,
+    required List<Map<String, Object?>> optionGroups,
   }) async {
     editCalls.add({
       'itemId': itemId,
@@ -160,7 +172,7 @@ void main() {
       price: 4.5,
       imageUrl: '',
       ingredientNames: const ['Falafel', 'Tahini'],
-      customizations: const [],
+      optionGroups: const [],
     );
 
     expect(_FakeVendorDataController.addCalls, hasLength(1));
@@ -214,7 +226,7 @@ void main() {
       price: 3.25,
       imageUrl: '',
       ingredientNames: const ['Milk', 'Espresso'],
-      customizations: const [],
+      optionGroups: const [],
     );
 
     expect(_FakeVendorDataController.editCalls, hasLength(1));

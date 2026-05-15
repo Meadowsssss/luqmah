@@ -152,6 +152,29 @@ class ApiRestaurantRepository implements RestaurantRepository {
   }
 
   MenuItem _menuItemFromJson(Map<String, dynamic> json, String categoryTitle) {
+    final optionGroups =
+        ((json['optionGroups'] as List<dynamic>?) ?? const []).map((group) {
+          final groupJson = group as Map<String, dynamic>;
+          return MenuItemOptionGroup(
+            id: groupJson['id'] as String,
+            title: groupJson['title'] as String,
+            selectionType: (groupJson['selectionType'] as String) == 'SINGLE'
+                ? MenuItemOptionSelectionType.single
+                : MenuItemOptionSelectionType.multiple,
+            isRequired: groupJson['isRequired'] as bool? ?? false,
+            options: ((groupJson['options'] as List<dynamic>?) ?? const [])
+                .map((option) {
+                  final optionJson = option as Map<String, dynamic>;
+                  return MenuItemOption(
+                    id: optionJson['id'] as String,
+                    title: optionJson['title'] as String,
+                    priceDelta: (optionJson['priceDelta'] as num).toDouble(),
+                  );
+                })
+                .toList(growable: false),
+          );
+        }).toList(growable: false);
+
     return MenuItem(
       id: json['id'] as String,
       name: json['title'] as String,
@@ -160,6 +183,7 @@ class ApiRestaurantRepository implements RestaurantRepository {
       price: (json['price'] as num).toDouble(),
       image: json['imageUrl'] as String? ?? '',
       category: categoryTitle,
+      optionGroups: optionGroups,
     );
   }
 

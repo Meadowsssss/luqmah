@@ -7,8 +7,17 @@ import '../../../features/vendor/vendor_data_controller.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
-class VendorProductsPage extends ConsumerWidget {
+class VendorProductsPage extends ConsumerStatefulWidget {
   const VendorProductsPage({super.key});
+
+  @override
+  ConsumerState<VendorProductsPage> createState() => _VendorProductsPageState();
+}
+
+class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
+  static const _allCategory = 'All';
+
+  String _selectedCategoryId = _allCategory;
 
   Future<void> _toggleAvailability(
     BuildContext context,
@@ -82,7 +91,7 @@ class VendorProductsPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final data = ref.watch(vendorDataControllerProvider);
 
     return Scaffold(
@@ -127,6 +136,17 @@ class VendorProductsPage extends ConsumerWidget {
             ),
             data: (state) {
               final items = state.menuItems;
+              final categoryEntries = <MapEntry<String, String>>[
+                const MapEntry(_allCategory, _allCategory),
+                ...{
+                  for (final item in items) item.categoryId: item.category,
+                }.entries,
+              ];
+              final visibleItems = _selectedCategoryId == _allCategory
+                  ? items
+                  : items
+                        .where((item) => item.categoryId == _selectedCategoryId)
+                        .toList(growable: false);
               if (items.isEmpty) {
                 return const AppEmptyState(
                   icon: Icons.soup_kitchen_outlined,
@@ -135,12 +155,39 @@ class VendorProductsPage extends ConsumerWidget {
                 );
               }
 
-              return Column(
-                children: [
-                  for (final item in items) ...[
-                    AppSurfaceCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+               return Column(
+                 children: [
+                   SizedBox(
+                     height: 42,
+                     child: ListView.separated(
+                       scrollDirection: Axis.horizontal,
+                       itemCount: categoryEntries.length,
+                       separatorBuilder: (_, __) => const SizedBox(width: 8),
+                       itemBuilder: (context, index) {
+                         final category = categoryEntries[index];
+                         return ChoiceChip(
+                           label: Text(category.value),
+                           selected: _selectedCategoryId == category.key,
+                           onSelected: (_) {
+                             setState(() => _selectedCategoryId = category.key);
+                           },
+                         );
+                       },
+                     ),
+                   ),
+                   const SizedBox(height: AppSpacing.lg),
+                   if (visibleItems.isEmpty)
+                     AppEmptyState(
+                       icon: Icons.inventory_2_outlined,
+                       title: 'No products in ${categoryEntries.firstWhere((entry) => entry.key == _selectedCategoryId).value}',
+                       message: 'Add an item in this category or switch filters to review the rest of the menu.',
+                     )
+                   else
+                     ...[
+                   for (final item in visibleItems) ...[
+                     AppSurfaceCard(
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                            Row(
                              children: [
@@ -215,22 +262,27 @@ class VendorProductsPage extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.sm),
                             Text(item.ingredients.join(', ')),
                           ],
-                          if (item.customizations.isNotEmpty) ...[
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(
-                              item.customizations.map((customization) => customization.label).join(', '),
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: context.luqmah.mutedText,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
-                ],
-              );
+                           if (item.optionGroups.isNotEmpty) ...[
+                             const SizedBox(height: AppSpacing.sm),
+                             Text(
+                               item.optionGroups
+                                   .map(
+                                     (group) => '${group.title}: ${group.options.map((option) => option.label).join(', ')}',
+                                   )
+                                   .join(' | '),
+                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                 color: context.luqmah.mutedText,
+                               ),
+                             ),
+                           ],
+                         ],
+                       ),
+                     ),
+                     const SizedBox(height: AppSpacing.lg),
+                   ],
+                   ],
+                 ],
+               );
             },
           ),
         ],

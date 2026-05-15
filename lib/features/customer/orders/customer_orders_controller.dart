@@ -101,6 +101,9 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
             (line) => CustomerCheckoutItemInput(
               menuItemId: line.item.itemId,
               quantity: line.quantity,
+              optionIds: line.item.selectedOptions
+                  .map((option) => option.id)
+                  .toList(growable: false),
             ),
           )
           .toList(growable: false),

@@ -14,18 +14,18 @@ class CustomerCheckoutItemInput {
   const CustomerCheckoutItemInput({
     required this.menuItemId,
     required this.quantity,
-    this.customizationIds = const <String>[],
+    this.optionIds = const <String>[],
   });
 
   final String menuItemId;
   final int quantity;
-  final List<String> customizationIds;
+  final List<String> optionIds;
 
   Map<String, Object?> toJson() {
     return {
       'menuItemId': menuItemId,
       'quantity': quantity,
-      'customizationIds': customizationIds,
+      'optionIds': optionIds,
     };
   }
 }

@@ -403,12 +403,18 @@ class _MenuItemCard extends ConsumerWidget {
       return;
     }
 
+    final selectedOptions = await _selectOptionsIfNeeded(context);
+    if (selectedOptions == null) {
+      return;
+    }
+
     final controller = ref.read(cartControllerProvider.notifier);
     final cart = ref.read(cartControllerProvider);
     final added = controller.addItem(
       item,
       restaurantId: restaurantId,
       restaurantName: restaurantName,
+      selectedOptions: selectedOptions,
     );
 
     if (added) {
@@ -444,15 +450,31 @@ class _MenuItemCard extends ConsumerWidget {
         item,
         restaurantId: restaurantId,
         restaurantName: restaurantName,
+        selectedOptions: selectedOptions,
       );
     }
+  }
+
+  Future<List<CartItemOptionSnapshot>?> _selectOptionsIfNeeded(BuildContext context) async {
+    if (item.optionGroups.isEmpty) {
+      return const <CartItemOptionSnapshot>[];
+    }
+
+    return showModalBottomSheet<List<CartItemOptionSnapshot>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _MenuItemOptionSheet(item: item),
+    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartControllerProvider);
-    final quantity = cart.items[item.id]?.quantity ?? 0;
+    final quantity = cart.items.values
+        .where((line) => line.item.itemId == item.id)
+        .fold(0, (sum, line) => sum + line.quantity);
     final textTheme = Theme.of(context).textTheme;
+    final hasOptions = item.optionGroups.isNotEmpty;
 
     return AppSurfaceCard(
       child: Row(
@@ -506,7 +528,7 @@ class _MenuItemCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          if (quantity == 0)
+          if (quantity == 0 || hasOptions)
             IconButton.filled(
               onPressed: () => _handleAddPressed(context, ref),
               style: IconButton.styleFrom(
@@ -551,5 +573,181 @@ class _MenuItemCard extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+class _MenuItemOptionSheet extends StatefulWidget {
+  const _MenuItemOptionSheet({required this.item});
+
+  final MenuItem item;
+
+  @override
+  State<_MenuItemOptionSheet> createState() => _MenuItemOptionSheetState();
+}
+
+class _MenuItemOptionSheetState extends State<_MenuItemOptionSheet> {
+  late final Map<String, Set<String>> _selectedOptionIdsByGroup;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedOptionIdsByGroup = {
+      for (final group in widget.item.optionGroups) group.id: <String>{},
+    };
+  }
+
+  double get _unitPrice {
+    var total = widget.item.price;
+    for (final group in widget.item.optionGroups) {
+      final selectedIds = _selectedOptionIdsByGroup[group.id] ?? const <String>{};
+      for (final option in group.options) {
+        if (selectedIds.contains(option.id)) {
+          total += option.priceDelta;
+        }
+      }
+    }
+    return total;
+  }
+
+  String? _validate() {
+    for (final group in widget.item.optionGroups) {
+      if (group.isRequired && (_selectedOptionIdsByGroup[group.id]?.isEmpty ?? true)) {
+        return 'Choose ${group.title.toLowerCase()} before adding this item.';
+      }
+    }
+    return null;
+  }
+
+  List<CartItemOptionSnapshot> _buildSelections() {
+    final selections = <CartItemOptionSnapshot>[];
+    for (final group in widget.item.optionGroups) {
+      final selectedIds = _selectedOptionIdsByGroup[group.id] ?? const <String>{};
+      for (final option in group.options) {
+        if (selectedIds.contains(option.id)) {
+          selections.add(
+            CartItemOptionSnapshot(
+              id: option.id,
+              groupTitle: group.title,
+              title: option.title,
+              priceDelta: option.priceDelta,
+            ),
+          );
+        }
+      }
+    }
+    return selections;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: AppSpacing.lg,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.item.name, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Base price ${widget.item.price.toStringAsFixed(2)} JD',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final group in widget.item.optionGroups) ...[
+                      Text(
+                        group.isRequired ? '${group.title} *' : group.title,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      if (group.isSingleChoice)
+                        ...group.options.map((option) {
+                          final selectedIds = _selectedOptionIdsByGroup[group.id] ?? const <String>{};
+                          return RadioListTile<String>(
+                            contentPadding: EdgeInsets.zero,
+                            value: option.id,
+                            groupValue: selectedIds.isEmpty ? null : selectedIds.first,
+                            title: Text(option.title),
+                            subtitle: Text(_priceDeltaLabel(option.priceDelta)),
+                            onChanged: (value) {
+                              if (value == null) {
+                                return;
+                              }
+                              setState(() {
+                                _selectedOptionIdsByGroup[group.id] = {value};
+                              });
+                            },
+                          );
+                        })
+                      else
+                        ...group.options.map((option) {
+                          final selected = _selectedOptionIdsByGroup[group.id]?.contains(option.id) ?? false;
+                          return CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: selected,
+                            title: Text(option.title),
+                            subtitle: Text(_priceDeltaLabel(option.priceDelta)),
+                            onChanged: (value) {
+                              setState(() {
+                                final next = {...(_selectedOptionIdsByGroup[group.id] ?? <String>{})};
+                                if (value == true) {
+                                  next.add(option.id);
+                                } else {
+                                  next.remove(option.id);
+                                }
+                                _selectedOptionIdsByGroup[group.id] = next;
+                              });
+                            },
+                          );
+                        }),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Add for ${_unitPrice.toStringAsFixed(2)} JD',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final error = _validate();
+                    if (error != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+                      return;
+                    }
+                    Navigator.of(context).pop(_buildSelections());
+                  },
+                  child: const Text('Add'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _priceDeltaLabel(double priceDelta) {
+    if (priceDelta == 0) {
+      return 'No extra cost';
+    }
+    return '+${priceDelta.toStringAsFixed(2)} JD';
   }
 }

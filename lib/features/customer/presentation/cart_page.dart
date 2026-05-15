@@ -131,6 +131,17 @@ class CartPage extends ConsumerWidget {
                                         line.item.restaurantName,
                                         style: textTheme.bodySmall,
                                       ),
+                                      if (line.item.selectedOptions.isNotEmpty) ...[
+                                        const SizedBox(height: AppSpacing.xs),
+                                        Text(
+                                          line.item.selectedOptions
+                                              .map((option) => '${option.groupTitle}: ${option.title}')
+                                              .join(', '),
+                                          style: textTheme.bodySmall?.copyWith(
+                                            color: context.luqmah.mutedText,
+                                          ),
+                                        ),
+                                      ],
                                       const SizedBox(height: AppSpacing.sm),
                                       Text(
                                         '${line.item.price.toStringAsFixed(2)} JD each',
@@ -158,7 +169,7 @@ class CartPage extends ConsumerWidget {
                                             .read(
                                               cartControllerProvider.notifier,
                                             )
-                                            .deleteItem(line.item.itemId);
+                                            .deleteItem(line.item.lineId);
                                       },
                                       icon: const Icon(
                                         Icons.delete_outline_rounded,
@@ -186,7 +197,7 @@ class CartPage extends ConsumerWidget {
                                                     cartControllerProvider
                                                         .notifier,
                                                   )
-                                                  .removeItem(line.item.itemId);
+                                                  .removeItem(line.item.lineId);
                                             },
                                             visualDensity:
                                                 VisualDensity.compact,
@@ -208,7 +219,7 @@ class CartPage extends ConsumerWidget {
                                                         .notifier,
                                                   )
                                                   .incrementItem(
-                                                    line.item.itemId,
+                                                    line.item.lineId,
                                                   );
                                             },
                                             visualDensity:

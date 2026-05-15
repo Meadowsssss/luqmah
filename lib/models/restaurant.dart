@@ -1,3 +1,35 @@
+enum MenuItemOptionSelectionType { single, multiple }
+
+class MenuItemOption {
+  const MenuItemOption({
+    required this.id,
+    required this.title,
+    required this.priceDelta,
+  });
+
+  final String id;
+  final String title;
+  final double priceDelta;
+}
+
+class MenuItemOptionGroup {
+  const MenuItemOptionGroup({
+    required this.id,
+    required this.title,
+    required this.selectionType,
+    required this.isRequired,
+    required this.options,
+  });
+
+  final String id;
+  final String title;
+  final MenuItemOptionSelectionType selectionType;
+  final bool isRequired;
+  final List<MenuItemOption> options;
+
+  bool get isSingleChoice => selectionType == MenuItemOptionSelectionType.single;
+}
+
 class MenuItem {
   final String id;
   final String name;
@@ -6,6 +38,7 @@ class MenuItem {
   final String image;
   final String category;
   final bool isMostSelling;
+  final List<MenuItemOptionGroup> optionGroups;
 
   const MenuItem({
     required this.id,
@@ -15,6 +48,7 @@ class MenuItem {
     required this.image,
     required this.category,
     this.isMostSelling = false,
+    this.optionGroups = const [],
   });
 
   MenuItem copyWith({
@@ -25,6 +59,7 @@ class MenuItem {
     String? image,
     String? category,
     bool? isMostSelling,
+    List<MenuItemOptionGroup>? optionGroups,
   }) {
     return MenuItem(
       id: id ?? this.id,
@@ -34,6 +69,7 @@ class MenuItem {
       image: image ?? this.image,
       category: category ?? this.category,
       isMostSelling: isMostSelling ?? this.isMostSelling,
+      optionGroups: optionGroups ?? this.optionGroups,
     );
   }
 }

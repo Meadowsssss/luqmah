@@ -223,7 +223,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     required double price,
     required String imageUrl,
     required List<String> ingredientNames,
-    required List<Map<String, Object?>> customizations,
+    required List<Map<String, Object?>> optionGroups,
   }) async {
     final token = ref.read(sessionControllerProvider).snapshot.backendToken;
     if (token == null || token.isEmpty) {
@@ -256,7 +256,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       price: price,
       imageUrl: imageUrl,
       ingredientNames: ingredientNames,
-      customizations: customizations,
+      optionGroups: optionGroups,
     );
     if (createdCategory != null) {
       _appendRestaurantCategory(restaurantId, createdCategory);
@@ -274,7 +274,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     required double price,
     required String imageUrl,
     required List<String> ingredientNames,
-    required List<Map<String, Object?>> customizations,
+    required List<Map<String, Object?>> optionGroups,
   }) async {
     final token = ref.read(sessionControllerProvider).snapshot.backendToken;
     if (token == null || token.isEmpty) {
@@ -307,7 +307,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       price: price,
       imageUrl: imageUrl,
       ingredientNames: ingredientNames,
-      customizations: customizations,
+      optionGroups: optionGroups,
     );
     if (createdCategory != null) {
       _appendRestaurantCategory(restaurantId, createdCategory);
