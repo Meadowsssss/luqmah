@@ -40,6 +40,7 @@ class CustomerOrder {
     this.restaurantId = '',
     required this.restaurantName,
     required this.placedAt,
+    this.estimatedReadyAt,
     DateTime? updatedAt,
     required this.status,
     required this.items,
@@ -52,6 +53,7 @@ class CustomerOrder {
   final String restaurantId;
   final String restaurantName;
   final DateTime placedAt;
+  final DateTime? estimatedReadyAt;
   final DateTime updatedAt;
   final VendorOrderStatus status;
   final List<CustomerOrderItem> items;
@@ -73,6 +75,7 @@ class CustomerOrder {
       restaurantId: restaurantId,
       restaurantName: restaurantName,
       placedAt: placedAt,
+      estimatedReadyAt: estimatedReadyAt,
       updatedAt: DateTime.now(),
       status: status ?? this.status,
       items: items,
@@ -88,6 +91,7 @@ class CustomerOrder {
       'restaurantId': restaurantId,
       'restaurantName': restaurantName,
       'placedAt': placedAt.toIso8601String(),
+      'estimatedReadyAt': estimatedReadyAt?.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'status': status.name,
       'items': items.map((item) => item.toJson()).toList(growable: false),
@@ -103,6 +107,9 @@ class CustomerOrder {
       restaurantId: json['restaurantId'] as String? ?? '',
       restaurantName: json['restaurantName'] as String,
       placedAt: DateTime.parse(json['placedAt'] as String),
+      estimatedReadyAt: json['estimatedReadyAt'] == null
+          ? null
+          : DateTime.parse(json['estimatedReadyAt'] as String),
       updatedAt: json['updatedAt'] == null
           ? null
           : DateTime.parse(json['updatedAt'] as String),

@@ -48,6 +48,35 @@ void main() {
     expect(client.lastRequestBody?['isBusy'], isTrue);
     expect(restaurant.isBusy, isTrue);
   });
+
+  test('vendor repository maps estimated ready times for in-progress orders', () async {
+    final client = _FakeHttpClient({
+      'GET /vendor/restaurants/me': http.Response(jsonEncode({'restaurants': []}), 200),
+      'GET /vendor/menu-items': http.Response(jsonEncode({'menuItems': []}), 200),
+      'GET /vendor/orders?status=new': http.Response(
+        jsonEncode({
+          'orders': [
+            {
+              'id': 'order_1',
+              'createdAt': '2026-05-16T12:00:00.000Z',
+              'estimatedReadyAt': '2026-05-16T12:15:00.000Z',
+              'status': 'IN_PROGRESS',
+              'totalAmount': 5,
+              'customer': {'name': 'Sara', 'email': 'sara@example.com'},
+              'orderItems': [],
+            },
+          ],
+        }),
+        200,
+      ),
+      'GET /vendor/orders?status=past': http.Response(jsonEncode({'orders': []}), 200),
+    });
+
+    final repository = VendorRepository(ApiClient(client: client));
+    final workspace = await repository.loadWorkspace('token');
+
+    expect(workspace.orders.single.estimatedReadyAt, DateTime.parse('2026-05-16T12:15:00.000Z'));
+  });
 }
 
 class _FakeHttpClient extends http.BaseClient {

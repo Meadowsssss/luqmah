@@ -72,6 +72,16 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
                       '${order.customerPhone} · ${formatter.format(order.dateTime)}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
+                    if (order.status == VendorOrderStatus.inProgress && order.estimatedReadyAt != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'Expected by ${DateFormat('hh:mm a').format(order.estimatedReadyAt!)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: context.luqmah.info,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

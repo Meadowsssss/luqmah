@@ -172,6 +172,16 @@ class _VendorOrderCard extends StatelessWidget {
               '${order.items.length} items · ${order.total.toStringAsFixed(0)} JD',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
+            if (order.status == VendorOrderStatus.inProgress && order.estimatedReadyAt != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Expected by ${DateFormat('hh:mm a').format(order.estimatedReadyAt!)}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: context.luqmah.info,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ],
         ),
       ),

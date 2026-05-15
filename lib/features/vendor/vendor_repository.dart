@@ -275,6 +275,9 @@ class VendorRepository {
       customerName: ((json['customer'] as Map<String, dynamic>?)?['name'] as String?) ?? 'Customer',
       customerPhone: ((json['customer'] as Map<String, dynamic>?)?['email'] as String?) ?? '',
       dateTime: DateTime.parse(json['createdAt'] as String),
+      estimatedReadyAt: json['estimatedReadyAt'] == null
+          ? null
+          : DateTime.parse(json['estimatedReadyAt'] as String),
       paymentMethod: 'Luqmah',
       status: vendorOrderStatusFromApi(json['status'] as String),
       items: items,

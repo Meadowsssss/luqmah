@@ -88,6 +88,7 @@ class VendorOrder {
   final String customerName;
   final String customerPhone;
   final DateTime dateTime;
+  final DateTime? estimatedReadyAt;
   final String paymentMethod;
   final VendorOrderStatus status;
   final List<VendorOrderItem> items;
@@ -100,6 +101,7 @@ class VendorOrder {
     required this.customerName,
     required this.customerPhone,
     required this.dateTime,
+    this.estimatedReadyAt,
     required this.paymentMethod,
     required this.status,
     required this.items,
@@ -114,6 +116,7 @@ class VendorOrder {
       customerName: customerName,
       customerPhone: customerPhone,
       dateTime: dateTime,
+      estimatedReadyAt: estimatedReadyAt,
       paymentMethod: paymentMethod,
       status: status ?? this.status,
       items: items,

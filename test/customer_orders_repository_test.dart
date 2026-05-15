@@ -16,6 +16,7 @@ void main() {
               'id': 'ord_1',
               'status': 'ACCEPTED',
               'createdAt': '2026-04-23T12:00:00.000Z',
+              'estimatedReadyAt': '2026-04-23T12:20:00.000Z',
               'updatedAt': '2026-04-23T12:30:00.000Z',
               'totalAmount': 5.0,
               'ratingPromptDismissedAt': '2026-04-23T13:00:00.000Z',
@@ -43,6 +44,7 @@ void main() {
     expect(orders.first.id, 'ord_1');
     expect(orders.first.restaurantId, 'rest_1');
     expect(orders.first.restaurantName, 'Al-Salam Grill');
+    expect(orders.first.estimatedReadyAt, DateTime.parse('2026-04-23T12:20:00.000Z'));
     expect(orders.first.updatedAt, DateTime.parse('2026-04-23T12:30:00.000Z'));
     expect(orders.first.status, VendorOrderStatus.accepted);
     expect(orders.first.ratingScore, 4);
