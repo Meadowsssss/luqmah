@@ -18,6 +18,7 @@ void main() {
             'isBusy': false,
             'averageRating': 4.5,
             'ratingCount': 2,
+            'estimatedPrepMinutes': 14,
           },
           'categories': [
             {
@@ -63,6 +64,7 @@ void main() {
     expect(restaurant, isNotNull);
     expect(restaurant!.rating, '4.5');
     expect(restaurant.ratingCount, 2);
+    expect(restaurant.estimatedPrepMinutes, 14);
     expect(restaurant.menu, hasLength(3));
     expect(
       restaurant.menu.map((item) => item.name),

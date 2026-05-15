@@ -326,6 +326,14 @@ class _RestaurantCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Usually ready in ${restaurant.estimatedPrepMinutes} min',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: context.luqmah.info,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   Wrap(
                     spacing: 8,

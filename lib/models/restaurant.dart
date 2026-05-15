@@ -82,6 +82,7 @@ class Restaurant {
   final String rating;
   final double? averageRating;
   final int ratingCount;
+  final int estimatedPrepMinutes;
   final String time;
   final bool isBusy;
   final List<String> tags;
@@ -95,6 +96,7 @@ class Restaurant {
     required this.rating,
     this.averageRating,
     this.ratingCount = 0,
+    this.estimatedPrepMinutes = 15,
     required this.time,
     this.isBusy = false,
     required this.tags,
@@ -109,6 +111,7 @@ class Restaurant {
     String? rating,
     double? averageRating,
     int? ratingCount,
+    int? estimatedPrepMinutes,
     String? time,
     bool? isBusy,
     List<String>? tags,
@@ -122,6 +125,7 @@ class Restaurant {
       rating: rating ?? this.rating,
       averageRating: averageRating ?? this.averageRating,
       ratingCount: ratingCount ?? this.ratingCount,
+      estimatedPrepMinutes: estimatedPrepMinutes ?? this.estimatedPrepMinutes,
       time: time ?? this.time,
       isBusy: isBusy ?? this.isBusy,
       tags: tags ?? this.tags,

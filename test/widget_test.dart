@@ -21,6 +21,7 @@ class _FakeRestaurantRepository implements RestaurantRepository {
     description: 'Fresh meals',
     image: '',
     rating: 'Live',
+    estimatedPrepMinutes: 14,
     time: 'Campus pickup',
     isBusy: isBusy,
     tags: const ['Open now'],
@@ -60,6 +61,7 @@ class _FakeRestaurantRepository implements RestaurantRepository {
       description: 'Fresh meals',
       image: '',
       rating: 'Live',
+      estimatedPrepMinutes: 14,
       time: 'Campus pickup',
       isBusy: isBusy,
       tags: const ['Open now'],
@@ -115,6 +117,24 @@ void main() {
     await tester.pump();
 
     expect(find.text('Busy now'), findsOneWidget);
+  });
+
+  testWidgets('restaurants screen shows prep estimate on the card', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          restaurantRepositoryProvider.overrideWithValue(const _FakeRestaurantRepository()),
+        ],
+        child: MaterialApp(
+          theme: buildLuqmahTheme(),
+          home: const RestaurantsPage(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.text('Usually ready in 14 min'), findsOneWidget);
   });
 
   testWidgets('cart page renders non-empty cart content', (
