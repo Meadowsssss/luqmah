@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:typed_data';
 
 import '../session/session_controller.dart';
 import 'admin_repository.dart';
@@ -45,13 +46,34 @@ class AdminVendorsController extends AsyncNotifier<List<AdminVendorRecord>> {
     await future;
   }
 
+  Future<String> uploadRestaurantCover({
+    required Uint8List bytes,
+    required String filename,
+    String? contentType,
+  }) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Admin session is required');
+    }
+
+    return _repository.uploadRestaurantCover(
+      token: token,
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
+  }
+
   Future<String> deleteVendor(String vendorId) async {
     final token = ref.read(sessionControllerProvider).snapshot.backendToken;
     if (token == null || token.isEmpty) {
       throw StateError('Admin session is required');
     }
 
-    final message = await _repository.deleteVendor(token: token, vendorId: vendorId);
+    final message = await _repository.deleteVendor(
+      token: token,
+      vendorId: vendorId,
+    );
     ref.invalidateSelf();
     await future;
     return message;

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:typed_data';
 
 import '../../core/realtime/realtime_event.dart';
 import '../../models/vendor.dart';
@@ -46,11 +47,13 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       return;
     }
 
-    final exists = currentState.menuItems.any((menuItem) => menuItem.id == item.id);
+    final exists = currentState.menuItems.any(
+      (menuItem) => menuItem.id == item.id,
+    );
     final nextMenuItems = exists
         ? currentState.menuItems
-            .map((menuItem) => menuItem.id == item.id ? item : menuItem)
-            .toList(growable: false)
+              .map((menuItem) => menuItem.id == item.id ? item : menuItem)
+              .toList(growable: false)
         : <VendorMenuItem>[item, ...currentState.menuItems];
 
     state = AsyncData(
@@ -88,8 +91,8 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     final exists = currentState.orders.any((item) => item.id == order.id);
     final nextOrders = exists
         ? currentState.orders
-            .map((item) => item.id == order.id ? order : item)
-            .toList(growable: false)
+              .map((item) => item.id == order.id ? order : item)
+              .toList(growable: false)
         : <VendorOrder>[order, ...currentState.orders];
 
     state = AsyncData(
@@ -110,7 +113,10 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     state = AsyncData(
       VendorDataState(
         orders: currentState.orders
-            .map((order) => order.id == orderId ? order.copyWith(status: status) : order)
+            .map(
+              (order) =>
+                  order.id == orderId ? order.copyWith(status: status) : order,
+            )
             .toList(growable: false),
         menuItems: currentState.menuItems,
         restaurants: currentState.restaurants,
@@ -129,7 +135,11 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
         orders: currentState.orders,
         menuItems: currentState.menuItems,
         restaurants: currentState.restaurants
-            .map((restaurant) => restaurant.id == restaurantId ? restaurant.copyWith(isBusy: isBusy) : restaurant)
+            .map(
+              (restaurant) => restaurant.id == restaurantId
+                  ? restaurant.copyWith(isBusy: isBusy)
+                  : restaurant,
+            )
             .toList(growable: false),
       ),
     );
@@ -187,7 +197,10 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     state = next;
   }
 
-  void _appendRestaurantCategory(String restaurantId, VendorRestaurantCategory category) {
+  void _appendRestaurantCategory(
+    String restaurantId,
+    VendorRestaurantCategory category,
+  ) {
     final currentState = state.valueOrNull;
     if (currentState == null) {
       return;
@@ -197,19 +210,21 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       VendorDataState(
         orders: currentState.orders,
         menuItems: currentState.menuItems,
-        restaurants: currentState.restaurants.map((restaurant) {
-          if (restaurant.id != restaurantId ||
-              restaurant.categories.any((item) => item.id == category.id)) {
-            return restaurant;
-          }
+        restaurants: currentState.restaurants
+            .map((restaurant) {
+              if (restaurant.id != restaurantId ||
+                  restaurant.categories.any((item) => item.id == category.id)) {
+                return restaurant;
+              }
 
-          return VendorRestaurant(
-            id: restaurant.id,
-            title: restaurant.title,
-            isBusy: restaurant.isBusy,
-            categories: [...restaurant.categories, category],
-          );
-        }).toList(growable: false),
+              return VendorRestaurant(
+                id: restaurant.id,
+                title: restaurant.title,
+                isBusy: restaurant.isBusy,
+                categories: [...restaurant.categories, category],
+              );
+            })
+            .toList(growable: false),
       ),
     );
   }
@@ -264,6 +279,24 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     _replaceMenuItem(menuItem);
   }
 
+  Future<String> uploadMenuItemImage({
+    required Uint8List bytes,
+    required String filename,
+    String? contentType,
+  }) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Vendor session is required');
+    }
+
+    return _repository.uploadMenuItemImage(
+      token: token,
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
+  }
+
   Future<void> editMenuItem({
     required String itemId,
     required String restaurantId,
@@ -315,7 +348,10 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     _replaceMenuItem(menuItem);
   }
 
-  Future<void> toggleMenuItemAvailability(String itemId, bool isAvailable) async {
+  Future<void> toggleMenuItemAvailability(
+    String itemId,
+    bool isAvailable,
+  ) async {
     final token = ref.read(sessionControllerProvider).snapshot.backendToken;
     if (token == null || token.isEmpty) {
       throw StateError('Vendor session is required');
@@ -335,11 +371,17 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       throw StateError('Vendor session is required');
     }
 
-    final deletedItemId = await _repository.deleteMenuItem(token: token, itemId: itemId);
+    final deletedItemId = await _repository.deleteMenuItem(
+      token: token,
+      itemId: itemId,
+    );
     _removeMenuItem(deletedItemId);
   }
 
-  Future<void> updateOrderStatus(String orderId, VendorOrderStatus status) async {
+  Future<void> updateOrderStatus(
+    String orderId,
+    VendorOrderStatus status,
+  ) async {
     final token = ref.read(sessionControllerProvider).snapshot.backendToken;
     if (token == null || token.isEmpty) {
       throw StateError('Vendor session is required');
@@ -368,7 +410,10 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     );
   }
 
-  Future<void> updateRestaurantBusyState(String restaurantId, bool isBusy) async {
+  Future<void> updateRestaurantBusyState(
+    String restaurantId,
+    bool isBusy,
+  ) async {
     final token = ref.read(sessionControllerProvider).snapshot.backendToken;
     if (token == null || token.isEmpty) {
       throw StateError('Vendor session is required');
@@ -391,7 +436,11 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
         orders: currentState.orders,
         menuItems: currentState.menuItems,
         restaurants: currentState.restaurants
-            .map((restaurant) => restaurant.id == restaurantId ? updatedRestaurant : restaurant)
+            .map(
+              (restaurant) => restaurant.id == restaurantId
+                  ? updatedRestaurant
+                  : restaurant,
+            )
             .toList(growable: false),
       ),
     );
@@ -399,19 +448,22 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
 }
 
 final vendorDataControllerProvider =
-    AsyncNotifierProvider<VendorDataController, VendorDataState>(VendorDataController.new);
+    AsyncNotifierProvider<VendorDataController, VendorDataState>(
+      VendorDataController.new,
+    );
 
-final vendorOrderByIdProvider = Provider.family<AsyncValue<VendorOrder?>, String>((ref, id) {
-  final state = ref.watch(vendorDataControllerProvider);
-  return state.whenData((value) {
-    for (final order in value.orders) {
-      if (order.id == id) {
-        return order;
-      }
-    }
-    return null;
-  });
-});
+final vendorOrderByIdProvider =
+    Provider.family<AsyncValue<VendorOrder?>, String>((ref, id) {
+      final state = ref.watch(vendorDataControllerProvider);
+      return state.whenData((value) {
+        for (final order in value.orders) {
+          if (order.id == id) {
+            return order;
+          }
+        }
+        return null;
+      });
+    });
 
 class VendorInsightsSummary {
   const VendorInsightsSummary({
@@ -442,11 +494,18 @@ class VendorTopItem {
 }
 
 VendorInsightsSummary summarizeVendorInsights(List<VendorOrder> orders) {
-  final completedOrders = orders.where((order) => order.status.isPast).toList(growable: false);
+  final completedOrders = orders
+      .where((order) => order.status.isPast)
+      .toList(growable: false);
   final activeOrders = orders.length - completedOrders.length;
   final revenueSource = completedOrders.isEmpty ? orders : completedOrders;
-  final totalRevenue = revenueSource.fold<double>(0, (sum, order) => sum + order.total);
-  final averageOrderValue = revenueSource.isEmpty ? 0.0 : totalRevenue / revenueSource.length;
+  final totalRevenue = revenueSource.fold<double>(
+    0,
+    (sum, order) => sum + order.total,
+  );
+  final averageOrderValue = revenueSource.isEmpty
+      ? 0.0
+      : totalRevenue / revenueSource.length;
 
   final totals = <String, VendorTopItem>{};
   for (final order in orders) {
@@ -472,7 +531,9 @@ VendorInsightsSummary summarizeVendorInsights(List<VendorOrder> orders) {
   );
 }
 
-final vendorInsightsProvider = Provider<AsyncValue<VendorInsightsSummary>>((ref) {
+final vendorInsightsProvider = Provider<AsyncValue<VendorInsightsSummary>>((
+  ref,
+) {
   final state = ref.watch(vendorDataControllerProvider);
   return state.whenData((value) => summarizeVendorInsights(value.orders));
 });

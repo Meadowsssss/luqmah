@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/api_client.dart';
@@ -24,9 +26,32 @@ class VendorRepository {
 
   final ApiClient _apiClient;
 
+  Future<String> uploadMenuItemImage({
+    required String token,
+    required Uint8List bytes,
+    required String filename,
+    String? contentType,
+  }) async {
+    final response = await _apiClient.uploadFile(
+      '/vendor/uploads/menu-item-image',
+      token: token,
+      fieldName: 'image',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
+    return response['imageUrl'] as String;
+  }
+
   Future<VendorWorkspaceData> loadWorkspace(String token) async {
-    final restaurantsResponse = await _apiClient.get('/vendor/restaurants/me', token: token);
-    final menuItemsResponse = await _apiClient.get('/vendor/menu-items', token: token);
+    final restaurantsResponse = await _apiClient.get(
+      '/vendor/restaurants/me',
+      token: token,
+    );
+    final menuItemsResponse = await _apiClient.get(
+      '/vendor/menu-items',
+      token: token,
+    );
     final activeOrdersResponse = await _apiClient.get(
       '/vendor/orders',
       token: token,
@@ -38,19 +63,27 @@ class VendorRepository {
       queryParameters: const {'status': 'past'},
     );
 
-    final restaurants = ((restaurantsResponse['restaurants'] as List<dynamic>?) ?? const [])
-        .map((json) => _vendorRestaurantFromJson(json as Map<String, dynamic>))
-        .toList(growable: false);
-    final menuItems = ((menuItemsResponse['menuItems'] as List<dynamic>?) ?? const [])
-        .map((json) => _vendorMenuItemFromJson(json as Map<String, dynamic>))
-        .toList(growable: false);
-    final orders = [
-      ...((activeOrdersResponse['orders'] as List<dynamic>?) ?? const []),
-      ...((pastOrdersResponse['orders'] as List<dynamic>?) ?? const []),
-    ]
-        .map((json) => _vendorOrderFromJson(json as Map<String, dynamic>))
-        .toList(growable: false)
-      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    final restaurants =
+        ((restaurantsResponse['restaurants'] as List<dynamic>?) ?? const [])
+            .map(
+              (json) => _vendorRestaurantFromJson(json as Map<String, dynamic>),
+            )
+            .toList(growable: false);
+    final menuItems =
+        ((menuItemsResponse['menuItems'] as List<dynamic>?) ?? const [])
+            .map(
+              (json) => _vendorMenuItemFromJson(json as Map<String, dynamic>),
+            )
+            .toList(growable: false);
+    final orders =
+        [
+              ...((activeOrdersResponse['orders'] as List<dynamic>?) ??
+                  const []),
+              ...((pastOrdersResponse['orders'] as List<dynamic>?) ?? const []),
+            ]
+            .map((json) => _vendorOrderFromJson(json as Map<String, dynamic>))
+            .toList(growable: false)
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
     return VendorWorkspaceData(
       orders: orders,
@@ -85,7 +118,9 @@ class VendorRepository {
       },
     );
 
-    return _vendorMenuItemFromJson(response['menuItem'] as Map<String, dynamic>);
+    return _vendorMenuItemFromJson(
+      response['menuItem'] as Map<String, dynamic>,
+    );
   }
 
   VendorMenuItem menuItemFromJson(Map<String, dynamic> json) {
@@ -121,7 +156,9 @@ class VendorRepository {
       },
     );
 
-    return _vendorMenuItemFromJson(response['menuItem'] as Map<String, dynamic>);
+    return _vendorMenuItemFromJson(
+      response['menuItem'] as Map<String, dynamic>,
+    );
   }
 
   Future<VendorRestaurantCategory> createMenuCategory({
@@ -132,10 +169,7 @@ class VendorRepository {
     final response = await _apiClient.post(
       '/vendor/menu-categories',
       token: token,
-      body: {
-        'restaurantId': restaurantId,
-        'title': title,
-      },
+      body: {'restaurantId': restaurantId, 'title': title},
     );
 
     final category = response['category'] as Map<String, dynamic>;
@@ -168,7 +202,9 @@ class VendorRepository {
       token: token,
       body: {'restaurantId': restaurantId, 'isBusy': isBusy},
     );
-    return _vendorRestaurantFromJson(response['restaurant'] as Map<String, dynamic>);
+    return _vendorRestaurantFromJson(
+      response['restaurant'] as Map<String, dynamic>,
+    );
   }
 
   Future<VendorMenuItem> updateMenuItemAvailability({
@@ -181,14 +217,19 @@ class VendorRepository {
       token: token,
       body: {'isAvailable': isAvailable},
     );
-    return _vendorMenuItemFromJson(response['menuItem'] as Map<String, dynamic>);
+    return _vendorMenuItemFromJson(
+      response['menuItem'] as Map<String, dynamic>,
+    );
   }
 
   Future<String> deleteMenuItem({
     required String token,
     required String itemId,
   }) async {
-    final response = await _apiClient.delete('/vendor/menu-items/$itemId', token: token);
+    final response = await _apiClient.delete(
+      '/vendor/menu-items/$itemId',
+      token: token,
+    );
     return response['deletedItemId'] as String? ?? itemId;
   }
 
@@ -236,8 +277,10 @@ class VendorRepository {
         .toList(growable: false);
 
     return VendorMenuItem(
-      restaurantId: (json['restaurant'] as Map<String, dynamic>)['id'] as String,
-      restaurantTitle: (json['restaurant'] as Map<String, dynamic>)['title'] as String,
+      restaurantId:
+          (json['restaurant'] as Map<String, dynamic>)['id'] as String,
+      restaurantTitle:
+          (json['restaurant'] as Map<String, dynamic>)['title'] as String,
       categoryId: (json['category'] as Map<String, dynamic>)['id'] as String,
       id: json['id'] as String,
       title: json['title'] as String,
@@ -255,9 +298,14 @@ class VendorRepository {
     final items = ((json['orderItems'] as List<dynamic>?) ?? const [])
         .map((item) {
           final itemJson = item as Map<String, dynamic>;
-          final extras = ((itemJson['customizations'] as List<dynamic>?) ?? const [])
-              .map((customization) => (customization as Map<String, dynamic>)['title'] as String)
-              .toList(growable: false);
+          final extras =
+              ((itemJson['customizations'] as List<dynamic>?) ?? const [])
+                  .map(
+                    (customization) =>
+                        (customization as Map<String, dynamic>)['title']
+                            as String,
+                  )
+                  .toList(growable: false);
           return VendorOrderItem(
             name: itemJson['itemTitle'] as String,
             quantity: (itemJson['quantity'] as num).toInt(),
@@ -272,8 +320,12 @@ class VendorRepository {
 
     return VendorOrder(
       id: json['id'] as String,
-      customerName: ((json['customer'] as Map<String, dynamic>?)?['name'] as String?) ?? 'Customer',
-      customerPhone: ((json['customer'] as Map<String, dynamic>?)?['email'] as String?) ?? '',
+      customerName:
+          ((json['customer'] as Map<String, dynamic>?)?['name'] as String?) ??
+          'Customer',
+      customerPhone:
+          ((json['customer'] as Map<String, dynamic>?)?['email'] as String?) ??
+          '',
       dateTime: DateTime.parse(json['createdAt'] as String),
       estimatedReadyAt: json['estimatedReadyAt'] == null
           ? null

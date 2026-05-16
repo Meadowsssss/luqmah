@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
@@ -15,7 +18,8 @@ class VendorProductFormPage extends ConsumerStatefulWidget {
   bool get isEditMode => itemId != null;
 
   @override
-  ConsumerState<VendorProductFormPage> createState() => _VendorProductFormPageState();
+  ConsumerState<VendorProductFormPage> createState() =>
+      _VendorProductFormPageState();
 }
 
 class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
@@ -24,14 +28,18 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
   final _titleController = TextEditingController();
   final _ingredientsController = TextEditingController();
   final _priceController = TextEditingController();
-  final _imageUrlController = TextEditingController();
   final _newCategoryController = TextEditingController();
+  final _imagePicker = ImagePicker();
 
   String? _restaurantId;
   String? _categoryId;
+  Uint8List? _selectedImageBytes;
+  String? _selectedImageName;
+  String? _selectedImageMimeType;
   bool _creatingNewCategory = false;
   bool _submitting = false;
   bool _didInitializeForm = false;
+  bool _clearExistingImage = false;
   List<_OptionGroupDraft> _optionGroups = <_OptionGroupDraft>[];
 
   @override
@@ -40,7 +48,6 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
     _titleController.dispose();
     _ingredientsController.dispose();
     _priceController.dispose();
-    _imageUrlController.dispose();
     _newCategoryController.dispose();
     super.dispose();
   }
@@ -60,10 +67,11 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
     final nextCategoryId = categories.isEmpty
         ? null
         : categories.any((item) => item.id == _categoryId)
-            ? _categoryId
-            : categories.first.id;
+        ? _categoryId
+        : categories.first.id;
 
-    if (_restaurantId != selectedRestaurant.id || _categoryId != nextCategoryId) {
+    if (_restaurantId != selectedRestaurant.id ||
+        _categoryId != nextCategoryId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;
@@ -88,7 +96,6 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
     _descriptionController.text = item.description;
     _ingredientsController.text = item.ingredients.join(', ');
     _priceController.text = item.price.toStringAsFixed(2);
-    _imageUrlController.text = item.image;
     _optionGroups = item.optionGroups
         .map(
           (group) => _OptionGroupDraft(
@@ -137,35 +144,79 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
   }
 
   List<Map<String, Object?>> _serializeOptionGroups() {
-    return _optionGroups.asMap().entries.map((groupEntry) {
-      final group = groupEntry.value;
-      return <String, Object?>{
-        'title': group.title.trim(),
-        'selectionType': group.selectionType == VendorMenuItemOptionSelectionType.single
-            ? 'single'
-            : 'multiple',
-        'isRequired': group.isRequired,
-        'sortOrder': groupEntry.key,
-        'options': group.options.asMap().entries.map((optionEntry) {
-          final option = optionEntry.value;
+    return _optionGroups
+        .asMap()
+        .entries
+        .map((groupEntry) {
+          final group = groupEntry.value;
           return <String, Object?>{
-            'title': option.title.trim(),
-            'priceDelta': double.parse(option.priceDeltaText.trim()),
-            'sortOrder': optionEntry.key,
+            'title': group.title.trim(),
+            'selectionType':
+                group.selectionType == VendorMenuItemOptionSelectionType.single
+                ? 'single'
+                : 'multiple',
+            'isRequired': group.isRequired,
+            'sortOrder': groupEntry.key,
+            'options': group.options
+                .asMap()
+                .entries
+                .map((optionEntry) {
+                  final option = optionEntry.value;
+                  return <String, Object?>{
+                    'title': option.title.trim(),
+                    'priceDelta': double.parse(option.priceDeltaText.trim()),
+                    'sortOrder': optionEntry.key,
+                  };
+                })
+                .toList(growable: false),
           };
-        }).toList(growable: false),
-      };
-    }).toList(growable: false);
+        })
+        .toList(growable: false);
   }
 
-  Future<void> _submit({required bool isEditMode, required VendorMenuItem? editingItem}) async {
+  Future<void> _pickImage() async {
+    final image = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (image == null) {
+      return;
+    }
+
+    final bytes = await image.readAsBytes();
+    setState(() {
+      _selectedImageBytes = bytes;
+      _selectedImageName = image.name;
+      _selectedImageMimeType = image.mimeType;
+      _clearExistingImage = false;
+    });
+  }
+
+  void _removeImage({required bool hasExistingImage}) {
+    setState(() {
+      if (_selectedImageBytes != null) {
+        _selectedImageBytes = null;
+        _selectedImageName = null;
+        _selectedImageMimeType = null;
+        return;
+      }
+
+      if (hasExistingImage) {
+        _clearExistingImage = true;
+      }
+    });
+  }
+
+  Future<void> _submit({
+    required bool isEditMode,
+    required VendorMenuItem? editingItem,
+  }) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     final optionGroupsError = _validateOptionGroups();
     if (optionGroupsError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(optionGroupsError)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(optionGroupsError)));
       return;
     }
 
@@ -178,7 +229,9 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
 
     if (!_creatingNewCategory && _categoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choose an existing category or create a new one.')),
+        const SnackBar(
+          content: Text('Choose an existing category or create a new one.'),
+        ),
       );
       return;
     }
@@ -195,8 +248,21 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
     try {
       final notifier = ref.read(vendorDataControllerProvider.notifier);
       final categoryId = _creatingNewCategory ? null : _categoryId;
-      final newCategoryTitle = _creatingNewCategory ? _newCategoryController.text.trim() : null;
+      final newCategoryTitle = _creatingNewCategory
+          ? _newCategoryController.text.trim()
+          : null;
       final optionGroups = _serializeOptionGroups();
+      var imageUrl = isEditMode && !_clearExistingImage
+          ? editingItem!.image
+          : '';
+
+      if (_selectedImageBytes != null) {
+        imageUrl = await notifier.uploadMenuItemImage(
+          bytes: _selectedImageBytes!,
+          filename: _selectedImageName ?? 'menu-item-image.jpg',
+          contentType: _selectedImageMimeType,
+        );
+      }
 
       if (isEditMode) {
         await notifier.editMenuItem(
@@ -207,7 +273,7 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim(),
           price: double.parse(_priceController.text.trim()),
-          imageUrl: _imageUrlController.text.trim(),
+          imageUrl: imageUrl,
           ingredientNames: _parseCsv(_ingredientsController),
           optionGroups: optionGroups,
         );
@@ -219,7 +285,7 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim(),
           price: double.parse(_priceController.text.trim()),
-          imageUrl: _imageUrlController.text.trim(),
+          imageUrl: imageUrl,
           ingredientNames: _parseCsv(_ingredientsController),
           optionGroups: optionGroups,
         );
@@ -231,7 +297,9 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            isEditMode ? 'Product updated successfully.' : 'Product published successfully.',
+            isEditMode
+                ? 'Product updated successfully.'
+                : 'Product published successfully.',
           ),
         ),
       );
@@ -241,7 +309,9 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     } finally {
       if (mounted) {
@@ -257,7 +327,8 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
     final pageTitle = isEditMode ? 'Edit product' : 'Add product';
 
     return data.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
         appBar: AppBar(title: Text(pageTitle)),
         body: Padding(
@@ -291,7 +362,8 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
               child: AppEmptyState(
                 icon: Icons.storefront_outlined,
                 title: 'No restaurant setup yet',
-                message: 'Ask an admin to create your restaurant and categories before publishing products.',
+                message:
+                    'Ask an admin to create your restaurant and categories before publishing products.',
               ),
             ),
           );
@@ -317,7 +389,13 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
           orElse: () => restaurants.first,
         );
         final categories = selectedRestaurant.categories;
-        final activeCategoryId = categories.any((item) => item.id == _categoryId)
+        final existingImageUrl = isEditMode && !_clearExistingImage
+            ? editingItem?.image ?? ''
+            : '';
+        final hasImage =
+            _selectedImageBytes != null || existingImageUrl.isNotEmpty;
+        final activeCategoryId =
+            categories.any((item) => item.id == _categoryId)
             ? _categoryId
             : (categories.isEmpty ? null : categories.first.id);
 
@@ -332,12 +410,17 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Product details', style: Theme.of(context).textTheme.titleLarge),
+                      Text(
+                        'Product details',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                       const SizedBox(height: AppSpacing.lg),
                       if (isEditMode)
                         TextFormField(
                           initialValue: selectedRestaurant.title,
-                          decoration: const InputDecoration(labelText: 'Restaurant'),
+                          decoration: const InputDecoration(
+                            labelText: 'Restaurant',
+                          ),
                           readOnly: true,
                           enabled: false,
                         )
@@ -346,7 +429,12 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                           key: ValueKey(currentRestaurantId),
                           initialValue: currentRestaurantId,
                           items: restaurants
-                              .map((value) => DropdownMenuItem(value: value.id, child: Text(value.title)))
+                              .map(
+                                (value) => DropdownMenuItem(
+                                  value: value.id,
+                                  child: Text(value.title),
+                                ),
+                              )
                               .toList(growable: false),
                           onChanged: (value) {
                             if (value == null) {
@@ -354,19 +442,31 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                             }
                             setState(() {
                               _restaurantId = value;
-                              final nextRestaurant = restaurants.firstWhere((item) => item.id == value);
-                              _categoryId = nextRestaurant.categories.isEmpty ? null : nextRestaurant.categories.first.id;
+                              final nextRestaurant = restaurants.firstWhere(
+                                (item) => item.id == value,
+                              );
+                              _categoryId = nextRestaurant.categories.isEmpty
+                                  ? null
+                                  : nextRestaurant.categories.first.id;
                               _creatingNewCategory = false;
                               _newCategoryController.clear();
                             });
                           },
-                          decoration: const InputDecoration(labelText: 'Restaurant'),
+                          decoration: const InputDecoration(
+                            labelText: 'Restaurant',
+                          ),
                         ),
                       const SizedBox(height: AppSpacing.lg),
                       SegmentedButton<bool>(
                         segments: const [
-                          ButtonSegment<bool>(value: false, label: Text('Use existing')),
-                          ButtonSegment<bool>(value: true, label: Text('Create new')),
+                          ButtonSegment<bool>(
+                            value: false,
+                            label: Text('Use existing'),
+                          ),
+                          ButtonSegment<bool>(
+                            value: true,
+                            label: Text('Create new'),
+                          ),
                         ],
                         selected: <bool>{_creatingNewCategory},
                         onSelectionChanged: (selection) {
@@ -398,10 +498,17 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                         )
                       else
                         DropdownButtonFormField<String>(
-                          key: ValueKey('${selectedRestaurant.id}-${activeCategoryId ?? 'none'}'),
+                          key: ValueKey(
+                            '${selectedRestaurant.id}-${activeCategoryId ?? 'none'}',
+                          ),
                           initialValue: activeCategoryId,
                           items: categories
-                              .map((value) => DropdownMenuItem(value: value.id, child: Text(value.title)))
+                              .map(
+                                (value) => DropdownMenuItem(
+                                  value: value.id,
+                                  child: Text(value.title),
+                                ),
+                              )
                               .toList(growable: false),
                           onChanged: categories.isEmpty
                               ? null
@@ -418,15 +525,20 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                       const SizedBox(height: AppSpacing.lg),
                       TextFormField(
                         controller: _titleController,
-                        decoration: const InputDecoration(labelText: 'Food title'),
-                        validator: (value) => value == null || value.trim().isEmpty
+                        decoration: const InputDecoration(
+                          labelText: 'Food title',
+                        ),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
                             ? 'Food title is required'
                             : null,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       TextFormField(
                         controller: _descriptionController,
-                        decoration: const InputDecoration(labelText: 'Description'),
+                        decoration: const InputDecoration(
+                          labelText: 'Description',
+                        ),
                         maxLines: 3,
                       ),
                       const SizedBox(height: AppSpacing.lg),
@@ -436,15 +548,20 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                           labelText: 'Ingredients',
                           hintText: 'Tomato, mozzarella, basil',
                         ),
-                        validator: (value) => value == null || value.trim().isEmpty
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
                             ? 'Ingredients are required'
                             : null,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       TextFormField(
                         controller: _priceController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(labelText: 'Base price in JD'),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Base price in JD',
+                        ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Price is required';
@@ -456,9 +573,15 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                         },
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      TextFormField(
-                        controller: _imageUrlController,
-                        decoration: const InputDecoration(labelText: 'Image URL'),
+                      _ProductImagePicker(
+                        selectedBytes: _selectedImageBytes,
+                        existingImageUrl: existingImageUrl,
+                        onChoose: _submitting ? null : _pickImage,
+                        onRemove: hasImage
+                            ? () => _removeImage(
+                                hasExistingImage: existingImageUrl.isNotEmpty,
+                              )
+                            : null,
                       ),
                     ],
                   ),
@@ -471,7 +594,10 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                       Row(
                         children: [
                           Expanded(
-                            child: Text('Option groups', style: Theme.of(context).textTheme.titleLarge),
+                            child: Text(
+                              'Option groups',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
                           ),
                           TextButton.icon(
                             onPressed: () {
@@ -479,9 +605,14 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                                 _optionGroups.add(
                                   _OptionGroupDraft(
                                     title: '',
-                                    selectionType: VendorMenuItemOptionSelectionType.single,
+                                    selectionType:
+                                        VendorMenuItemOptionSelectionType
+                                            .single,
                                     options: [
-                                      _OptionValueDraft(title: '', priceDeltaText: '0'),
+                                      _OptionValueDraft(
+                                        title: '',
+                                        priceDeltaText: '0',
+                                      ),
                                     ],
                                   ),
                                 );
@@ -524,12 +655,18 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                 ElevatedButton(
                   onPressed: _submitting
                       ? null
-                      : () => _submit(isEditMode: isEditMode, editingItem: editingItem),
+                      : () => _submit(
+                          isEditMode: isEditMode,
+                          editingItem: editingItem,
+                        ),
                   child: _submitting
                       ? const SizedBox(
                           height: 18,
                           width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : Text(isEditMode ? 'Save changes' : 'Add product'),
                 ),
@@ -538,6 +675,83 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _ProductImagePicker extends StatelessWidget {
+  const _ProductImagePicker({
+    required this.selectedBytes,
+    required this.existingImageUrl,
+    required this.onChoose,
+    required this.onRemove,
+  });
+
+  final Uint8List? selectedBytes;
+  final String existingImageUrl;
+  final VoidCallback? onChoose;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = selectedBytes != null || existingImageUrl.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Product image', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: AppSpacing.sm),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              color: AppColors.surfaceAlt,
+              alignment: Alignment.center,
+              child: selectedBytes != null
+                  ? Image.memory(
+                      selectedBytes!,
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                      height: double.infinity,
+                    )
+                  : existingImageUrl.isNotEmpty
+                  ? Image.network(
+                      existingImageUrl,
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.image_not_supported_outlined),
+                    )
+                  : const Icon(Icons.add_photo_alternate_outlined, size: 42),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            OutlinedButton.icon(
+              onPressed: onChoose,
+              icon: const Icon(Icons.upload_rounded),
+              label: Text(hasImage ? 'Change image' : 'Choose image'),
+            ),
+            if (hasImage) ...[
+              const SizedBox(width: AppSpacing.md),
+              TextButton.icon(
+                onPressed: onRemove,
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: const Text('Remove'),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'JPEG, PNG, or WebP. Maximum 5 MB.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
     );
   }
 }
@@ -576,7 +790,10 @@ class _OptionGroupEditor extends StatelessWidget {
               ),
               IconButton(
                 onPressed: onRemove,
-                icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColors.error,
+                ),
               ),
             ],
           ),
@@ -602,7 +819,9 @@ class _OptionGroupEditor extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             value: group.isRequired,
             title: const Text('Required'),
-            subtitle: const Text('Customers must choose from this group before adding to cart.'),
+            subtitle: const Text(
+              'Customers must choose from this group before adding to cart.',
+            ),
             onChanged: (value) {
               group.isRequired = value;
               onChanged();
@@ -615,7 +834,9 @@ class _OptionGroupEditor extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     initialValue: optionEntry.value.title,
-                    decoration: const InputDecoration(labelText: 'Option title'),
+                    decoration: const InputDecoration(
+                      labelText: 'Option title',
+                    ),
                     onChanged: (value) => optionEntry.value.title = value,
                   ),
                 ),
@@ -624,9 +845,12 @@ class _OptionGroupEditor extends StatelessWidget {
                   width: 120,
                   child: TextFormField(
                     initialValue: optionEntry.value.priceDeltaText,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: const InputDecoration(labelText: 'Price delta'),
-                    onChanged: (value) => optionEntry.value.priceDeltaText = value,
+                    onChanged: (value) =>
+                        optionEntry.value.priceDeltaText = value,
                   ),
                 ),
                 IconButton(
@@ -644,7 +868,9 @@ class _OptionGroupEditor extends StatelessWidget {
           ],
           TextButton.icon(
             onPressed: () {
-              group.options.add(_OptionValueDraft(title: '', priceDeltaText: '0'));
+              group.options.add(
+                _OptionValueDraft(title: '', priceDeltaText: '0'),
+              );
               onChanged();
             },
             icon: const Icon(Icons.add_rounded),

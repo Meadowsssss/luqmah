@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../shared/widgets/app_surface_card.dart';
@@ -9,7 +12,8 @@ class AdminCreateVendorPage extends ConsumerStatefulWidget {
   const AdminCreateVendorPage({super.key});
 
   @override
-  ConsumerState<AdminCreateVendorPage> createState() => _AdminCreateVendorPageState();
+  ConsumerState<AdminCreateVendorPage> createState() =>
+      _AdminCreateVendorPageState();
 }
 
 class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
@@ -20,8 +24,11 @@ class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
   final _restaurantTitleController = TextEditingController();
   final _restaurantDescriptionController = TextEditingController();
   final _restaurantAddressController = TextEditingController();
-  final _coverImageController = TextEditingController();
   final _categoriesController = TextEditingController();
+  final _imagePicker = ImagePicker();
+  Uint8List? _coverImageBytes;
+  String? _coverImageName;
+  String? _coverImageMimeType;
   bool _submitting = false;
 
   @override
@@ -32,9 +39,22 @@ class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
     _restaurantTitleController.dispose();
     _restaurantDescriptionController.dispose();
     _restaurantAddressController.dispose();
-    _coverImageController.dispose();
     _categoriesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickCoverImage() async {
+    final image = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (image == null) {
+      return;
+    }
+
+    final bytes = await image.readAsBytes();
+    setState(() {
+      _coverImageBytes = bytes;
+      _coverImageName = image.name;
+      _coverImageMimeType = image.mimeType;
+    });
   }
 
   Future<void> _submit() async {
@@ -44,22 +64,35 @@ class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
 
     setState(() => _submitting = true);
     try {
+      var coverImage = '';
+      if (_coverImageBytes != null) {
+        coverImage = await ref
+            .read(adminVendorsControllerProvider.notifier)
+            .uploadRestaurantCover(
+              bytes: _coverImageBytes!,
+              filename: _coverImageName ?? 'restaurant-cover.jpg',
+              contentType: _coverImageMimeType,
+            );
+      }
+
       final categories = _categoriesController.text
           .split(',')
           .map((value) => value.trim())
           .where((value) => value.isNotEmpty)
           .toList(growable: false);
 
-      await ref.read(adminVendorsControllerProvider.notifier).createVendor(
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-        restaurantTitle: _restaurantTitleController.text.trim(),
-        restaurantDescription: _restaurantDescriptionController.text.trim(),
-        restaurantAddress: _restaurantAddressController.text.trim(),
-        coverImage: _coverImageController.text.trim(),
-        categories: categories,
-      );
+      await ref
+          .read(adminVendorsControllerProvider.notifier)
+          .createVendor(
+            name: _nameController.text.trim(),
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+            restaurantTitle: _restaurantTitleController.text.trim(),
+            restaurantDescription: _restaurantDescriptionController.text.trim(),
+            restaurantAddress: _restaurantAddressController.text.trim(),
+            coverImage: coverImage,
+            categories: categories,
+          );
       if (!mounted) {
         return;
       }
@@ -72,7 +105,9 @@ class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     } finally {
       if (mounted) {
@@ -94,24 +129,36 @@ class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Vendor account', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Vendor account',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                   TextFormField(
                     controller: _nameController,
                     decoration: const InputDecoration(labelText: 'Vendor name'),
-                    validator: (value) => value == null || value.trim().isEmpty ? 'Required' : null,
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Required'
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(labelText: 'Vendor email'),
-                    validator: (value) => value == null || value.trim().isEmpty ? 'Required' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Vendor email',
+                    ),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Required'
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   TextFormField(
                     controller: _passwordController,
-                    decoration: const InputDecoration(labelText: 'Temporary password'),
-                    validator: (value) => value == null || value.trim().length < 8
+                    decoration: const InputDecoration(
+                      labelText: 'Temporary password',
+                    ),
+                    validator: (value) =>
+                        value == null || value.trim().length < 8
                         ? 'Minimum 8 characters'
                         : null,
                   ),
@@ -123,12 +170,19 @@ class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Restaurant setup', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Restaurant setup',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                   TextFormField(
                     controller: _restaurantTitleController,
-                    decoration: const InputDecoration(labelText: 'Restaurant title'),
-                    validator: (value) => value == null || value.trim().isEmpty ? 'Required' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Restaurant title',
+                    ),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Required'
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   TextFormField(
@@ -142,9 +196,16 @@ class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
                     decoration: const InputDecoration(labelText: 'Address'),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  TextFormField(
-                    controller: _coverImageController,
-                    decoration: const InputDecoration(labelText: 'Cover image URL'),
+                  _CoverImagePicker(
+                    selectedBytes: _coverImageBytes,
+                    onChoose: _submitting ? null : _pickCoverImage,
+                    onRemove: _coverImageBytes == null
+                        ? null
+                        : () => setState(() {
+                            _coverImageBytes = null;
+                            _coverImageName = null;
+                            _coverImageMimeType = null;
+                          }),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   TextFormField(
@@ -167,13 +228,84 @@ class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
                   ? const SizedBox(
                       height: 18,
                       width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text('Create vendor'),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CoverImagePicker extends StatelessWidget {
+  const _CoverImagePicker({
+    required this.selectedBytes,
+    required this.onChoose,
+    required this.onRemove,
+  });
+
+  final Uint8List? selectedBytes;
+  final VoidCallback? onChoose;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = selectedBytes != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Restaurant cover image',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Container(
+              color: AppColors.surfaceAlt,
+              alignment: Alignment.center,
+              child: selectedBytes == null
+                  ? const Icon(Icons.add_photo_alternate_outlined, size: 42)
+                  : Image.memory(
+                      selectedBytes!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            OutlinedButton.icon(
+              onPressed: onChoose,
+              icon: const Icon(Icons.upload_rounded),
+              label: Text(hasImage ? 'Change cover' : 'Choose cover'),
+            ),
+            if (hasImage) ...[
+              const SizedBox(width: AppSpacing.md),
+              TextButton.icon(
+                onPressed: onRemove,
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: const Text('Remove'),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'JPEG, PNG, or WebP. Maximum 5 MB.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
     );
   }
 }

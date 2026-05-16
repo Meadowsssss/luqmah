@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/api_client.dart';
@@ -37,6 +39,23 @@ class AdminRepository {
 
   final ApiClient _apiClient;
 
+  Future<String> uploadRestaurantCover({
+    required String token,
+    required Uint8List bytes,
+    required String filename,
+    String? contentType,
+  }) async {
+    final response = await _apiClient.uploadFile(
+      '/admin/uploads/restaurant-cover',
+      token: token,
+      fieldName: 'image',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
+    return response['imageUrl'] as String;
+  }
+
   Future<List<AdminVendorRecord>> loadVendors(String token) async {
     final response = await _apiClient.get('/admin/vendors', token: token);
     return ((response['vendors'] as List<dynamic>?) ?? const [])
@@ -64,7 +83,8 @@ class AdminRepository {
         'password': password,
         'restaurant': {
           'title': restaurantTitle,
-          if (restaurantDescription.isNotEmpty) 'description': restaurantDescription,
+          if (restaurantDescription.isNotEmpty)
+            'description': restaurantDescription,
           if (restaurantAddress.isNotEmpty) 'address': restaurantAddress,
           if (coverImage.isNotEmpty) 'coverImage': coverImage,
           'isActive': true,
@@ -82,7 +102,10 @@ class AdminRepository {
     required String token,
     required String vendorId,
   }) async {
-    final response = await _apiClient.delete('/admin/vendors/$vendorId', token: token);
+    final response = await _apiClient.delete(
+      '/admin/vendors/$vendorId',
+      token: token,
+    );
     return response['message'] as String? ?? 'Vendor deleted successfully.';
   }
 
@@ -98,9 +121,15 @@ class AdminRepository {
             return AdminRestaurantRecord(
               id: restaurantJson['id'] as String,
               title: restaurantJson['title'] as String,
-              categories: ((restaurantJson['menuCategories'] as List<dynamic>?) ?? const [])
-                  .map((category) => (category as Map<String, dynamic>)['title'] as String)
-                  .toList(growable: false),
+              categories:
+                  ((restaurantJson['menuCategories'] as List<dynamic>?) ??
+                          const [])
+                      .map(
+                        (category) =>
+                            (category as Map<String, dynamic>)['title']
+                                as String,
+                      )
+                      .toList(growable: false),
             );
           })
           .toList(growable: false),

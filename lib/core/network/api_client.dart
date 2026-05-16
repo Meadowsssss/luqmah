@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient();
@@ -90,6 +91,89 @@ class ApiClient {
     Object? body,
   }) async {
     return _request('DELETE', path, token: token, body: body);
+  }
+
+  Future<Map<String, dynamic>> uploadFile(
+    String path, {
+    required String token,
+    required String fieldName,
+    required Uint8List bytes,
+    required String filename,
+    String? contentType,
+  }) async {
+    final uri = Uri.parse('$_baseUrl$path');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          fieldName,
+          bytes,
+          filename: filename,
+          contentType: MediaType.parse(
+            contentType ?? _contentTypeForFilename(filename),
+          ),
+        ),
+      );
+
+    http.Response response;
+    try {
+      final streamedResponse = await _client.send(request).timeout(_timeout);
+      response = await http.Response.fromStream(streamedResponse);
+    } on TimeoutException catch (error) {
+      throw ApiException(
+        'The Luqmah backend timed out. Please try again.',
+        code: 'REQUEST_TIMEOUT',
+        method: 'POST',
+        path: path,
+        details: error.toString(),
+      );
+    } on SocketException catch (error) {
+      throw ApiException(
+        'Cannot reach the Luqmah backend right now.',
+        code: 'NETWORK_UNREACHABLE',
+        method: 'POST',
+        path: path,
+        details: error.message,
+      );
+    }
+
+    final dynamic decoded = response.body.isEmpty
+        ? <String, dynamic>{}
+        : jsonDecode(response.body);
+
+    if (response.statusCode >= 400) {
+      final map = decoded is Map<String, dynamic>
+          ? decoded
+          : const <String, dynamic>{};
+      throw ApiException(
+        map['message'] as String? ?? 'Upload failed',
+        statusCode: response.statusCode,
+        code: map['code'] as String?,
+        method: 'POST',
+        path: path,
+        details: map['details'] ?? map['errors'] ?? map['debug'],
+      );
+    }
+
+    if (decoded is! Map<String, dynamic>) {
+      throw const ApiException(
+        'Unexpected response format',
+        code: 'INVALID_RESPONSE_FORMAT',
+      );
+    }
+
+    return decoded;
+  }
+
+  String _contentTypeForFilename(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (lower.endsWith('.webp')) {
+      return 'image/webp';
+    }
+    return 'image/jpeg';
   }
 
   Future<Map<String, dynamic>> _request(
