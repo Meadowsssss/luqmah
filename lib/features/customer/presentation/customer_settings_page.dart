@@ -17,99 +17,17 @@ class CustomerSettingsPage extends ConsumerWidget {
     WidgetRef ref,
     String currentPhoneNumber,
   ) async {
-    final phoneController = TextEditingController(text: currentPhoneNumber);
-    String? error;
-    bool saving = false;
-
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(
-                currentPhoneNumber.isEmpty
-                    ? 'Add phone number'
-                    : 'Change phone number',
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone number',
-                      hintText: '07...',
-                    ),
-                  ),
-                  if (error != null) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ],
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: saving ? null : () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: saving
-                      ? null
-                      : () async {
-                          final phoneNumber = phoneController.text.trim();
-                          if (phoneNumber.isEmpty) {
-                            setState(() => error = 'Phone number is required.');
-                            return;
-                          }
-
-                          setState(() {
-                            saving = true;
-                            error = null;
-                          });
-
-                          try {
-                            await ref
-                                .read(sessionControllerProvider)
-                                .updateCustomerPhoneNumber(phoneNumber);
-                            if (context.mounted) {
-                              Navigator.of(dialogContext).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Phone number updated.'),
-                                ),
-                              );
-                            }
-                          } catch (err) {
-                            setState(() {
-                              saving = false;
-                              error = formatAuthError(err);
-                            });
-                          }
-                        },
-                  child: saving
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (dialogContext) => _PhoneNumberDialog(
+        currentPhoneNumber: currentPhoneNumber,
+        onSaved: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Phone number updated.')),
+          );
+        },
+      ),
     );
-
-    phoneController.dispose();
   }
 
   Future<void> _showCustomerPasswordDialog(BuildContext context, WidgetRef ref) async {
@@ -377,6 +295,119 @@ class CustomerSettingsPage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PhoneNumberDialog extends ConsumerStatefulWidget {
+  const _PhoneNumberDialog({
+    required this.currentPhoneNumber,
+    required this.onSaved,
+  });
+
+  final String currentPhoneNumber;
+  final VoidCallback onSaved;
+
+  @override
+  ConsumerState<_PhoneNumberDialog> createState() => _PhoneNumberDialogState();
+}
+
+class _PhoneNumberDialogState extends ConsumerState<_PhoneNumberDialog> {
+  late final TextEditingController _phoneController;
+  String? _error;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController = TextEditingController(text: widget.currentPhoneNumber);
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final phoneNumber = _phoneController.text.trim();
+    if (phoneNumber.isEmpty) {
+      setState(() => _error = 'Phone number is required.');
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+
+    try {
+      await ref
+          .read(sessionControllerProvider)
+          .updateCustomerPhoneNumber(phoneNumber);
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop();
+      widget.onSaved();
+    } catch (err) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _saving = false;
+        _error = formatAuthError(err);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        widget.currentPhoneNumber.isEmpty
+            ? 'Add phone number'
+            : 'Change phone number',
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'Phone number',
+              hintText: '07...',
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _saving ? null : _save,
+          child: _saving
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Save'),
+        ),
+      ],
     );
   }
 }
