@@ -36,6 +36,11 @@ class AppRadii {
 
 class LuqmahThemeTokens extends ThemeExtension<LuqmahThemeTokens> {
   const LuqmahThemeTokens({
+    required this.primary,
+    required this.surface,
+    required this.surfaceAlt,
+    required this.background,
+    required this.strongText,
     required this.accent,
     required this.mutedText,
     required this.border,
@@ -44,6 +49,11 @@ class LuqmahThemeTokens extends ThemeExtension<LuqmahThemeTokens> {
     required this.info,
   });
 
+  final Color primary;
+  final Color surface;
+  final Color surfaceAlt;
+  final Color background;
+  final Color strongText;
   final Color accent;
   final Color mutedText;
   final Color border;
@@ -53,6 +63,11 @@ class LuqmahThemeTokens extends ThemeExtension<LuqmahThemeTokens> {
 
   @override
   LuqmahThemeTokens copyWith({
+    Color? primary,
+    Color? surface,
+    Color? surfaceAlt,
+    Color? background,
+    Color? strongText,
     Color? accent,
     Color? mutedText,
     Color? border,
@@ -61,6 +76,11 @@ class LuqmahThemeTokens extends ThemeExtension<LuqmahThemeTokens> {
     Color? info,
   }) {
     return LuqmahThemeTokens(
+      primary: primary ?? this.primary,
+      surface: surface ?? this.surface,
+      surfaceAlt: surfaceAlt ?? this.surfaceAlt,
+      background: background ?? this.background,
+      strongText: strongText ?? this.strongText,
       accent: accent ?? this.accent,
       mutedText: mutedText ?? this.mutedText,
       border: border ?? this.border,
@@ -77,6 +97,11 @@ class LuqmahThemeTokens extends ThemeExtension<LuqmahThemeTokens> {
     }
 
     return LuqmahThemeTokens(
+      primary: Color.lerp(primary, other.primary, t) ?? primary,
+      surface: Color.lerp(surface, other.surface, t) ?? surface,
+      surfaceAlt: Color.lerp(surfaceAlt, other.surfaceAlt, t) ?? surfaceAlt,
+      background: Color.lerp(background, other.background, t) ?? background,
+      strongText: Color.lerp(strongText, other.strongText, t) ?? strongText,
       accent: Color.lerp(accent, other.accent, t) ?? accent,
       mutedText: Color.lerp(mutedText, other.mutedText, t) ?? mutedText,
       border: Color.lerp(border, other.border, t) ?? border,
@@ -91,6 +116,11 @@ extension LuqmahThemeContext on BuildContext {
   LuqmahThemeTokens get luqmah =>
       Theme.of(this).extension<LuqmahThemeTokens>() ??
       const LuqmahThemeTokens(
+        primary: AppColors.primary,
+        surface: AppColors.surface,
+        surfaceAlt: AppColors.surfaceAlt,
+        background: AppColors.background,
+        strongText: AppColors.strongText,
         accent: AppColors.accent,
         mutedText: AppColors.mutedText,
         border: AppColors.border,
@@ -101,124 +131,184 @@ extension LuqmahThemeContext on BuildContext {
 }
 
 ThemeData buildLuqmahTheme() {
-  const colorScheme = ColorScheme.light(
+  return _buildLuqmahTheme(
+    brightness: Brightness.light,
     primary: AppColors.primary,
-    secondary: AppColors.accent,
+    primaryAlt: AppColors.primaryAlt,
+    accent: AppColors.accent,
+    background: AppColors.background,
     surface: AppColors.surface,
-    surfaceContainerHighest: AppColors.surfaceAlt,
+    surfaceAlt: AppColors.surfaceAlt,
+    strongText: AppColors.strongText,
+    mutedText: AppColors.mutedText,
+    border: AppColors.border,
+    success: AppColors.success,
+    warning: AppColors.warning,
+    info: AppColors.info,
     error: AppColors.error,
-    onPrimary: Colors.white,
-    onSecondary: Colors.white,
-    onSurface: AppColors.strongText,
-    onError: Colors.white,
+  );
+}
+
+ThemeData buildLuqmahDarkTheme() {
+  return _buildLuqmahTheme(
+    brightness: Brightness.dark,
+    primary: const Color(0xFF76C891),
+    primaryAlt: const Color(0xFF4E9E68),
+    accent: const Color(0xFF9CCFA8),
+    background: const Color(0xFF0E1712),
+    surface: const Color(0xFF17231B),
+    surfaceAlt: const Color(0xFF223328),
+    strongText: const Color(0xFFEAF3EA),
+    mutedText: const Color(0xFFA9B9AC),
+    border: const Color(0xFF314536),
+    success: const Color(0xFF86D99A),
+    warning: const Color(0xFFE2BD68),
+    info: const Color(0xFF8DC8C1),
+    error: const Color(0xFFFF8D7E),
+  );
+}
+
+ThemeData _buildLuqmahTheme({
+  required Brightness brightness,
+  required Color primary,
+  required Color primaryAlt,
+  required Color accent,
+  required Color background,
+  required Color surface,
+  required Color surfaceAlt,
+  required Color strongText,
+  required Color mutedText,
+  required Color border,
+  required Color success,
+  required Color warning,
+  required Color info,
+  required Color error,
+}) {
+  final colorScheme = ColorScheme(
+    brightness: brightness,
+    primary: primary,
+    onPrimary: brightness == Brightness.dark
+        ? const Color(0xFF082111)
+        : Colors.white,
+    secondary: accent,
+    onSecondary: brightness == Brightness.dark
+        ? const Color(0xFF082111)
+        : Colors.white,
+    error: error,
+    onError: brightness == Brightness.dark
+        ? const Color(0xFF240D0A)
+        : Colors.white,
+    surface: surface,
+    onSurface: strongText,
   );
 
   final base = ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
-    scaffoldBackgroundColor: AppColors.background,
+    scaffoldBackgroundColor: background,
+    brightness: brightness,
     fontFamily: 'Inter',
   );
 
   return base.copyWith(
     textTheme: base.textTheme.copyWith(
-      headlineLarge: const TextStyle(
+      headlineLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.w800,
-        color: AppColors.strongText,
+        color: strongText,
         height: 1.08,
       ),
-      headlineMedium: const TextStyle(
+      headlineMedium: TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.w800,
-        color: AppColors.strongText,
+        color: strongText,
         height: 1.12,
       ),
-      titleLarge: const TextStyle(
+      titleLarge: TextStyle(
         fontSize: 22,
         fontWeight: FontWeight.w700,
-        color: AppColors.strongText,
+        color: strongText,
       ),
-      titleMedium: const TextStyle(
+      titleMedium: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: AppColors.strongText,
+        color: strongText,
       ),
-      bodyLarge: const TextStyle(
+      bodyLarge: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w500,
-        color: AppColors.strongText,
+        color: strongText,
       ),
-      bodyMedium: const TextStyle(
+      bodyMedium: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: AppColors.strongText,
+        color: strongText,
         height: 1.45,
       ),
-      bodySmall: const TextStyle(
+      bodySmall: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w500,
-        color: AppColors.mutedText,
+        color: mutedText,
         height: 1.35,
       ),
       labelLarge: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
     ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.background,
-      foregroundColor: AppColors.strongText,
+    appBarTheme: AppBarTheme(
+      backgroundColor: background,
+      foregroundColor: strongText,
       elevation: 0,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.surface.withValues(alpha: 0.94),
+      backgroundColor: surface.withValues(alpha: 0.95),
       height: 78,
       elevation: 0,
-      shadowColor: AppColors.primary.withValues(alpha: 0.06),
+      shadowColor: primary.withValues(alpha: 0.08),
       surfaceTintColor: Colors.transparent,
-      indicatorColor: AppColors.primary.withValues(alpha: 0.10),
+      indicatorColor: primary.withValues(alpha: 0.14),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       iconTheme: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
-        return IconThemeData(
-          color: selected ? AppColors.primary : AppColors.mutedText,
-        );
+        return IconThemeData(color: selected ? primary : mutedText);
       }),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
         return TextStyle(
           fontSize: 12,
           fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-          color: selected ? AppColors.primary : AppColors.mutedText,
+          color: selected ? primary : mutedText,
         );
       }),
     ),
     cardTheme: CardThemeData(
-      color: AppColors.surface,
+      color: surface,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.xl),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: border),
       ),
     ),
     chipTheme: base.chipTheme.copyWith(
-      backgroundColor: AppColors.surface,
-      selectedColor: AppColors.accent.withValues(alpha: 0.12),
-      side: const BorderSide(color: AppColors.border),
+      backgroundColor: surface,
+      selectedColor: accent.withValues(
+        alpha: brightness == Brightness.dark ? 0.20 : 0.12,
+      ),
+      side: BorderSide(color: border),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-      labelStyle: const TextStyle(
+      labelStyle: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: AppColors.strongText,
+        color: strongText,
       ),
     ),
-    dividerColor: AppColors.border,
+    dividerColor: border,
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
+        backgroundColor: primary,
         foregroundColor: Colors.white,
         minimumSize: const Size(0, 54),
         elevation: 0,
@@ -231,9 +321,9 @@ ThemeData buildLuqmahTheme() {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
+        foregroundColor: primary,
         minimumSize: const Size(0, 48),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: border),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.lg),
         ),
@@ -242,41 +332,46 @@ ThemeData buildLuqmahTheme() {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.surface,
-      labelStyle: const TextStyle(color: AppColors.mutedText),
-      hintStyle: const TextStyle(color: AppColors.mutedText),
-      prefixIconColor: AppColors.mutedText,
-      suffixIconColor: AppColors.mutedText,
+      fillColor: surface,
+      labelStyle: TextStyle(color: mutedText),
+      hintStyle: TextStyle(color: mutedText),
+      prefixIconColor: mutedText,
+      suffixIconColor: mutedText,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
+        borderSide: BorderSide(color: primary, width: 1.4),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        borderSide: const BorderSide(color: AppColors.error),
+        borderSide: BorderSide(color: error),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        borderSide: const BorderSide(color: AppColors.error, width: 1.4),
+        borderSide: BorderSide(color: error, width: 1.4),
       ),
     ),
-    extensions: const [
+    extensions: [
       LuqmahThemeTokens(
-        accent: AppColors.accent,
-        mutedText: AppColors.mutedText,
-        border: AppColors.border,
-        success: AppColors.success,
-        warning: AppColors.warning,
-        info: AppColors.info,
+        primary: primary,
+        surface: surface,
+        surfaceAlt: surfaceAlt,
+        background: background,
+        strongText: strongText,
+        accent: accent,
+        mutedText: mutedText,
+        border: border,
+        success: success,
+        warning: warning,
+        info: info,
       ),
     ],
   );

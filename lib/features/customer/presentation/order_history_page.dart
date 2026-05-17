@@ -101,6 +101,7 @@ class _OrderHistoryCard extends ConsumerWidget {
       VendorOrderStatus.completed => context.luqmah.mutedText,
       VendorOrderStatus.cancelled => AppColors.error,
     };
+    final tokens = context.luqmah;
 
     return AppSurfaceCard(
       child: Column(
@@ -144,6 +145,8 @@ class _OrderHistoryCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
+          _OrderProgressTrack(status: order.status, color: statusColor),
+          const SizedBox(height: AppSpacing.md),
           Text(
             formatter.format(order.placedAt),
             style: Theme.of(context).textTheme.bodySmall,
@@ -159,6 +162,15 @@ class _OrderHistoryCard extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: tokens.surfaceAlt.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              border: Border.all(color: tokens.border),
+            ),
+            child: Column(
+              children: [
           for (final item in order.items) ...[
             Row(
               children: [
@@ -168,6 +180,9 @@ class _OrderHistoryCard extends ConsumerWidget {
             ),
             if (item != order.items.last) const SizedBox(height: AppSpacing.sm),
           ],
+              ],
+            ),
+          ),
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
@@ -200,6 +215,52 @@ class _OrderHistoryCard extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _OrderProgressTrack extends StatelessWidget {
+  const _OrderProgressTrack({required this.status, required this.color});
+
+  final VendorOrderStatus status;
+  final Color color;
+
+  int get _index {
+    return switch (status) {
+      VendorOrderStatus.accepted => 0,
+      VendorOrderStatus.inProgress => 1,
+      VendorOrderStatus.ready => 2,
+      VendorOrderStatus.completed => 3,
+      VendorOrderStatus.cancelled => -1,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = const ['Confirmed', 'Preparing', 'Ready', 'Done'];
+    final activeIndex = _index;
+
+    return Row(
+      children: [
+        for (var index = 0; index < labels.length; index++) ...[
+          Expanded(
+            child: Column(
+              children: [
+                Container(
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: activeIndex >= index ? color : context.luqmah.border,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(labels[index], style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+          if (index != labels.length - 1) const SizedBox(width: AppSpacing.xs),
+        ],
+      ],
     );
   }
 }

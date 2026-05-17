@@ -15,10 +15,12 @@ class VendorOrderDetailsPage extends ConsumerStatefulWidget {
   final String orderId;
 
   @override
-  ConsumerState<VendorOrderDetailsPage> createState() => _VendorOrderDetailsPageState();
+  ConsumerState<VendorOrderDetailsPage> createState() =>
+      _VendorOrderDetailsPageState();
 }
 
-class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage> {
+class _VendorOrderDetailsPageState
+    extends ConsumerState<VendorOrderDetailsPage> {
   bool _isUpdatingStatus = false;
 
   @override
@@ -27,7 +29,8 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
     final orderAsync = ref.watch(vendorOrderByIdProvider(decodedId));
 
     return orderAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
         appBar: AppBar(),
         body: Padding(
@@ -58,7 +61,7 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
         final allowedTransitions = order.status.allowedTransitions;
 
         return Scaffold(
-          appBar: AppBar(title: Text(order.id)),
+          appBar: AppBar(title: const Text('Order details')),
           body: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
@@ -66,27 +69,66 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(order.customerName, style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      order.customerEmail.isEmpty
+                    Row(
+                      children: [
+                        Container(
+                          height: 42,
+                          width: 42,
+                          decoration: BoxDecoration(
+                            color: context.luqmah.primary.withValues(
+                              alpha: 0.12,
+                            ),
+                            borderRadius: BorderRadius.circular(AppRadii.md),
+                          ),
+                          child: Icon(
+                            Icons.person_rounded,
+                            color: context.luqmah.primary,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            order.customerName,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.luqmah.surfaceAlt,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            order.id,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _ContactLine(
+                      icon: Icons.mail_outline_rounded,
+                      value: order.customerEmail.isEmpty
                           ? 'No email available'
                           : order.customerEmail,
-                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      order.customerPhone.isEmpty
+                    _ContactLine(
+                      icon: Icons.phone_outlined,
+                      value: order.customerPhone.isEmpty
                           ? 'No phone number added'
                           : order.customerPhone,
-                      style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    const SizedBox(height: AppSpacing.xs),
+                    const SizedBox(height: AppSpacing.md),
                     Text(
                       formatter.format(order.dateTime),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    if (order.status == VendorOrderStatus.inProgress && order.estimatedReadyAt != null) ...[
+                    if (order.status == VendorOrderStatus.inProgress &&
+                        order.estimatedReadyAt != null) ...[
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         'Expected by ${DateFormat('hh:mm a').format(order.estimatedReadyAt!)}',
@@ -102,7 +144,13 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
               const SizedBox(height: AppSpacing.lg),
               AppSurfaceCard(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(
+                      'Items',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
                     for (final item in order.items) ...[
                       _OrderItemRow(item: item),
                       if (item != order.items.last) const Divider(),
@@ -115,7 +163,15 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Status', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Status',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Move this order through the kitchen workflow.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     if (allowedTransitions.isEmpty)
                       Text(
@@ -124,7 +180,9 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
                       )
                     else
                       DropdownButtonFormField<VendorOrderStatus>(
-                        key: ValueKey('vendor-order-status-${order.id}-${order.status.name}'),
+                        key: ValueKey(
+                          'vendor-order-status-${order.id}-${order.status.name}',
+                        ),
                         hint: Text('Current: ${order.status.label}'),
                         items: allowedTransitions
                             .map(
@@ -145,7 +203,9 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
                                 setState(() => _isUpdatingStatus = true);
                                 try {
                                   await ref
-                                      .read(vendorDataControllerProvider.notifier)
+                                      .read(
+                                        vendorDataControllerProvider.notifier,
+                                      )
                                       .updateOrderStatus(order.id, value);
                                 } on ApiException catch (error) {
                                   if (!mounted) {
@@ -153,7 +213,9 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
                                   }
                                   messenger
                                     ..hideCurrentSnackBar()
-                                    ..showSnackBar(SnackBar(content: Text(error.message)));
+                                    ..showSnackBar(
+                                      SnackBar(content: Text(error.message)),
+                                    );
                                 } catch (_) {
                                   if (!mounted) {
                                     return;
@@ -162,7 +224,9 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
                                     ..hideCurrentSnackBar()
                                     ..showSnackBar(
                                       const SnackBar(
-                                        content: Text('Unable to update the order status right now.'),
+                                        content: Text(
+                                          'Unable to update the order status right now.',
+                                        ),
                                       ),
                                     );
                                 } finally {
@@ -174,10 +238,16 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
                       ),
                     if (_isUpdatingStatus) ...[
                       const SizedBox(height: AppSpacing.sm),
-                      Text('Updating order status...', style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        'Updating order status...',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ],
                     const SizedBox(height: AppSpacing.lg),
-                    _SummaryRow(label: 'Subtotal', value: '${order.subtotal.toStringAsFixed(2)} JD'),
+                    _SummaryRow(
+                      label: 'Subtotal',
+                      value: '${order.subtotal.toStringAsFixed(2)} JD',
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     _SummaryRow(
                       label: 'Coupon',
@@ -202,6 +272,26 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
   }
 }
 
+class _ContactLine extends StatelessWidget {
+  const _ContactLine({required this.icon, required this.value});
+
+  final IconData icon;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 17, color: context.luqmah.primary),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(value, style: Theme.of(context).textTheme.bodySmall),
+        ),
+      ],
+    );
+  }
+}
+
 class _OrderItemRow extends StatelessWidget {
   const _OrderItemRow({required this.item});
 
@@ -219,16 +309,24 @@ class _OrderItemRow extends StatelessWidget {
               Text(item.name, style: Theme.of(context).textTheme.titleMedium),
               if (item.extras.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xs),
-                Text(item.extras.join(', '), style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  item.extras.join(', '),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ],
           ),
         ),
-        Text('x${item.quantity}', style: Theme.of(context).textTheme.bodyMedium),
+        Text(
+          'x${item.quantity}',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
         const SizedBox(width: AppSpacing.lg),
         Text(
           '${item.lineTotal.toStringAsFixed(0)} JD',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
       ],
     );
@@ -236,7 +334,11 @@ class _OrderItemRow extends StatelessWidget {
 }
 
 class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value, this.strong = false});
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.strong = false,
+  });
 
   final String label;
   final String value;

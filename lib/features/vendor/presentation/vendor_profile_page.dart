@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
+import '../../../app/theme/theme_mode_controller.dart';
 import '../../../features/session/auth_error_formatter.dart';
 import '../../../features/session/session_controller.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
@@ -14,7 +15,10 @@ class VendorProfilePage extends ConsumerWidget {
   static const _busyMessage =
       'This restaurant is busy right now. You can browse the menu, but ordering is temporarily unavailable.';
 
-  Future<void> _showVendorPasswordDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showVendorPasswordDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
     String? error;
@@ -33,26 +37,34 @@ class VendorProfilePage extends ConsumerWidget {
                   TextField(
                     controller: currentPasswordController,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Current password'),
+                    decoration: const InputDecoration(
+                      labelText: 'Current password',
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   TextField(
                     controller: newPasswordController,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'New password'),
+                    decoration: const InputDecoration(
+                      labelText: 'New password',
+                    ),
                   ),
                   if (error != null) ...[
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ],
                 ],
               ),
               actions: [
                 TextButton(
-                  onPressed: saving ? null : () => Navigator.of(dialogContext).pop(),
+                  onPressed: saving
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
@@ -65,15 +77,20 @@ class VendorProfilePage extends ConsumerWidget {
                           });
 
                           try {
-                            await ref.read(sessionControllerProvider).changeVendorPassword(
-                                  currentPassword: currentPasswordController.text,
+                            await ref
+                                .read(sessionControllerProvider)
+                                .changeVendorPassword(
+                                  currentPassword:
+                                      currentPasswordController.text,
                                   newPassword: newPasswordController.text,
                                 );
                             if (context.mounted) {
                               Navigator.of(dialogContext).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Vendor password updated on the backend.'),
+                                  content: Text(
+                                    'Vendor password updated on the backend.',
+                                  ),
                                 ),
                               );
                             }
@@ -110,6 +127,7 @@ class VendorProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider).snapshot;
     final vendorData = ref.watch(vendorDataControllerProvider);
+    final themeMode = ref.watch(themeModeControllerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Vendor profile')),
@@ -117,21 +135,67 @@ class VendorProfilePage extends ConsumerWidget {
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           AppSurfaceCard(
+            child: Row(
+              children: [
+                Container(
+                  height: 52,
+                  width: 52,
+                  decoration: BoxDecoration(
+                    color: context.luqmah.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                  ),
+                  child: Icon(
+                    Icons.storefront_rounded,
+                    color: context.luqmah.primary,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Workspace identity',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        session.email.isEmpty
+                            ? 'Vendor account'
+                            : session.email,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'Connected to the live Luqmah backend.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: context.luqmah.mutedText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppSurfaceCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Workspace identity', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.lg),
                 Text(
-                  session.email.isEmpty ? 'Vendor account' : session.email,
+                  'Appearance',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Vendor workspace connected to the live Luqmah backend.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: context.luqmah.mutedText,
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Dark mode'),
+                  subtitle: const Text(
+                    'Use a darker premium Luqmah workspace.',
                   ),
+                  value: themeMode.isDark,
+                  onChanged: (value) =>
+                      ref.read(themeModeControllerProvider).setDarkMode(value),
                 ),
               ],
             ),
@@ -162,7 +226,10 @@ class VendorProfilePage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Restaurant availability', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'Restaurant availability',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   _busyMessage,
@@ -172,10 +239,13 @@ class VendorProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 vendorData.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (error, _) => Text(
                     error.toString(),
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                   data: (state) => Column(
                     children: state.restaurants
@@ -185,7 +255,10 @@ class VendorProfilePage extends ConsumerWidget {
                             onChanged: (value) async {
                               await ref
                                   .read(vendorDataControllerProvider.notifier)
-                                  .updateRestaurantBusyState(restaurant.id, value);
+                                  .updateRestaurantBusyState(
+                                    restaurant.id,
+                                    value,
+                                  );
                               if (!context.mounted) {
                                 return;
                               }
@@ -211,7 +284,8 @@ class VendorProfilePage extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           AppSurfaceCard(
-            child: ElevatedButton.icon(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: FilledButton.icon(
               onPressed: () => ref.read(sessionControllerProvider).logout(),
               icon: const Icon(Icons.logout_rounded),
               label: const Text('Sign out'),

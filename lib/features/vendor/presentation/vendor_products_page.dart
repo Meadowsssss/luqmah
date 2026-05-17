@@ -115,8 +115,8 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
       appBar: AppBar(title: const Text('Products')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/vendor/products/new'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: context.luqmah.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add item'),
       ),
@@ -127,9 +127,28 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Menu management',
-                  style: Theme.of(context).textTheme.titleLarge,
+                Row(
+                  children: [
+                    Container(
+                      height: 42,
+                      width: 42,
+                      decoration: BoxDecoration(
+                        color: context.luqmah.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                      ),
+                      child: Icon(
+                        Icons.restaurant_menu_rounded,
+                        color: context.luqmah.primary,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        'Menu management',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
@@ -221,17 +240,34 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                   else ...[
                     for (final item in visibleItems) ...[
                       AppSurfaceCard(
+                        padding: const EdgeInsets.all(AppSpacing.md),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                _ProductThumb(imageUrl: item.image),
+                                const SizedBox(width: AppSpacing.md),
                                 Expanded(
-                                  child: Text(
-                                    item.title,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleMedium,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.title,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium,
+                                      ),
+                                      const SizedBox(height: AppSpacing.xs),
+                                      Text(
+                                        '${item.restaurantTitle} · ${item.category}${item.isAvailable ? '' : ' · Unavailable'}',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 Container(
@@ -241,17 +277,17 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: item.isAvailable
-                                        ? AppColors.primary.withValues(
-                                            alpha: 0.08,
+                                        ? context.luqmah.primary.withValues(
+                                            alpha: 0.10,
                                           )
-                                        : AppColors.surfaceAlt,
+                                        : context.luqmah.surfaceAlt,
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
                                     item.isAvailable ? 'Available' : 'Hidden',
                                     style: TextStyle(
                                       color: item.isAvailable
-                                          ? AppColors.primary
+                                          ? context.luqmah.primary
                                           : context.luqmah.mutedText,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -260,8 +296,8 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                 const SizedBox(width: AppSpacing.sm),
                                 Text(
                                   '${item.price.toStringAsFixed(2)} JD',
-                                  style: const TextStyle(
-                                    color: AppColors.accent,
+                                  style: TextStyle(
+                                    color: context.luqmah.accent,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
@@ -309,11 +345,6 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              '${item.restaurantTitle} · ${item.category}${item.isAvailable ? '' : ' · Unavailable'}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
                             if (item.description.isNotEmpty) ...[
                               const SizedBox(height: AppSpacing.sm),
                               Text(item.description),
@@ -346,6 +377,32 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProductThumb extends StatelessWidget {
+  const _ProductThumb({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadii.md),
+      child: Container(
+        height: 58,
+        width: 58,
+        color: context.luqmah.surfaceAlt,
+        child: imageUrl.isEmpty
+            ? Icon(Icons.fastfood_rounded, color: context.luqmah.primary)
+            : Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) =>
+                    Icon(Icons.fastfood_rounded, color: context.luqmah.primary),
+              ),
       ),
     );
   }

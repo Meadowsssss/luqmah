@@ -16,8 +16,6 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   static const _adminEntryCode = 'luqmah-admin-portal';
-  static const _heroImageUrl =
-      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=80';
 
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -204,6 +202,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final mutedTextStyle = Theme.of(
       context,
     ).textTheme.bodyMedium?.copyWith(color: context.luqmah.mutedText);
+    final tokens = context.luqmah;
 
     return Scaffold(
       body: SafeArea(
@@ -237,18 +236,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 500),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: tokens.surface,
                           borderRadius: BorderRadius.circular(AppRadii.hero),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: tokens.border),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.08),
+                              color: tokens.primary.withValues(alpha: 0.10),
                               blurRadius: 36,
                               offset: const Offset(0, 16),
                             ),
@@ -265,35 +264,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   height: 210,
                                   width: 210,
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(
-                                      alpha: 0.07,
+                                    color: tokens.primary.withValues(
+                                      alpha: 0.08,
                                     ),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
                               ),
                               Positioned(
-                                right: -6,
-                                top: 28,
-                                child: ClipOval(
-                                  child: SizedBox(
-                                    height: 196,
-                                    width: 196,
-                                    child: Image.network(
-                                      _heroImageUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return Container(
-                                              color: AppColors.surfaceAlt,
-                                              alignment: Alignment.center,
-                                              child: const Icon(
-                                                Icons.restaurant_rounded,
-                                                color: AppColors.primary,
-                                                size: 42,
-                                              ),
-                                            );
-                                          },
+                                left: -30,
+                                top: 76,
+                                child: Transform.rotate(
+                                  angle: -0.28,
+                                  child: Container(
+                                    height: 18,
+                                    width: 142,
+                                    decoration: BoxDecoration(
+                                      color: tokens.primary.withValues(
+                                        alpha: 0.10,
+                                      ),
+                                      borderRadius: BorderRadius.circular(999),
                                     ),
                                   ),
                                 ),
@@ -302,7 +292,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 padding: const EdgeInsets.all(AppSpacing.xxl),
                                 child: ConstrainedBox(
                                   constraints: const BoxConstraints(
-                                    maxWidth: 260,
+                                    maxWidth: 250,
                                   ),
                                   child: Column(
                                     crossAxisAlignment:
@@ -314,8 +304,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                           Container(
                                             height: 14,
                                             width: 14,
-                                            decoration: const BoxDecoration(
-                                              color: AppColors.primary,
+                                            decoration: BoxDecoration(
+                                              color: tokens.primary,
                                               shape: BoxShape.circle,
                                             ),
                                           ),
@@ -326,7 +316,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                                 .textTheme
                                                 .titleLarge
                                                 ?.copyWith(
-                                                  color: AppColors.primary,
+                                                  color: tokens.primary,
                                                 ),
                                           ),
                                         ],
@@ -356,24 +346,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       const SizedBox(height: AppSpacing.xxl),
                       AppSurfaceCard(
-                        padding: const EdgeInsets.all(AppSpacing.xxl),
+                        padding: const EdgeInsets.all(AppSpacing.xl),
                         child: Form(
                           key: _formKey,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Text(
-                                'Sign in',
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              Text(
-                                _vendorMode
-                                    ? 'Use the backend vendor credentials we assigned to your restaurant.'
-                                    : 'Use your customer account to continue on the customer side.',
-                                style: mutedTextStyle,
-                              ),
-                              const SizedBox(height: AppSpacing.xl),
                               SegmentedButton<bool>(
                                 style: ButtonStyle(
                                   visualDensity: VisualDensity.standard,
@@ -381,7 +359,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                     const EdgeInsets.symmetric(vertical: 12),
                                   ),
                                   side: WidgetStateProperty.all(
-                                    const BorderSide(color: AppColors.border),
+                                    BorderSide(color: tokens.border),
                                   ),
                                   shape: WidgetStateProperty.all(
                                     RoundedRectangleBorder(
@@ -413,39 +391,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                           _error = null;
                                         });
                                       },
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              Container(
-                                padding: const EdgeInsets.all(AppSpacing.md),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.06,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadii.lg,
-                                  ),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(
-                                      _vendorMode
-                                          ? Icons.store_mall_directory_rounded
-                                          : Icons.person_rounded,
-                                      color: AppColors.primary,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: AppSpacing.md),
-                                    Expanded(
-                                      child: Text(
-                                        _vendorMode
-                                            ? 'Vendor access uses your assigned Luqmah workspace credentials.'
-                                            : 'Customer access uses your verified Luqmah account on the customer side.',
-                                        style: mutedTextStyle,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
                               const SizedBox(height: AppSpacing.xl),
                               TextFormField(

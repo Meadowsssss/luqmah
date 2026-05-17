@@ -81,6 +81,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
         final cartTotal = ref.watch(cartTotalProvider);
         final showCheckoutButton =
             cart.itemCount > 0 && cart.activeRestaurantId == restaurant.id;
+        final tokens = context.luqmah;
 
         return Scaffold(
           appBar: AppBar(),
@@ -99,9 +100,9 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                   ),
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(AppRadii.hero),
+                      borderRadius: BorderRadius.circular(AppRadii.xl),
                       child: AspectRatio(
-                        aspectRatio: 16 / 11,
+                        aspectRatio: 16 / 9,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
@@ -123,9 +124,25 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    Colors.black.withValues(alpha: 0.06),
-                                    Colors.black.withValues(alpha: 0.62),
+                                    Colors.black.withValues(alpha: 0.02),
+                                    Colors.black.withValues(alpha: 0.40),
+                                    Colors.black.withValues(alpha: 0.78),
                                   ],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: -24,
+                              top: 22,
+                              child: Transform.rotate(
+                                angle: -0.24,
+                                child: Container(
+                                  height: 12,
+                                  width: 132,
+                                  decoration: BoxDecoration(
+                                    color: tokens.primary.withValues(alpha: 0.78),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
                                 ),
                               ),
                             ),
@@ -144,9 +161,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.92,
-                                          ),
+                                            color: Colors.white.withValues(alpha: 0.92),
                                           borderRadius: BorderRadius.circular(
                                             999,
                                           ),
@@ -158,7 +173,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                                           style: TextStyle(
                                             color: restaurant.isBusy
                                                 ? context.luqmah.warning
-                                                : AppColors.primary,
+                                                : tokens.primary,
                                             fontWeight: FontWeight.w700,
                                           ),
                                         ),
@@ -185,9 +200,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                                   Text(
                                     restaurant.time,
                                     style: textTheme.bodySmall?.copyWith(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.82,
-                                      ),
+                                      color: Colors.white.withValues(alpha: 0.82),
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.xs),
@@ -243,7 +256,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                       const SizedBox(height: AppSpacing.xl),
                       SizedBox(
                         height: 42,
-                        child: ListView.separated(
+                          child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: categoryOptions.length,
                           separatorBuilder: (_, __) => const SizedBox(width: 8),
@@ -272,7 +285,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                               Text('Menu', style: textTheme.titleLarge),
                               const SizedBox(height: AppSpacing.xs),
                               Text(
-                                'Prepared fresh for today\'s service.',
+                                'Premium picks from ${restaurant.name}.',
                                 style: textTheme.bodyMedium?.copyWith(
                                   color: context.luqmah.mutedText,
                                 ),
@@ -345,10 +358,10 @@ class _CheckoutFloatingButton extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () => context.push('/cart'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
+                  backgroundColor: context.luqmah.primary,
                   foregroundColor: Colors.white,
                   elevation: 12,
-                  shadowColor: AppColors.success.withValues(alpha: 0.28),
+                  shadowColor: context.luqmah.primary.withValues(alpha: 0.28),
                   minimumSize: const Size.fromHeight(58),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999),
@@ -480,8 +493,10 @@ class _MenuItemCard extends ConsumerWidget {
         .fold(0, (sum, line) => sum + line.quantity);
     final textTheme = Theme.of(context).textTheme;
     final hasOptions = item.optionGroups.isNotEmpty;
+    final tokens = context.luqmah;
 
     return AppSurfaceCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
           ClipRRect(
@@ -493,7 +508,7 @@ class _MenuItemCard extends ConsumerWidget {
                 item.image,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  color: AppColors.surfaceAlt,
+                  color: tokens.surfaceAlt,
                   alignment: Alignment.center,
                   child: const Icon(Icons.fastfood_rounded),
                 ),
@@ -510,7 +525,8 @@ class _MenuItemCard extends ConsumerWidget {
                 Text(
                   item.category,
                   style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.primary,
+                    color: tokens.primary,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
@@ -526,7 +542,7 @@ class _MenuItemCard extends ConsumerWidget {
                 Text(
                   '${item.price.toStringAsFixed(2)} JD',
                   style: textTheme.titleMedium?.copyWith(
-                    color: AppColors.primary,
+                    color: tokens.primary,
                   ),
                 ),
               ],
@@ -537,7 +553,7 @@ class _MenuItemCard extends ConsumerWidget {
             IconButton.filled(
               onPressed: () => _handleAddPressed(context, ref),
               style: IconButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: tokens.primary,
                 foregroundColor: Colors.white,
               ),
               icon: Icon(
@@ -549,6 +565,7 @@ class _MenuItemCard extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
               decoration: BoxDecoration(
                 color: AppColors.surfaceAlt,
+                border: Border.all(color: tokens.border),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Row(

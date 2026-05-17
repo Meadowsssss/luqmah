@@ -16,24 +16,28 @@ class AppSurfaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: margin,
       padding: padding,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: tokens.surface,
         borderRadius: BorderRadius.circular(AppRadii.xl),
-        border: Border.all(color: context.luqmah.border),
+        border: Border.all(color: tokens.border),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.05),
-            blurRadius: 26,
+            color: tokens.primary.withValues(alpha: isDark ? 0.10 : 0.05),
+            blurRadius: isDark ? 18 : 26,
             offset: const Offset(0, 12),
           ),
-          BoxShadow(
-            color: Colors.white.withValues(alpha: 0.65),
-            blurRadius: 12,
-            offset: const Offset(0, -2),
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.65),
+              blurRadius: 12,
+              offset: const Offset(0, -2),
+            ),
         ],
       ),
       child: child,

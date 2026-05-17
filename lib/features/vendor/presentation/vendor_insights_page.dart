@@ -20,13 +20,49 @@ class VendorInsightsPage extends ConsumerWidget {
         data: (data) => ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
+            AppSurfaceCard(
+              child: Row(
+                children: [
+                  Container(
+                    height: 42,
+                    width: 42,
+                    decoration: BoxDecoration(
+                      color: context.luqmah.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                    ),
+                    child: Icon(
+                      Icons.bar_chart_rounded,
+                      color: context.luqmah.primary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Performance',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'A clean pulse check for today and recent orders.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
                 Expanded(
                   child: _StatCard(
                     label: 'Active',
                     value: '${data.activeOrders}',
-                    accent: AppColors.primary,
+                    accent: context.luqmah.primary,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
@@ -46,7 +82,7 @@ class VendorInsightsPage extends ConsumerWidget {
                   child: _StatCard(
                     label: 'Revenue',
                     value: '${data.totalRevenue.toStringAsFixed(2)} JD',
-                    accent: AppColors.accent,
+                    accent: context.luqmah.accent,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
@@ -64,7 +100,10 @@ class VendorInsightsPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Top items', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Top items',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   if (data.topItems.isEmpty)
                     Text(
@@ -80,9 +119,8 @@ class VendorInsightsPage extends ConsumerWidget {
                           Expanded(
                             child: Text(
                               item.name,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
                           Text(
@@ -117,6 +155,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppSurfaceCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -124,7 +163,9 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: accent),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: accent),
           ),
         ],
       ),

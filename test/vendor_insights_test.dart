@@ -8,7 +8,8 @@ void main() {
       VendorOrder(
         id: 'ord-1',
         customerName: 'Customer A',
-        customerPhone: 'a@example.com',
+        customerEmail: 'a@example.com',
+        customerPhone: '0790000001',
         dateTime: DateTime(2026, 4, 23, 12),
         paymentMethod: 'Luqmah',
         status: VendorOrderStatus.completed,
@@ -23,7 +24,8 @@ void main() {
       VendorOrder(
         id: 'ord-2',
         customerName: 'Customer B',
-        customerPhone: 'b@example.com',
+        customerEmail: 'b@example.com',
+        customerPhone: '0790000002',
         dateTime: DateTime(2026, 4, 23, 13),
         paymentMethod: 'Luqmah',
         status: VendorOrderStatus.accepted,

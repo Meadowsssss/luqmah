@@ -6,7 +6,6 @@ import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/customer/data/restaurant_repository.dart';
 import '../../../models/restaurant.dart';
 import '../../../shared/widgets/app_empty_state.dart';
-import '../../../shared/widgets/app_surface_card.dart';
 
 class RestaurantsPage extends ConsumerWidget {
   const RestaurantsPage({super.key});
@@ -15,6 +14,7 @@ class RestaurantsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final restaurants = ref.watch(restaurantsProvider);
     final textTheme = Theme.of(context).textTheme;
+    final tokens = context.luqmah;
 
     return Scaffold(
       appBar: AppBar(
@@ -23,7 +23,7 @@ class RestaurantsPage extends ConsumerWidget {
           children: [
             Text(
               'Luqmah',
-              style: textTheme.titleLarge?.copyWith(color: AppColors.primary),
+              style: textTheme.titleLarge?.copyWith(color: tokens.primary),
             ),
             Text(
               'Campus favourites, ready when you are',
@@ -36,42 +36,45 @@ class RestaurantsPage extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           Container(
-            padding: const EdgeInsets.all(AppSpacing.xxl),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadii.hero),
-              border: Border.all(color: AppColors.border),
+              color: tokens.surface,
+              borderRadius: BorderRadius.circular(AppRadii.xl),
+              border: Border.all(color: tokens.border),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.06),
-                  blurRadius: 30,
-                  offset: const Offset(0, 14),
+                  color: tokens.primary.withValues(alpha: 0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
                 ),
               ],
             ),
             child: Stack(
               children: [
                 Positioned(
-                  top: -16,
-                  right: -12,
+                  top: -26,
+                  right: -20,
                   child: Container(
-                    height: 150,
-                    width: 150,
+                    height: 132,
+                    width: 132,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
+                      color: tokens.primary.withValues(alpha: 0.10),
                       shape: BoxShape.circle,
                     ),
                   ),
                 ),
                 Positioned(
-                  right: 18,
-                  bottom: -18,
-                  child: Container(
-                    height: 88,
-                    width: 88,
-                    decoration: const BoxDecoration(
-                      color: AppColors.surfaceAlt,
-                      shape: BoxShape.circle,
+                  right: -28,
+                  bottom: 12,
+                  child: Transform.rotate(
+                    angle: -0.32,
+                    child: Container(
+                      height: 18,
+                      width: 118,
+                      decoration: BoxDecoration(
+                        color: tokens.primary.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
                     ),
                   ),
                 ),
@@ -84,13 +87,13 @@ class RestaurantsPage extends ConsumerWidget {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.08),
+                        color: tokens.primary.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: const Text(
+                      child: Text(
                         'On campus now',
                         style: TextStyle(
-                          color: AppColors.primary,
+                          color: tokens.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -107,7 +110,7 @@ class RestaurantsPage extends ConsumerWidget {
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 300),
                       child: Text(
-                        'Discover warm bowls, quick bites, and all-day favorites from nearby restaurant partners.',
+                        'Clean, premium campus picks curated for quick ordering.',
                         style: textTheme.bodyMedium?.copyWith(
                           color: context.luqmah.mutedText,
                         ),
@@ -192,163 +195,122 @@ class _RestaurantCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final detailColor = context.luqmah.mutedText;
+    final tokens = context.luqmah;
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadii.xl),
-      child: AppSurfaceCard(
-        padding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Container(
+        height: 168,
+        decoration: BoxDecoration(
+          color: const Color(0xFF101510),
+          borderRadius: BorderRadius.circular(AppRadii.xl),
+          border: Border.all(color: tokens.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppRadii.xl),
+            Image.network(
+              restaurant.image,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: tokens.surfaceAlt,
+                alignment: Alignment.center,
+                child: Icon(Icons.restaurant_rounded, color: tokens.mutedText),
               ),
-              child: AspectRatio(
-                aspectRatio: 16 / 10,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(
-                      restaurant.image,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: AppColors.surfaceAlt,
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.restaurant_rounded,
-                            size: 38,
-                            color: AppColors.mutedText,
-                          ),
-                        );
-                      },
-                    ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.04),
-                            Colors.black.withValues(alpha: 0.58),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: AppSpacing.lg,
-                      right: AppSpacing.lg,
-                      bottom: AppSpacing.lg,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            restaurant.name,
-                            style: textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            restaurant.description,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.86),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (restaurant.isBusy)
-                      Positioned(
-                        top: AppSpacing.lg,
-                        left: AppSpacing.lg,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.92),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            'Busy now',
-                            style: TextStyle(
-                              color: context.luqmah.warning,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.08),
+                    Colors.black.withValues(alpha: 0.34),
+                    Colors.black.withValues(alpha: 0.80),
                   ],
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+            Positioned(
+              right: -20,
+              top: 18,
+              child: Transform.rotate(
+                angle: -0.24,
+                child: Container(
+                  height: 10,
+                  width: 112,
+                  decoration: BoxDecoration(
+                    color: tokens.primary.withValues(alpha: 0.82),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
+              bottom: AppSpacing.lg,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  Text(
+                    restaurant.name,
+                    style: textTheme.titleMedium?.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    restaurant.tags.take(3).join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.78),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
                   Row(
                     children: [
                       const Icon(
-                        Icons.location_on_outlined,
-                        size: 18,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          restaurant.time,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: detailColor,
-                          ),
-                        ),
-                      ),
-                      const Icon(
                         Icons.star_rounded,
-                        size: 18,
+                        size: 16,
                         color: Color(0xFFD1A340),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 3),
                       Text(
                         restaurant.ratingCount > 0
                             ? '${restaurant.rating} (${restaurant.ratingCount})'
                             : restaurant.rating,
                         style: textTheme.bodySmall?.copyWith(
-                          color: detailColor,
+                          color: Colors.white,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Usually ready in ${restaurant.estimatedPrepMinutes} min',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: context.luqmah.info,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: restaurant.tags
-                        .take(2)
-                        .map(
-                          (tag) => Chip(
-                            label: Text(tag),
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                            visualDensity: VisualDensity.compact,
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        '· ${restaurant.estimatedPrepMinutes}-${restaurant.estimatedPrepMinutes + 10} min',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.76),
+                        ),
+                      ),
+                      if (restaurant.isBusy) ...[
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          '· Busy',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: tokens.warning,
+                            fontWeight: FontWeight.w800,
                           ),
-                        )
-                        .toList(growable: false),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),

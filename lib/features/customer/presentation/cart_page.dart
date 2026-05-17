@@ -24,6 +24,7 @@ class CartPage extends ConsumerWidget {
         : ref.watch(restaurantByIdProvider(lines.first.item.restaurantId));
     final isBusy = restaurantAsync?.valueOrNull?.isBusy ?? false;
     final textTheme = Theme.of(context).textTheme;
+    final tokens = context.luqmah;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Your cart')),
@@ -72,15 +73,13 @@ class CartPage extends ConsumerWidget {
                                   vertical: 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.08,
-                                  ),
+                                  color: tokens.primary.withValues(alpha: 0.10),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
                                   '${lines.length} items',
-                                  style: const TextStyle(
-                                    color: AppColors.primary,
+                                  style: TextStyle(
+                                    color: tokens.primary,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -91,6 +90,7 @@ class CartPage extends ConsumerWidget {
                         const SizedBox(height: AppSpacing.lg),
                         for (final line in lines) ...[
                           AppSurfaceCard(
+                            padding: const EdgeInsets.all(AppSpacing.md),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -107,7 +107,7 @@ class CartPage extends ConsumerWidget {
                                       errorBuilder:
                                           (context, error, stackTrace) =>
                                               Container(
-                                                color: AppColors.surfaceAlt,
+                                                color: tokens.surfaceAlt,
                                                 alignment: Alignment.center,
                                                 child: const Icon(
                                                   Icons.fastfood_rounded,
@@ -131,11 +131,17 @@ class CartPage extends ConsumerWidget {
                                         line.item.restaurantName,
                                         style: textTheme.bodySmall,
                                       ),
-                                      if (line.item.selectedOptions.isNotEmpty) ...[
+                                      if (line
+                                          .item
+                                          .selectedOptions
+                                          .isNotEmpty) ...[
                                         const SizedBox(height: AppSpacing.xs),
                                         Text(
                                           line.item.selectedOptions
-                                              .map((option) => '${option.groupTitle}: ${option.title}')
+                                              .map(
+                                                (option) =>
+                                                    '${option.groupTitle}: ${option.title}',
+                                              )
                                               .join(', '),
                                           style: textTheme.bodySmall?.copyWith(
                                             color: context.luqmah.mutedText,
@@ -153,7 +159,7 @@ class CartPage extends ConsumerWidget {
                                       Text(
                                         '${line.lineTotal.toStringAsFixed(2)} JD',
                                         style: textTheme.titleMedium?.copyWith(
-                                          color: AppColors.primary,
+                                          color: tokens.primary,
                                         ),
                                       ),
                                     ],
@@ -182,7 +188,10 @@ class CartPage extends ConsumerWidget {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.surfaceAlt,
+                                        color: tokens.surfaceAlt,
+                                        border: Border.all(
+                                          color: tokens.border,
+                                        ),
                                         borderRadius: BorderRadius.circular(
                                           999,
                                         ),
@@ -242,10 +251,10 @@ class CartPage extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                     decoration: BoxDecoration(
-                      color: AppColors.background.withValues(alpha: 0.94),
+                      color: tokens.background.withValues(alpha: 0.94),
                       border: Border(
                         top: BorderSide(
-                          color: AppColors.border.withValues(alpha: 0.7),
+                          color: tokens.border.withValues(alpha: 0.7),
                         ),
                       ),
                     ),
@@ -262,7 +271,7 @@ class CartPage extends ConsumerWidget {
                                 Text(
                                   '${total.toStringAsFixed(2)} JD',
                                   style: textTheme.titleLarge?.copyWith(
-                                    color: AppColors.primary,
+                                    color: tokens.primary,
                                   ),
                                 ),
                               ],

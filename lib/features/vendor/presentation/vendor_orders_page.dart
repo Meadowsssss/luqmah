@@ -40,7 +40,23 @@ class _VendorOrdersPageState extends ConsumerState<VendorOrdersPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Order queue', style: Theme.of(context).textTheme.titleLarge),
+                Row(
+                  children: [
+                    Container(
+                      height: 42,
+                      width: 42,
+                      decoration: BoxDecoration(
+                        color: context.luqmah.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                      ),
+                      child: Icon(Icons.receipt_long_rounded, color: context.luqmah.primary),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text('Order queue', style: Theme.of(context).textTheme.titleLarge),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Track what is active now and move completed orders into history.',
@@ -136,6 +152,7 @@ class _VendorOrderCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadii.xl),
       child: AppSurfaceCard(
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -169,8 +186,10 @@ class _VendorOrderCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              '${order.items.length} items · ${order.total.toStringAsFixed(0)} JD',
-              style: Theme.of(context).textTheme.bodyMedium,
+              '${order.items.length} items · ${order.total.toStringAsFixed(2)} JD',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
             if (order.status == VendorOrderStatus.inProgress && order.estimatedReadyAt != null) ...[
               const SizedBox(height: AppSpacing.sm),

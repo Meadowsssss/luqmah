@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
+import '../../../app/theme/theme_mode_controller.dart';
 import '../../../features/customer/orders/customer_orders_controller.dart';
 import '../../../features/session/auth_error_formatter.dart';
 import '../../../features/session/session_controller.dart';
@@ -207,6 +208,7 @@ class CustomerSettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider).snapshot;
     final recentOrders = ref.watch(customerOrdersControllerProvider);
+    final themeMode = ref.watch(themeModeControllerProvider);
     final phoneNumber = session.phoneNumber.trim();
 
     return Scaffold(
@@ -250,6 +252,21 @@ class CustomerSettingsPage extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppSurfaceCard(
+            child: SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                'Dark mode',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              subtitle: const Text('Use a darker premium Luqmah theme.'),
+              value: themeMode.isDark,
+              onChanged: (value) => ref
+                  .read(themeModeControllerProvider)
+                  .setDarkMode(value),
             ),
           ),
           if (session.customerSyncError != null) ...[

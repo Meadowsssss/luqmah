@@ -83,36 +83,51 @@ class _CustomerShellState extends ConsumerState<CustomerShell> {
     ref.watch(customerOrdersControllerProvider).whenData(_maybePromptForRating);
     final cartCount = ref.watch(cartControllerProvider).itemCount;
 
+    final tokens = context.luqmah;
+
     return Scaffold(
       body: widget.navigationShell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: widget.navigationShell.currentIndex,
-        onDestinationSelected: (index) {
-          widget.navigationShell.goBranch(
-            index,
-            initialLocation: index == widget.navigationShell.currentIndex,
-          );
-        },
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.storefront_outlined),
-            selectedIcon: Icon(Icons.storefront_rounded),
-            label: 'Browse',
-          ),
-          NavigationDestination(
-            icon: _CartDestinationIcon(count: cartCount),
-            selectedIcon: _CartDestinationIcon(
-              count: cartCount,
-              selected: true,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: tokens.surface,
+          border: Border(top: BorderSide(color: tokens.border)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, -8),
             ),
-            label: 'Cart',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Settings',
-          ),
-        ],
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: widget.navigationShell.currentIndex,
+          onDestinationSelected: (index) {
+            widget.navigationShell.goBranch(
+              index,
+              initialLocation: index == widget.navigationShell.currentIndex,
+            );
+          },
+          destinations: [
+            const NavigationDestination(
+              icon: Icon(Icons.storefront_outlined),
+              selectedIcon: Icon(Icons.storefront_rounded),
+              label: 'Browse',
+            ),
+            NavigationDestination(
+              icon: _CartDestinationIcon(count: cartCount),
+              selectedIcon: _CartDestinationIcon(
+                count: cartCount,
+                selected: true,
+              ),
+              label: 'Cart',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded),
+              label: 'Settings',
+            ),
+          ],
+        ),
       ),
     );
   }
