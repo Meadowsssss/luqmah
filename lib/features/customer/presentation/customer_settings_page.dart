@@ -225,13 +225,6 @@ class CustomerSettingsPage extends ConsumerWidget {
                 const _SettingRow(label: 'Account type', value: 'Customer'),
                 const SizedBox(height: AppSpacing.md),
                 _SettingRow(
-                  label: 'Name',
-                  value: session.displayName.isEmpty
-                      ? 'No name available'
-                      : session.displayName,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _SettingRow(
                   label: 'Signed in as',
                   value: session.email.isEmpty ? 'No email available' : session.email,
                 ),
