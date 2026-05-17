@@ -5,9 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:luqmah/app/theme/luqmah_theme.dart';
 import 'package:luqmah/features/customer/cart/cart_controller.dart';
 import 'package:luqmah/features/customer/data/restaurant_repository.dart';
+import 'package:luqmah/features/customer/orders/customer_orders_controller.dart';
 import 'package:luqmah/features/customer/presentation/cart_page.dart';
 import 'package:luqmah/features/customer/presentation/restaurants_page.dart';
+import 'package:luqmah/models/customer_order.dart';
 import 'package:luqmah/models/restaurant.dart';
+import 'package:luqmah/models/vendor.dart';
 
 class _FakeRestaurantRepository implements RestaurantRepository {
   const _FakeRestaurantRepository({this.isBusy = false});
@@ -79,45 +82,37 @@ class _FakeRestaurantRepository implements RestaurantRepository {
   Restaurant? getRestaurantById(String id) => null;
 }
 
-class _FakeRestaurantsController extends RestaurantsController {
-  _FakeRestaurantsController(this._restaurants);
+class _FakeCustomerOrdersController extends CustomerOrdersController {
+  _FakeCustomerOrdersController(this._orders);
 
-  final List<Restaurant> _restaurants;
+  final List<CustomerOrder> _orders;
 
   @override
-  Future<List<Restaurant>> build() async => _restaurants;
+  Future<List<CustomerOrder>> build() async => _orders;
 }
 
-List<Restaurant> _restaurantList({bool isBusy = false}) => [
-  Restaurant(
-    id: 'r1',
-    name: 'Campus Bites',
-    description: 'Fresh meals',
-    image: '',
-    rating: 'Live',
-    estimatedPrepMinutes: 14,
-    time: 'Campus pickup',
-    isBusy: isBusy,
-    tags: const ['Open now'],
-    menu: const [],
-  ),
-];
-
-Future<ProviderContainer> _createRestaurantContainer({bool isBusy = false}) async {
+Future<ProviderContainer> _createHomeContainer({
+  bool isBusy = false,
+  List<CustomerOrder> orders = const [],
+}) async {
   final container = ProviderContainer(
     overrides: [
       restaurantRepositoryProvider.overrideWithValue(
         _FakeRestaurantRepository(isBusy: isBusy),
       ),
+      customerOrdersControllerProvider.overrideWith(
+        () => _FakeCustomerOrdersController(orders),
+      ),
     ],
   );
   await container.read(restaurantsProvider.future);
+  await container.read(customerOrdersControllerProvider.future);
   return container;
 }
 
 void main() {
   testWidgets('restaurants screen shows hero copy', (WidgetTester tester) async {
-    final container = await _createRestaurantContainer();
+    final container = await _createHomeContainer();
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
@@ -134,6 +129,78 @@ void main() {
 
     expect(find.text('Luqmah'), findsOneWidget);
     expect(find.text('Good food. Great mood. On campus.'), findsOneWidget);
+  });
+
+  testWidgets('restaurants screen swaps hero for active order card', (tester) async {
+    final container = await _createHomeContainer(
+      orders: [
+        CustomerOrder(
+          id: 'ord_1',
+          restaurantName: 'Planet Donuts',
+          placedAt: DateTime.parse('2026-05-17T17:46:00.000Z'),
+          estimatedReadyAt: DateTime.parse('2026-05-17T18:00:00.000Z'),
+          status: VendorOrderStatus.inProgress,
+          items: const [
+            CustomerOrderItem(
+              itemId: 'item_1',
+              name: 'Chocolate Bar',
+              quantity: 1,
+              price: 1,
+            ),
+          ],
+          total: 1,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: buildLuqmahTheme(),
+          home: const RestaurantsPage(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Good food. Great mood. On campus.'), findsNothing);
+    expect(find.text('Planet Donuts'), findsOneWidget);
+    expect(find.text('Preparing'), findsOneWidget);
+    expect(find.textContaining('Expected by'), findsOneWidget);
+  });
+
+  testWidgets('restaurants screen keeps hero for completed orders', (tester) async {
+    final container = await _createHomeContainer(
+      orders: [
+        CustomerOrder(
+          id: 'ord_1',
+          restaurantName: 'Planet Donuts',
+          placedAt: DateTime.parse('2026-05-17T17:46:00.000Z'),
+          status: VendorOrderStatus.completed,
+          items: const [],
+          total: 2,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: buildLuqmahTheme(),
+          home: const RestaurantsPage(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Good food. Great mood. On campus.'), findsOneWidget);
+    expect(find.text('Planet Donuts'), findsNothing);
   });
 
   test('fake restaurant repository returns busy state for restaurant cards', () async {

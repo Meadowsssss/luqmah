@@ -64,6 +64,10 @@ class CustomerOrder {
   bool get hasRating => ratingScore != null;
   bool get canRate => status == VendorOrderStatus.completed && !hasRating;
   bool get needsRatingPrompt => canRate && ratingPromptDismissedAt == null;
+  bool get isActive =>
+      status == VendorOrderStatus.accepted ||
+      status == VendorOrderStatus.inProgress ||
+      status == VendorOrderStatus.ready;
 
   CustomerOrder copyWith({
     VendorOrderStatus? status,
