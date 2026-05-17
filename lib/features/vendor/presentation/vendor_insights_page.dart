@@ -134,6 +134,24 @@ class VendorInsightsPage extends ConsumerWidget {
                 ],
               ),
             ),
+            const SizedBox(height: AppSpacing.lg),
+            AppSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Restaurant recommendations',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  for (final recommendation in data.restaurantRecommendations) ...[
+                    _RestaurantRecommendationCard(recommendation: recommendation),
+                    if (recommendation != data.restaurantRecommendations.last)
+                      const SizedBox(height: AppSpacing.md),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -167,6 +185,56 @@ class _StatCard extends StatelessWidget {
               context,
             ).textTheme.titleLarge?.copyWith(color: accent),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RestaurantRecommendationCard extends StatelessWidget {
+  const _RestaurantRecommendationCard({required this.recommendation});
+
+  final VendorRestaurantRecommendation recommendation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            recommendation.restaurantTitle,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            recommendation.recommendationTitle,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: recommendation.hasEnoughHistory
+                  ? context.luqmah.primary
+                  : context.luqmah.mutedText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            recommendation.recommendationMessage,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          if (recommendation.hasEnoughHistory && recommendation.peakHourTopItems.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Top items: ${recommendation.peakHourTopItems.join(', ')}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: context.luqmah.mutedText,
+              ),
+            ),
+          ],
         ],
       ),
     );

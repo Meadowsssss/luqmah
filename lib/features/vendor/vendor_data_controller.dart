@@ -472,6 +472,7 @@ class VendorInsightsSummary {
     required this.totalRevenue,
     required this.averageOrderValue,
     required this.topItems,
+    required this.restaurantRecommendations,
   });
 
   final int activeOrders;
@@ -479,6 +480,31 @@ class VendorInsightsSummary {
   final double totalRevenue;
   final double averageOrderValue;
   final List<VendorTopItem> topItems;
+  final List<VendorRestaurantRecommendation> restaurantRecommendations;
+}
+
+class VendorRestaurantRecommendation {
+  const VendorRestaurantRecommendation({
+    required this.restaurantId,
+    required this.restaurantTitle,
+    required this.hasEnoughHistory,
+    this.peakHour,
+    this.peakHourLabel,
+    this.peakHourOrderCount = 0,
+    this.peakHourTopItems = const [],
+    required this.recommendationTitle,
+    required this.recommendationMessage,
+  });
+
+  final String restaurantId;
+  final String restaurantTitle;
+  final int? peakHour;
+  final String? peakHourLabel;
+  final int peakHourOrderCount;
+  final List<String> peakHourTopItems;
+  final bool hasEnoughHistory;
+  final String recommendationTitle;
+  final String recommendationMessage;
 }
 
 class VendorTopItem {
@@ -493,7 +519,10 @@ class VendorTopItem {
   final double revenue;
 }
 
-VendorInsightsSummary summarizeVendorInsights(List<VendorOrder> orders) {
+VendorInsightsSummary summarizeVendorInsights(
+  List<VendorOrder> orders,
+  List<VendorRestaurant> restaurants,
+) {
   final completedOrders = orders
       .where((order) => order.status.isPast)
       .toList(growable: false);
@@ -522,18 +551,112 @@ VendorInsightsSummary summarizeVendorInsights(List<VendorOrder> orders) {
   final topItems = totals.values.toList(growable: false)
     ..sort((a, b) => b.quantity.compareTo(a.quantity));
 
+  final restaurantRecommendations = summarizeRestaurantRecommendations(
+    orders,
+    restaurants,
+  );
+
   return VendorInsightsSummary(
     activeOrders: activeOrders,
     completedOrders: completedOrders.length,
     totalRevenue: totalRevenue,
     averageOrderValue: averageOrderValue,
     topItems: topItems.take(4).toList(growable: false),
+    restaurantRecommendations: restaurantRecommendations,
   );
+}
+
+List<VendorRestaurantRecommendation> summarizeRestaurantRecommendations(
+  List<VendorOrder> orders,
+  List<VendorRestaurant> restaurants,
+) {
+  final now = DateTime.now();
+  final cutoff = now.subtract(const Duration(days: 30));
+  const minimumOrders = 5;
+
+  return restaurants.map((restaurant) {
+    final recentOrders = orders.where((order) {
+      return order.restaurantId == restaurant.id &&
+          (order.status == VendorOrderStatus.ready ||
+              order.status == VendorOrderStatus.completed) &&
+          order.dateTime.isAfter(cutoff);
+    }).toList(growable: false);
+
+    if (recentOrders.length < minimumOrders) {
+      return VendorRestaurantRecommendation(
+        restaurantId: restaurant.id,
+        restaurantTitle: restaurant.title,
+        hasEnoughHistory: false,
+        recommendationTitle: 'Not enough recent order history yet',
+        recommendationMessage:
+            'We need a few more recent orders before we can predict this restaurant\'s rush hour.',
+      );
+    }
+
+    final orderCountByHour = <int, int>{};
+    for (final order in recentOrders) {
+      orderCountByHour.update(
+        order.dateTime.hour,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+
+    final peakHourEntry = orderCountByHour.entries.reduce(
+      (best, current) => current.value > best.value ? current : best,
+    );
+    final peakHourOrders = recentOrders
+        .where((order) => order.dateTime.hour == peakHourEntry.key)
+        .toList(growable: false);
+
+    final topItemsByHour = <String, int>{};
+    for (final order in peakHourOrders) {
+      for (final item in order.items) {
+        topItemsByHour.update(
+          item.name,
+          (count) => count + item.quantity,
+          ifAbsent: () => item.quantity,
+        );
+      }
+    }
+
+    final topItems = topItemsByHour.entries.toList(growable: false)
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final peakHourStart = DateTime(2026, 1, 1, peakHourEntry.key);
+    final peakHourEnd = peakHourStart.add(const Duration(hours: 1));
+    final prepReminder = peakHourStart.subtract(const Duration(minutes: 15));
+    final peakHourLabel =
+        '${formatInsightHour(peakHourStart)} - ${formatInsightHour(peakHourEnd)}';
+    final topItemNames = topItems.take(3).map((entry) => entry.key).toList(growable: false);
+
+    return VendorRestaurantRecommendation(
+      restaurantId: restaurant.id,
+      restaurantTitle: restaurant.title,
+      hasEnoughHistory: true,
+      peakHour: peakHourEntry.key,
+      peakHourLabel: peakHourLabel,
+      peakHourOrderCount: peakHourEntry.value,
+      peakHourTopItems: topItemNames,
+      recommendationTitle: 'Expected rush: $peakHourLabel',
+      recommendationMessage:
+          'Prepare extra stock before ${formatInsightHour(prepReminder)}. Most ordered in this window: ${topItemNames.join(', ')}.',
+    );
+  }).toList(growable: false);
+}
+
+String formatInsightHour(DateTime dateTime) {
+  final hour = dateTime.hour;
+  final suffix = hour >= 12 ? 'PM' : 'AM';
+  final normalizedHour = hour % 12 == 0 ? 12 : hour % 12;
+  return '$normalizedHour $suffix';
 }
 
 final vendorInsightsProvider = Provider<AsyncValue<VendorInsightsSummary>>((
   ref,
 ) {
   final state = ref.watch(vendorDataControllerProvider);
-  return state.whenData((value) => summarizeVendorInsights(value.orders));
+  return state.whenData(
+    (value) => summarizeVendorInsights(value.orders, value.restaurants),
+  );
 });

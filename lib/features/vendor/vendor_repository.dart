@@ -320,6 +320,8 @@ class VendorRepository {
 
     return VendorOrder(
       id: json['id'] as String,
+      restaurantId: ((json['restaurant'] as Map<String, dynamic>?)?['id'] as String?) ?? '',
+      restaurantTitle: ((json['restaurant'] as Map<String, dynamic>?)?['title'] as String?) ?? 'Restaurant',
       customerName:
           ((json['customer'] as Map<String, dynamic>?)?['name'] as String?) ??
           'Customer',

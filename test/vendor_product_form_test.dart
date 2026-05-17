@@ -169,7 +169,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(ListView).first, const Offset(0, -1000));
+    await tester.drag(find.byType(ListView).first, const Offset(0, -2000));
     await tester.pumpAndSettle();
     expect(find.text('Single choice (radio buttons)'), findsOneWidget);
     expect(find.text('Multiple choice (checkboxes)'), findsOneWidget);

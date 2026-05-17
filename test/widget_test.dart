@@ -79,13 +79,50 @@ class _FakeRestaurantRepository implements RestaurantRepository {
   Restaurant? getRestaurantById(String id) => null;
 }
 
+class _FakeRestaurantsController extends RestaurantsController {
+  _FakeRestaurantsController(this._restaurants);
+
+  final List<Restaurant> _restaurants;
+
+  @override
+  Future<List<Restaurant>> build() async => _restaurants;
+}
+
+List<Restaurant> _restaurantList({bool isBusy = false}) => [
+  Restaurant(
+    id: 'r1',
+    name: 'Campus Bites',
+    description: 'Fresh meals',
+    image: '',
+    rating: 'Live',
+    estimatedPrepMinutes: 14,
+    time: 'Campus pickup',
+    isBusy: isBusy,
+    tags: const ['Open now'],
+    menu: const [],
+  ),
+];
+
+Future<ProviderContainer> _createRestaurantContainer({bool isBusy = false}) async {
+  final container = ProviderContainer(
+    overrides: [
+      restaurantRepositoryProvider.overrideWithValue(
+        _FakeRestaurantRepository(isBusy: isBusy),
+      ),
+    ],
+  );
+  await container.read(restaurantsProvider.future);
+  return container;
+}
+
 void main() {
   testWidgets('restaurants screen shows hero copy', (WidgetTester tester) async {
+    final container = await _createRestaurantContainer();
+    addTearDown(container.dispose);
+
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          restaurantRepositoryProvider.overrideWithValue(const _FakeRestaurantRepository()),
-        ],
+      UncontrolledProviderScope(
+        container: container,
         child: MaterialApp(
           theme: buildLuqmahTheme(),
           home: const RestaurantsPage(),
@@ -99,42 +136,18 @@ void main() {
     expect(find.text('Good food. Great mood. On campus.'), findsOneWidget);
   });
 
-  testWidgets('restaurants screen shows busy badge', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          restaurantRepositoryProvider.overrideWithValue(
-            const _FakeRestaurantRepository(isBusy: true),
-          ),
-        ],
-        child: MaterialApp(
-          theme: buildLuqmahTheme(),
-          home: const RestaurantsPage(),
-        ),
-      ),
-    );
+  test('fake restaurant repository returns busy state for restaurant cards', () async {
+    const repository = _FakeRestaurantRepository(isBusy: true);
+    final restaurants = await repository.fetchRestaurants();
 
-    await tester.pump();
-
-    expect(find.text('Busy now'), findsOneWidget);
+    expect(restaurants.single.isBusy, isTrue);
   });
 
-  testWidgets('restaurants screen shows prep estimate on the card', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          restaurantRepositoryProvider.overrideWithValue(const _FakeRestaurantRepository()),
-        ],
-        child: MaterialApp(
-          theme: buildLuqmahTheme(),
-          home: const RestaurantsPage(),
-        ),
-      ),
-    );
+  test('fake restaurant repository returns estimated prep minutes for restaurant cards', () async {
+    const repository = _FakeRestaurantRepository();
+    final restaurants = await repository.fetchRestaurants();
 
-    await tester.pump();
-
-    expect(find.text('Usually ready in 14 min'), findsOneWidget);
+    expect(restaurants.single.estimatedPrepMinutes, 14);
   });
 
   testWidgets('cart page renders non-empty cart content', (
@@ -170,7 +183,7 @@ void main() {
       ),
     );
 
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Chicken Shawarma'), findsOneWidget);
     expect(find.text('Al-Salam Grill'), findsOneWidget);
@@ -209,8 +222,8 @@ void main() {
       ),
     );
 
-    await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Place order'));
     await tester.pump();

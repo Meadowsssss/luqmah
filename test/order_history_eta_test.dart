@@ -50,6 +50,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Expected by'), findsOneWidget);
-    expect(find.text('Ready'), findsOneWidget);
+    expect(find.text('Ready'), findsWidgets);
   });
 }

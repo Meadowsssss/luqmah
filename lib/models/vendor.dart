@@ -85,6 +85,8 @@ class VendorOrderItem {
 
 class VendorOrder {
   final String id;
+  final String restaurantId;
+  final String restaurantTitle;
   final String customerName;
   final String customerEmail;
   final String customerPhone;
@@ -99,6 +101,8 @@ class VendorOrder {
 
   const VendorOrder({
     required this.id,
+    required this.restaurantId,
+    required this.restaurantTitle,
     required this.customerName,
     required this.customerEmail,
     required this.customerPhone,
@@ -115,6 +119,8 @@ class VendorOrder {
   VendorOrder copyWith({VendorOrderStatus? status}) {
     return VendorOrder(
       id: id,
+      restaurantId: restaurantId,
+      restaurantTitle: restaurantTitle,
       customerName: customerName,
       customerEmail: customerEmail,
       customerPhone: customerPhone,
