@@ -145,6 +145,46 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     );
   }
 
+  void _replaceRestaurant(VendorRestaurant updatedRestaurant) {
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      return;
+    }
+
+    state = AsyncData(
+      VendorDataState(
+        orders: currentState.orders,
+        menuItems: currentState.menuItems
+            .map(
+              (item) => item.restaurantId == updatedRestaurant.id
+                  ? VendorMenuItem(
+                      restaurantId: item.restaurantId,
+                      restaurantTitle: updatedRestaurant.title,
+                      categoryId: item.categoryId,
+                      id: item.id,
+                      title: item.title,
+                      description: item.description,
+                      category: item.category,
+                      ingredients: item.ingredients,
+                      price: item.price,
+                      image: item.image,
+                      isAvailable: item.isAvailable,
+                      optionGroups: item.optionGroups,
+                    )
+                  : item,
+            )
+            .toList(growable: false),
+        restaurants: currentState.restaurants
+            .map(
+              (restaurant) => restaurant.id == updatedRestaurant.id
+                  ? updatedRestaurant
+                  : restaurant,
+            )
+            .toList(growable: false),
+      ),
+    );
+  }
+
   Future<void> applyRealtimeEvent(RealtimeEvent event) async {
     switch (event.type) {
       case RealtimeEventTypes.orderCreated:
@@ -220,6 +260,9 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
               return VendorRestaurant(
                 id: restaurant.id,
                 title: restaurant.title,
+                description: restaurant.description,
+                address: restaurant.address,
+                coverImage: restaurant.coverImage,
                 isBusy: restaurant.isBusy,
                 categories: [...restaurant.categories, category],
               );
@@ -290,6 +333,24 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     }
 
     return _repository.uploadMenuItemImage(
+      token: token,
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
+  }
+
+  Future<String> uploadRestaurantCover({
+    required Uint8List bytes,
+    required String filename,
+    String? contentType,
+  }) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Vendor session is required');
+    }
+
+    return _repository.uploadRestaurantCover(
       token: token,
       bytes: bytes,
       filename: filename,
@@ -445,6 +506,36 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       ),
     );
   }
+
+  Future<void> updateRestaurant({
+    required String restaurantId,
+    required String title,
+    required String description,
+    required String address,
+    required String coverImage,
+  }) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Vendor session is required');
+    }
+
+    final updatedRestaurant = await _repository.updateRestaurant(
+      token: token,
+      restaurantId: restaurantId,
+      title: title,
+      description: description,
+      address: address,
+      coverImage: coverImage,
+    );
+
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      await refresh();
+      return;
+    }
+
+    _replaceRestaurant(updatedRestaurant);
+  }
 }
 
 final vendorDataControllerProvider =
@@ -574,75 +665,84 @@ List<VendorRestaurantRecommendation> summarizeRestaurantRecommendations(
   final cutoff = now.subtract(const Duration(days: 30));
   const minimumOrders = 5;
 
-  return restaurants.map((restaurant) {
-    final recentOrders = orders.where((order) {
-      return order.restaurantId == restaurant.id &&
-          (order.status == VendorOrderStatus.ready ||
-              order.status == VendorOrderStatus.completed) &&
-          order.dateTime.isAfter(cutoff);
-    }).toList(growable: false);
+  return restaurants
+      .map((restaurant) {
+        final recentOrders = orders
+            .where((order) {
+              return order.restaurantId == restaurant.id &&
+                  (order.status == VendorOrderStatus.ready ||
+                      order.status == VendorOrderStatus.completed) &&
+                  order.dateTime.isAfter(cutoff);
+            })
+            .toList(growable: false);
 
-    if (recentOrders.length < minimumOrders) {
-      return VendorRestaurantRecommendation(
-        restaurantId: restaurant.id,
-        restaurantTitle: restaurant.title,
-        hasEnoughHistory: false,
-        recommendationTitle: 'Not enough recent order history yet',
-        recommendationMessage:
-            'We need a few more recent orders before we can predict this restaurant\'s rush hour.',
-      );
-    }
+        if (recentOrders.length < minimumOrders) {
+          return VendorRestaurantRecommendation(
+            restaurantId: restaurant.id,
+            restaurantTitle: restaurant.title,
+            hasEnoughHistory: false,
+            recommendationTitle: 'Not enough recent order history yet',
+            recommendationMessage:
+                'We need a few more recent orders before we can predict this restaurant\'s rush hour.',
+          );
+        }
 
-    final orderCountByHour = <int, int>{};
-    for (final order in recentOrders) {
-      orderCountByHour.update(
-        order.dateTime.hour,
-        (count) => count + 1,
-        ifAbsent: () => 1,
-      );
-    }
+        final orderCountByHour = <int, int>{};
+        for (final order in recentOrders) {
+          orderCountByHour.update(
+            order.dateTime.hour,
+            (count) => count + 1,
+            ifAbsent: () => 1,
+          );
+        }
 
-    final peakHourEntry = orderCountByHour.entries.reduce(
-      (best, current) => current.value > best.value ? current : best,
-    );
-    final peakHourOrders = recentOrders
-        .where((order) => order.dateTime.hour == peakHourEntry.key)
-        .toList(growable: false);
-
-    final topItemsByHour = <String, int>{};
-    for (final order in peakHourOrders) {
-      for (final item in order.items) {
-        topItemsByHour.update(
-          item.name,
-          (count) => count + item.quantity,
-          ifAbsent: () => item.quantity,
+        final peakHourEntry = orderCountByHour.entries.reduce(
+          (best, current) => current.value > best.value ? current : best,
         );
-      }
-    }
+        final peakHourOrders = recentOrders
+            .where((order) => order.dateTime.hour == peakHourEntry.key)
+            .toList(growable: false);
 
-    final topItems = topItemsByHour.entries.toList(growable: false)
-      ..sort((a, b) => b.value.compareTo(a.value));
+        final topItemsByHour = <String, int>{};
+        for (final order in peakHourOrders) {
+          for (final item in order.items) {
+            topItemsByHour.update(
+              item.name,
+              (count) => count + item.quantity,
+              ifAbsent: () => item.quantity,
+            );
+          }
+        }
 
-    final peakHourStart = DateTime(2026, 1, 1, peakHourEntry.key);
-    final peakHourEnd = peakHourStart.add(const Duration(hours: 1));
-    final prepReminder = peakHourStart.subtract(const Duration(minutes: 15));
-    final peakHourLabel =
-        '${formatInsightHour(peakHourStart)} - ${formatInsightHour(peakHourEnd)}';
-    final topItemNames = topItems.take(3).map((entry) => entry.key).toList(growable: false);
+        final topItems = topItemsByHour.entries.toList(growable: false)
+          ..sort((a, b) => b.value.compareTo(a.value));
 
-    return VendorRestaurantRecommendation(
-      restaurantId: restaurant.id,
-      restaurantTitle: restaurant.title,
-      hasEnoughHistory: true,
-      peakHour: peakHourEntry.key,
-      peakHourLabel: peakHourLabel,
-      peakHourOrderCount: peakHourEntry.value,
-      peakHourTopItems: topItemNames,
-      recommendationTitle: 'Expected rush: $peakHourLabel',
-      recommendationMessage:
-          'Prepare extra stock before ${formatInsightHour(prepReminder)}. Most ordered in this window: ${topItemNames.join(', ')}.',
-    );
-  }).toList(growable: false);
+        final peakHourStart = DateTime(2026, 1, 1, peakHourEntry.key);
+        final peakHourEnd = peakHourStart.add(const Duration(hours: 1));
+        final prepReminder = peakHourStart.subtract(
+          const Duration(minutes: 15),
+        );
+        final peakHourLabel =
+            '${formatInsightHour(peakHourStart)} - ${formatInsightHour(peakHourEnd)}';
+        final topItemNames = topItems
+            .take(3)
+            .map((entry) => entry.key)
+            .toList(growable: false);
+
+        return VendorRestaurantRecommendation(
+          restaurantId: restaurant.id,
+          restaurantTitle: restaurant.title,
+          hasEnoughHistory: true,
+          peakHour: peakHourEntry.key,
+          peakHourLabel: peakHourLabel,
+          peakHourOrderCount: peakHourEntry.value,
+          peakHourTopItems: topItemNames,
+          recommendationTitle: 'Expected rush: $peakHourLabel',
+          recommendationMessage:
+              'Prepare extra stock before ${formatInsightHour(prepReminder)}. Most ordered in this window: ${topItemNames.join(', ')}.',
+        );
+      })
+      .toList(growable: false);
 }
 
 String formatInsightHour(DateTime dateTime) {

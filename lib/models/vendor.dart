@@ -18,12 +18,17 @@ extension VendorOrderStatusLabel on VendorOrderStatus {
     }
   }
 
-  bool get isPast => this == VendorOrderStatus.completed || this == VendorOrderStatus.cancelled;
+  bool get isPast =>
+      this == VendorOrderStatus.completed ||
+      this == VendorOrderStatus.cancelled;
 
   List<VendorOrderStatus> get allowedTransitions {
     switch (this) {
       case VendorOrderStatus.accepted:
-        return const [VendorOrderStatus.inProgress, VendorOrderStatus.cancelled];
+        return const [
+          VendorOrderStatus.inProgress,
+          VendorOrderStatus.cancelled,
+        ];
       case VendorOrderStatus.inProgress:
         return const [VendorOrderStatus.ready, VendorOrderStatus.cancelled];
       case VendorOrderStatus.ready:
@@ -181,7 +186,8 @@ class VendorMenuItemOptionGroup {
   final bool isRequired;
   final List<VendorMenuItemCustomization> options;
 
-  bool get isSingleChoice => selectionType == VendorMenuItemOptionSelectionType.single;
+  bool get isSingleChoice =>
+      selectionType == VendorMenuItemOptionSelectionType.single;
 }
 
 class VendorMenuItemCustomization {
@@ -208,21 +214,37 @@ class VendorRestaurant {
   const VendorRestaurant({
     required this.id,
     required this.title,
+    this.description = '',
+    this.address = '',
+    this.coverImage = '',
     this.isBusy = false,
     required this.categories,
   });
 
   final String id;
   final String title;
+  final String description;
+  final String address;
+  final String coverImage;
   final bool isBusy;
   final List<VendorRestaurantCategory> categories;
 
-  VendorRestaurant copyWith({bool? isBusy}) {
+  VendorRestaurant copyWith({
+    String? title,
+    String? description,
+    String? address,
+    String? coverImage,
+    bool? isBusy,
+    List<VendorRestaurantCategory>? categories,
+  }) {
     return VendorRestaurant(
       id: id,
-      title: title,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      address: address ?? this.address,
+      coverImage: coverImage ?? this.coverImage,
       isBusy: isBusy ?? this.isBusy,
-      categories: categories,
+      categories: categories ?? this.categories,
     );
   }
 }

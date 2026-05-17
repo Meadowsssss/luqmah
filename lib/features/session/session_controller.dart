@@ -17,7 +17,9 @@ final sessionRepositoryProvider = Provider<SessionRepository>((ref) {
   return SessionRepository();
 });
 
-final sessionControllerProvider = ChangeNotifierProvider<SessionController>((ref) {
+final sessionControllerProvider = ChangeNotifierProvider<SessionController>((
+  ref,
+) {
   final controller = SessionController(
     authRepository: ref.watch(authRepositoryProvider),
     backendAuthRepository: ref.watch(backendAuthRepositoryProvider),
@@ -53,11 +55,16 @@ class SessionController extends ChangeNotifier {
   Future<void> refresh({bool showLoading = false}) async {
     if (showLoading) {
       final previous = _snapshot;
-      _snapshot = previous.copyWith(isLoading: true, clearCustomerSyncError: true);
+      _snapshot = previous.copyWith(
+        isLoading: true,
+        clearCustomerSyncError: true,
+      );
       notifyListeners();
     }
 
-    final next = await _sessionRepository.buildSnapshot(_authRepository.currentUser);
+    final next = await _sessionRepository.buildSnapshot(
+      _authRepository.currentUser,
+    );
     _snapshot = next;
     notifyListeners();
 
@@ -92,7 +99,10 @@ class SessionController extends ChangeNotifier {
     }
   }
 
-  Future<void> loginVendor({required String email, required String password}) async {
+  Future<void> loginVendor({
+    required String email,
+    required String password,
+  }) async {
     await _sessionRepository.clearBackendSession();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
@@ -106,7 +116,10 @@ class SessionController extends ChangeNotifier {
     await refresh();
   }
 
-  Future<void> loginAdmin({required String email, required String password}) async {
+  Future<void> loginAdmin({
+    required String email,
+    required String password,
+  }) async {
     await _sessionRepository.clearBackendSession();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
@@ -182,13 +195,16 @@ class SessionController extends ChangeNotifier {
   Future<void> updateCustomerPhoneNumber(String phoneNumber) async {
     final session = _snapshot.backendSession;
     if (session == null || session.token.isEmpty) {
-      throw StateError('A backend session is required to update this phone number.');
+      throw StateError(
+        'A backend session is required to update this phone number.',
+      );
     }
 
-    final updatedPhoneNumber = await _backendAuthRepository.updateCustomerPhoneNumber(
-      token: session.token,
-      phoneNumber: phoneNumber,
-    );
+    final updatedPhoneNumber = await _backendAuthRepository
+        .updateCustomerPhoneNumber(
+          token: session.token,
+          phoneNumber: phoneNumber,
+        );
     final updatedSession = session.copyWith(
       user: session.user.copyWith(phoneNumber: updatedPhoneNumber),
     );
@@ -204,7 +220,9 @@ class SessionController extends ChangeNotifier {
   }) async {
     final token = _snapshot.backendToken;
     if (token == null || token.isEmpty) {
-      throw StateError('A backend session is required to change this password.');
+      throw StateError(
+        'A backend session is required to change this password.',
+      );
     }
 
     await _backendAuthRepository.changeBackendPassword(
@@ -212,6 +230,23 @@ class SessionController extends ChangeNotifier {
       currentPassword: currentPassword,
       newPassword: newPassword,
     );
+  }
+
+  Future<void> updateVendorProfile({required String name}) async {
+    final session = _snapshot.backendSession;
+    if (session == null || session.token.isEmpty) {
+      throw StateError('A backend session is required to update this profile.');
+    }
+
+    final updatedUser = await _backendAuthRepository.updateVendorProfile(
+      token: session.token,
+      name: name,
+    );
+    final updatedSession = session.copyWith(user: updatedUser);
+
+    await _sessionRepository.saveBackendSession(updatedSession);
+    _snapshot = _snapshot.copyWith(backendSession: updatedSession);
+    notifyListeners();
   }
 
   Future<void> logout() async {
@@ -240,11 +275,9 @@ class SessionController extends ChangeNotifier {
     }
 
     final currentBackendSession = _snapshot.backendSession;
-    if (
-      currentBackendSession != null &&
-      currentBackendSession.user.role == 'CUSTOMER' &&
-      !forceRefreshFirebaseToken
-    ) {
+    if (currentBackendSession != null &&
+        currentBackendSession.user.role == 'CUSTOMER' &&
+        !forceRefreshFirebaseToken) {
       return;
     }
 
@@ -252,9 +285,8 @@ class SessionController extends ChangeNotifier {
       final idToken = await _authRepository.getIdToken(
         forceRefresh: forceRefreshFirebaseToken,
       );
-      final backendSession = await _backendAuthRepository.syncCustomerWithFirebase(
-        idToken: idToken,
-      );
+      final backendSession = await _backendAuthRepository
+          .syncCustomerWithFirebase(idToken: idToken);
       await _sessionRepository.saveBackendSession(backendSession);
       _snapshot = SessionSnapshot(
         firebaseUser: _authRepository.currentUser,

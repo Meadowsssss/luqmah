@@ -43,6 +43,23 @@ class VendorRepository {
     return response['imageUrl'] as String;
   }
 
+  Future<String> uploadRestaurantCover({
+    required String token,
+    required Uint8List bytes,
+    required String filename,
+    String? contentType,
+  }) async {
+    final response = await _apiClient.uploadFile(
+      '/vendor/uploads/restaurant-cover',
+      token: token,
+      fieldName: 'image',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
+    return response['imageUrl'] as String;
+  }
+
   Future<VendorWorkspaceData> loadWorkspace(String token) async {
     final restaurantsResponse = await _apiClient.get(
       '/vendor/restaurants/me',
@@ -207,6 +224,29 @@ class VendorRepository {
     );
   }
 
+  Future<VendorRestaurant> updateRestaurant({
+    required String token,
+    required String restaurantId,
+    required String title,
+    required String description,
+    required String address,
+    required String coverImage,
+  }) async {
+    final response = await _apiClient.patch(
+      '/vendor/restaurants/$restaurantId',
+      token: token,
+      body: {
+        'title': title,
+        'description': description.isEmpty ? null : description,
+        'address': address.isEmpty ? null : address,
+        'coverImage': coverImage.isEmpty ? null : coverImage,
+      },
+    );
+    return _vendorRestaurantFromJson(
+      response['restaurant'] as Map<String, dynamic>,
+    );
+  }
+
   Future<VendorMenuItem> updateMenuItemAvailability({
     required String token,
     required String itemId,
@@ -237,6 +277,9 @@ class VendorRepository {
     return VendorRestaurant(
       id: json['id'] as String,
       title: json['title'] as String,
+      description: json['description'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      coverImage: json['coverImage'] as String? ?? '',
       isBusy: json['isBusy'] as bool? ?? false,
       categories: ((json['menuCategories'] as List<dynamic>?) ?? const [])
           .map(
@@ -320,8 +363,13 @@ class VendorRepository {
 
     return VendorOrder(
       id: json['id'] as String,
-      restaurantId: ((json['restaurant'] as Map<String, dynamic>?)?['id'] as String?) ?? '',
-      restaurantTitle: ((json['restaurant'] as Map<String, dynamic>?)?['title'] as String?) ?? 'Restaurant',
+      restaurantId:
+          ((json['restaurant'] as Map<String, dynamic>?)?['id'] as String?) ??
+          '',
+      restaurantTitle:
+          ((json['restaurant'] as Map<String, dynamic>?)?['title']
+              as String?) ??
+          'Restaurant',
       customerName:
           ((json['customer'] as Map<String, dynamic>?)?['name'] as String?) ??
           'Customer',

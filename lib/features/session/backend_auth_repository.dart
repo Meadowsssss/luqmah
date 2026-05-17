@@ -31,10 +31,10 @@ class BackendAuthUser {
     );
   }
 
-  BackendAuthUser copyWith({String? phoneNumber}) {
+  BackendAuthUser copyWith({String? name, String? phoneNumber}) {
     return BackendAuthUser(
       id: id,
-      name: name,
+      name: name ?? this.name,
       email: email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       role: role,
@@ -70,10 +70,7 @@ class BackendAuthSession {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'token': token,
-      'user': user.toJson(),
-    };
+    return {'token': token, 'user': user.toJson()};
   }
 }
 
@@ -143,10 +140,7 @@ class BackendAuthRepository {
     await _apiClient.patch(
       '/users/me/password',
       token: token,
-      body: {
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      },
+      body: {'currentPassword': currentPassword, 'newPassword': newPassword},
     );
   }
 
@@ -160,5 +154,17 @@ class BackendAuthRepository {
       body: {'phoneNumber': phoneNumber},
     );
     return response['phoneNumber'] as String? ?? '';
+  }
+
+  Future<BackendAuthUser> updateVendorProfile({
+    required String token,
+    required String name,
+  }) async {
+    final response = await _apiClient.patch(
+      '/vendor/profile',
+      token: token,
+      body: {'name': name},
+    );
+    return BackendAuthUser.fromJson(response['user'] as Map<String, dynamic>);
   }
 }
