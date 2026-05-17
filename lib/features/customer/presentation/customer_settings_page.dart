@@ -11,6 +11,106 @@ import '../../../shared/widgets/app_surface_card.dart';
 class CustomerSettingsPage extends ConsumerWidget {
   const CustomerSettingsPage({super.key});
 
+  Future<void> _showPhoneNumberDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String currentPhoneNumber,
+  ) async {
+    final phoneController = TextEditingController(text: currentPhoneNumber);
+    String? error;
+    bool saving = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(
+                currentPhoneNumber.isEmpty
+                    ? 'Add phone number'
+                    : 'Change phone number',
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone number',
+                      hintText: '07...',
+                    ),
+                  ),
+                  if (error != null) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      error!,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: saving ? null : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final phoneNumber = phoneController.text.trim();
+                          if (phoneNumber.isEmpty) {
+                            setState(() => error = 'Phone number is required.');
+                            return;
+                          }
+
+                          setState(() {
+                            saving = true;
+                            error = null;
+                          });
+
+                          try {
+                            await ref
+                                .read(sessionControllerProvider)
+                                .updateCustomerPhoneNumber(phoneNumber);
+                            if (context.mounted) {
+                              Navigator.of(dialogContext).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Phone number updated.'),
+                                ),
+                              );
+                            }
+                          } catch (err) {
+                            setState(() {
+                              saving = false;
+                              error = formatAuthError(err);
+                            });
+                          }
+                        },
+                  child: saving
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    phoneController.dispose();
+  }
+
   Future<void> _showCustomerPasswordDialog(BuildContext context, WidgetRef ref) async {
     final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
@@ -107,6 +207,7 @@ class CustomerSettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider).snapshot;
     final recentOrders = ref.watch(customerOrdersControllerProvider);
+    final phoneNumber = session.phoneNumber.trim();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -131,6 +232,22 @@ class CustomerSettingsPage extends ConsumerWidget {
                 _SettingRow(
                   label: 'Signed in as',
                   value: session.email.isEmpty ? 'No email available' : session.email,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _SettingRow(
+                  label: 'Phone number',
+                  value: phoneNumber.isEmpty
+                      ? 'No phone number added'
+                      : phoneNumber,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                OutlinedButton(
+                  onPressed: () => _showPhoneNumberDialog(context, ref, phoneNumber),
+                  child: Text(
+                    phoneNumber.isEmpty
+                        ? 'Add phone number'
+                        : 'Change phone number',
+                  ),
                 ),
               ],
             ),

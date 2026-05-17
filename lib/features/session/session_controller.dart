@@ -179,6 +179,25 @@ class SessionController extends ChangeNotifier {
     );
   }
 
+  Future<void> updateCustomerPhoneNumber(String phoneNumber) async {
+    final session = _snapshot.backendSession;
+    if (session == null || session.token.isEmpty) {
+      throw StateError('A backend session is required to update this phone number.');
+    }
+
+    final updatedPhoneNumber = await _backendAuthRepository.updateCustomerPhoneNumber(
+      token: session.token,
+      phoneNumber: phoneNumber,
+    );
+    final updatedSession = session.copyWith(
+      user: session.user.copyWith(phoneNumber: updatedPhoneNumber),
+    );
+
+    await _sessionRepository.saveBackendSession(updatedSession);
+    _snapshot = _snapshot.copyWith(backendSession: updatedSession);
+    notifyListeners();
+  }
+
   Future<void> changeVendorPassword({
     required String currentPassword,
     required String newPassword,

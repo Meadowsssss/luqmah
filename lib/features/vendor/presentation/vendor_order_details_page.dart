@@ -69,7 +69,21 @@ class _VendorOrderDetailsPageState extends ConsumerState<VendorOrderDetailsPage>
                     Text(order.customerName, style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      '${order.customerPhone} · ${formatter.format(order.dateTime)}',
+                      order.customerEmail.isEmpty
+                          ? 'No email available'
+                          : order.customerEmail,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      order.customerPhone.isEmpty
+                          ? 'No phone number added'
+                          : order.customerPhone,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      formatter.format(order.dateTime),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     if (order.status == VendorOrderStatus.inProgress && order.estimatedReadyAt != null) ...[

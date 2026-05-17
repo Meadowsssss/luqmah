@@ -86,6 +86,7 @@ class VendorOrderItem {
 class VendorOrder {
   final String id;
   final String customerName;
+  final String customerEmail;
   final String customerPhone;
   final DateTime dateTime;
   final DateTime? estimatedReadyAt;
@@ -99,6 +100,7 @@ class VendorOrder {
   const VendorOrder({
     required this.id,
     required this.customerName,
+    required this.customerEmail,
     required this.customerPhone,
     required this.dateTime,
     this.estimatedReadyAt,
@@ -114,6 +116,7 @@ class VendorOrder {
     return VendorOrder(
       id: id,
       customerName: customerName,
+      customerEmail: customerEmail,
       customerPhone: customerPhone,
       dateTime: dateTime,
       estimatedReadyAt: estimatedReadyAt,

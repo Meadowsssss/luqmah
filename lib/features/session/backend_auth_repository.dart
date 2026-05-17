@@ -11,12 +11,14 @@ class BackendAuthUser {
     required this.id,
     required this.name,
     required this.email,
+    this.phoneNumber,
     required this.role,
   });
 
   final String id;
   final String name;
   final String email;
+  final String? phoneNumber;
   final String role;
 
   factory BackendAuthUser.fromJson(Map<String, dynamic> json) {
@@ -24,7 +26,18 @@ class BackendAuthUser {
       id: json['id'] as String,
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
+      phoneNumber: json['phoneNumber'] as String?,
       role: json['role'] as String,
+    );
+  }
+
+  BackendAuthUser copyWith({String? phoneNumber}) {
+    return BackendAuthUser(
+      id: id,
+      name: name,
+      email: email,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      role: role,
     );
   }
 
@@ -33,6 +46,7 @@ class BackendAuthUser {
       'id': id,
       'name': name,
       'email': email,
+      'phoneNumber': phoneNumber,
       'role': role,
     };
   }
@@ -43,6 +57,10 @@ class BackendAuthSession {
 
   final String token;
   final BackendAuthUser user;
+
+  BackendAuthSession copyWith({BackendAuthUser? user}) {
+    return BackendAuthSession(token: token, user: user ?? this.user);
+  }
 
   factory BackendAuthSession.fromJson(Map<String, dynamic> json) {
     return BackendAuthSession(
@@ -130,5 +148,17 @@ class BackendAuthRepository {
         'newPassword': newPassword,
       },
     );
+  }
+
+  Future<String> updateCustomerPhoneNumber({
+    required String token,
+    required String phoneNumber,
+  }) async {
+    final response = await _apiClient.patch(
+      '/users/me/phone',
+      token: token,
+      body: {'phoneNumber': phoneNumber},
+    );
+    return response['phoneNumber'] as String? ?? '';
   }
 }

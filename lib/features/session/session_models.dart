@@ -47,6 +47,7 @@ class SessionSnapshot {
 
   String get email => backendSession?.user.email ?? firebaseUser?.email ?? '';
   String get displayName => backendSession?.user.name ?? firebaseUser?.displayName ?? '';
+  String get phoneNumber => backendSession?.user.phoneNumber ?? '';
   String? get backendToken => backendSession?.token;
 
   SessionSnapshot copyWith({

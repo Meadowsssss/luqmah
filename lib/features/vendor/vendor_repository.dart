@@ -323,8 +323,12 @@ class VendorRepository {
       customerName:
           ((json['customer'] as Map<String, dynamic>?)?['name'] as String?) ??
           'Customer',
-      customerPhone:
+      customerEmail:
           ((json['customer'] as Map<String, dynamic>?)?['email'] as String?) ??
+          '',
+      customerPhone:
+          ((json['customer'] as Map<String, dynamic>?)?['phoneNumber']
+              as String?) ??
           '',
       dateTime: DateTime.parse(json['createdAt'] as String),
       estimatedReadyAt: json['estimatedReadyAt'] == null
