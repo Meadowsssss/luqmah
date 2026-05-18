@@ -72,6 +72,7 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> login({required String email, required String password}) async {
+    final normalizedEmail = email.trim().toLowerCase();
     await _sessionRepository.clearBackendSession();
 
     try {
@@ -79,7 +80,10 @@ class SessionController extends ChangeNotifier {
         await _authRepository.logout();
       }
 
-      await _authRepository.login(email: email, password: password);
+      await _authRepository.login(
+        email: normalizedEmail,
+        password: password,
+      );
       await _authRepository.reloadCurrentUser();
 
       if (_authRepository.currentUser?.emailVerified ?? false) {
@@ -103,13 +107,14 @@ class SessionController extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
+    final normalizedEmail = email.trim().toLowerCase();
     await _sessionRepository.clearBackendSession();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
     }
 
     final session = await _backendAuthRepository.loginVendor(
-      email: email,
+      email: normalizedEmail,
       password: password,
     );
     await _sessionRepository.saveBackendSession(session);
@@ -120,13 +125,14 @@ class SessionController extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
+    final normalizedEmail = email.trim().toLowerCase();
     await _sessionRepository.clearBackendSession();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
     }
 
     final session = await _backendAuthRepository.loginAdmin(
-      email: email,
+      email: normalizedEmail,
       password: password,
     );
     await _sessionRepository.saveBackendSession(session);
@@ -137,6 +143,7 @@ class SessionController extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
+    final normalizedEmail = email.trim().toLowerCase();
     await _sessionRepository.clearBackendSession();
 
     try {
@@ -145,7 +152,7 @@ class SessionController extends ChangeNotifier {
       }
 
       final credential = await _authRepository.register(
-        email: email,
+        email: normalizedEmail,
         password: password,
       );
       await credential.user?.sendEmailVerification();
