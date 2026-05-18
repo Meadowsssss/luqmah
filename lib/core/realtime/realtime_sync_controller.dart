@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -68,6 +69,10 @@ class _RealtimeLifecycleObserver extends WidgetsBindingObserver {
 
 void handleRealtimeEvent(Ref ref, RealtimeEvent event) {
   final snapshot = ref.read(sessionControllerProvider).snapshot;
+  if (snapshot.role == AppRole.vendor &&
+      event.type == RealtimeEventTypes.orderCreated) {
+    unawaited(SystemSound.play(SystemSoundType.alert));
+  }
   final actions = actionsForRealtimeEvent(snapshot.role, event);
   if (actions.isEmpty) {
     return;

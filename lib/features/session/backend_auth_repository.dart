@@ -155,4 +155,34 @@ class BackendAuthRepository {
     );
     return response['phoneNumber'] as String? ?? '';
   }
+
+  Future<void> registerPushToken({
+    required String token,
+    required String pushToken,
+    required String platform,
+  }) async {
+    await _apiClient.post(
+      '/users/me/push-tokens',
+      token: token,
+      body: {
+        'token': pushToken,
+        'platform': platform,
+      },
+    );
+  }
+
+  Future<void> unregisterPushToken({
+    required String token,
+    required String pushToken,
+    required String platform,
+  }) async {
+    await _apiClient.delete(
+      '/users/me/push-tokens',
+      token: token,
+      body: {
+        'token': pushToken,
+        'platform': platform,
+      },
+    );
+  }
 }
