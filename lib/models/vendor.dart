@@ -6,7 +6,7 @@ extension VendorOrderStatusLabel on VendorOrderStatus {
   String get label {
     switch (this) {
       case VendorOrderStatus.accepted:
-        return 'Accepted';
+        return 'In Queue';
       case VendorOrderStatus.inProgress:
         return 'In Progress';
       case VendorOrderStatus.ready:

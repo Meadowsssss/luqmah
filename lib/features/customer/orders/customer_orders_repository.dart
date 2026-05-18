@@ -82,12 +82,26 @@ class CustomerOrdersRepository {
     required String token,
     required String orderId,
   }) async {
-    final response = await _apiClient.post('/orders/$orderId/rating-dismiss', token: token);
+    final response = await _apiClient.post(
+      '/orders/$orderId/rating-dismiss',
+      token: token,
+    );
     final order = response['order'];
     if (order is! Map<String, dynamic> || order['id'] == null) {
       return null;
     }
     return _customerOrderFromJson(order);
+  }
+
+  Future<CustomerOrder> cancelOrder({
+    required String token,
+    required String orderId,
+  }) async {
+    final response = await _apiClient.post(
+      '/orders/$orderId/cancel',
+      token: token,
+    );
+    return _customerOrderFromJson(response['order'] as Map<String, dynamic>);
   }
 
   CustomerOrder _customerOrderFromJson(Map<String, dynamic> json) {

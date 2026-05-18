@@ -103,7 +103,7 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
     final currentOrders = state.valueOrNull;
     if (currentOrders != null && hasActiveCustomerOrder(currentOrders)) {
       throw const ApiException(
-        'You already have an active order. Complete or cancel it before placing a new one.',
+        "You already have an order in progress. You can't place a new order until your current order is finished.",
         statusCode: 409,
         code: 'CUSTOMER_ACTIVE_ORDER_EXISTS',
       );
@@ -179,6 +179,21 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
     _replaceOrder(
       updatedOrder ?? order.copyWith(ratingPromptDismissedAt: DateTime.now()),
     );
+  }
+
+  Future<void> cancelOrder(CustomerOrder order) async {
+    final token = ref.read(sessionControllerProvider).snapshot.backendToken;
+    if (token == null || token.isEmpty) {
+      throw ApiException(
+        'Customer backend session is required. Please sign in again.',
+      );
+    }
+
+    final cancelledOrder = await _repository.cancelOrder(
+      token: token,
+      orderId: order.id,
+    );
+    _replaceOrder(cancelledOrder);
   }
 }
 

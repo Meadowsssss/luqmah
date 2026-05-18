@@ -60,6 +60,51 @@ class _OrderHistoryCard extends ConsumerWidget {
 
   final CustomerOrder order;
 
+  Future<void> _cancelOrder(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel order?'),
+        content: const Text(
+          'This order is still in queue. Do you want to cancel it?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Keep order'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Cancel order'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(customerOrdersControllerProvider.notifier)
+          .cancelOrder(order);
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Order cancelled.')));
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
   Future<void> _rateOrder(BuildContext context, WidgetRef ref) async {
     final result = await showOrderRatingDialog(
       context: context,
@@ -151,7 +196,8 @@ class _OrderHistoryCard extends ConsumerWidget {
             formatter.format(order.placedAt),
             style: Theme.of(context).textTheme.bodySmall,
           ),
-          if (order.status == VendorOrderStatus.inProgress && order.estimatedReadyAt != null) ...[
+          if (order.status == VendorOrderStatus.inProgress &&
+              order.estimatedReadyAt != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Expected by ${DateFormat('hh:mm a').format(order.estimatedReadyAt!)}',
@@ -171,15 +217,16 @@ class _OrderHistoryCard extends ConsumerWidget {
             ),
             child: Column(
               children: [
-          for (final item in order.items) ...[
-            Row(
-              children: [
-                Expanded(child: Text('${item.name} x${item.quantity}')),
-                Text('${item.lineTotal.toStringAsFixed(2)} JD'),
-              ],
-            ),
-            if (item != order.items.last) const SizedBox(height: AppSpacing.sm),
-          ],
+                for (final item in order.items) ...[
+                  Row(
+                    children: [
+                      Expanded(child: Text('${item.name} x${item.quantity}')),
+                      Text('${item.lineTotal.toStringAsFixed(2)} JD'),
+                    ],
+                  ),
+                  if (item != order.items.last)
+                    const SizedBox(height: AppSpacing.sm),
+                ],
               ],
             ),
           ),
@@ -202,6 +249,14 @@ class _OrderHistoryCard extends ConsumerWidget {
               ),
             ],
           ),
+          if (order.status == VendorOrderStatus.accepted) ...[
+            const SizedBox(height: AppSpacing.lg),
+            OutlinedButton.icon(
+              onPressed: () => _cancelOrder(context, ref),
+              icon: const Icon(Icons.close_rounded),
+              label: const Text('Cancel order'),
+            ),
+          ],
           if (order.status == VendorOrderStatus.completed) ...[
             const SizedBox(height: AppSpacing.lg),
             if (order.hasRating)
@@ -254,7 +309,10 @@ class _OrderProgressTrack extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(labels[index], style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  labels[index],
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
