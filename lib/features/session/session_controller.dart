@@ -72,7 +72,7 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> login({required String email, required String password}) async {
-    final normalizedEmail = email.trim().toLowerCase();
+    final normalizedEmail = email.trim();
     await _sessionRepository.clearBackendSession();
 
     try {
@@ -107,7 +107,7 @@ class SessionController extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
-    final normalizedEmail = email.trim().toLowerCase();
+    final normalizedEmail = email.trim();
     await _sessionRepository.clearBackendSession();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
@@ -125,7 +125,7 @@ class SessionController extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
-    final normalizedEmail = email.trim().toLowerCase();
+    final normalizedEmail = email.trim();
     await _sessionRepository.clearBackendSession();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
@@ -143,7 +143,7 @@ class SessionController extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
-    final normalizedEmail = email.trim().toLowerCase();
+    final normalizedEmail = email.trim();
     await _sessionRepository.clearBackendSession();
 
     try {
