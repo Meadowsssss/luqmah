@@ -232,23 +232,6 @@ class SessionController extends ChangeNotifier {
     );
   }
 
-  Future<void> updateVendorProfile({required String name}) async {
-    final session = _snapshot.backendSession;
-    if (session == null || session.token.isEmpty) {
-      throw StateError('A backend session is required to update this profile.');
-    }
-
-    final updatedUser = await _backendAuthRepository.updateVendorProfile(
-      token: session.token,
-      name: name,
-    );
-    final updatedSession = session.copyWith(user: updatedUser);
-
-    await _sessionRepository.saveBackendSession(updatedSession);
-    _snapshot = _snapshot.copyWith(backendSession: updatedSession);
-    notifyListeners();
-  }
-
   Future<void> logout() async {
     await _sessionRepository.clearBackendSession();
     if (_authRepository.currentUser != null) {

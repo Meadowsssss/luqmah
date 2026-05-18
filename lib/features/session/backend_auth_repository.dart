@@ -155,16 +155,4 @@ class BackendAuthRepository {
     );
     return response['phoneNumber'] as String? ?? '';
   }
-
-  Future<BackendAuthUser> updateVendorProfile({
-    required String token,
-    required String name,
-  }) async {
-    final response = await _apiClient.patch(
-      '/vendor/profile',
-      token: token,
-      body: {'name': name},
-    );
-    return BackendAuthUser.fromJson(response['user'] as Map<String, dynamic>);
-  }
 }

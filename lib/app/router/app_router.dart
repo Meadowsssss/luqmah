@@ -18,6 +18,7 @@ import '../../features/vendor/presentation/vendor_orders_page.dart';
 import '../../features/vendor/presentation/vendor_product_form_page.dart';
 import '../../features/vendor/presentation/vendor_products_page.dart';
 import '../../features/vendor/presentation/vendor_profile_page.dart';
+import '../../features/vendor/presentation/vendor_restaurant_edit_page.dart';
 import '../../features/vendor/presentation/vendor_shell.dart';
 import '../../shared/widgets/app_loading_page.dart';
 import '../../features/auth/presentation/login_page.dart';
@@ -53,7 +54,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return (isAuthRoute || isAdminLoginRoute) ? null : '/login';
       }
 
-      if (!snapshot.isAdminSurface && !snapshot.isVendorSurface && !snapshot.isEmailVerified) {
+      if (!snapshot.isAdminSurface &&
+          !snapshot.isVendorSurface &&
+          !snapshot.isEmailVerified) {
         return isVerifyRoute ? null : '/verify-email';
       }
 
@@ -65,13 +68,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (snapshot.isVendorSurface) {
-        if (isLoadingRoute || isAuthRoute || isVerifyRoute || isAdminRoute || !isVendorRoute) {
+        if (isLoadingRoute ||
+            isAuthRoute ||
+            isVerifyRoute ||
+            isAdminRoute ||
+            !isVendorRoute) {
           return '/vendor/orders';
         }
         return null;
       }
 
-      if (isVendorRoute || isAdminRoute || isAuthRoute || isVerifyRoute || isLoadingRoute) {
+      if (isVendorRoute ||
+          isAdminRoute ||
+          isAuthRoute ||
+          isVerifyRoute ||
+          isLoadingRoute) {
         return '/restaurants';
       }
 
@@ -82,10 +93,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/loading',
         builder: (context, state) => const AppLoadingPage(),
       ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginPage(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
         path: '/admin/login',
         builder: (context, state) => const AdminLoginPage(),
@@ -123,7 +131,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: ':restaurantId',
                     builder: (context, state) {
-                      final restaurantId = state.pathParameters['restaurantId']!;
+                      final restaurantId =
+                          state.pathParameters['restaurantId']!;
                       return RestaurantMenuPage(restaurantId: restaurantId);
                     },
                   ),
@@ -212,6 +221,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/vendor/profile',
                 builder: (context, state) => const VendorProfilePage(),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) =>
+                        const VendorRestaurantEditPage(),
+                  ),
+                ],
               ),
             ],
           ),
