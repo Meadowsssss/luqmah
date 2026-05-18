@@ -6,6 +6,7 @@ import '../../../app/theme/luqmah_theme.dart';
 import '../../../app/theme/theme_mode_controller.dart';
 import '../../../features/session/auth_error_formatter.dart';
 import '../../../features/session/session_controller.dart';
+import '../../../features/vendor/vendor_blacklist_controller.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
 import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_surface_card.dart';
@@ -128,6 +129,7 @@ class VendorProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider).snapshot;
     final vendorData = ref.watch(vendorDataControllerProvider);
+    final blacklist = ref.watch(vendorBlacklistControllerProvider);
     final themeMode = ref.watch(themeModeControllerProvider);
 
     return Scaffold(
@@ -302,6 +304,37 @@ class VendorProfilePage extends ConsumerWidget {
                   value: themeMode.isDark,
                   onChanged: (value) =>
                       ref.read(themeModeControllerProvider).setDarkMode(value),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppSurfaceCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Blocked students',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  blacklist.when(
+                    loading: () => 'Loading blacklist...',
+                    error: (_, __) =>
+                        'Review students who are blocked from future orders.',
+                    data: (entries) => entries.isEmpty
+                        ? 'No students are blocked right now.'
+                        : '${entries.length} student${entries.length == 1 ? '' : 's'} currently blocked from future orders.',
+                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: context.luqmah.mutedText,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                OutlinedButton(
+                  onPressed: () => context.push('/vendor/profile/blacklist'),
+                  child: const Text('Manage blacklist'),
                 ),
               ],
             ),

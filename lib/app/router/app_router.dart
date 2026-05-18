@@ -13,6 +13,7 @@ import '../../features/admin/presentation/admin_login_page.dart';
 import '../../features/admin/presentation/admin_vendors_page.dart';
 import '../../features/session/session_controller.dart';
 import '../../features/vendor/presentation/vendor_insights_page.dart';
+import '../../features/vendor/presentation/vendor_blacklist_page.dart';
 import '../../features/vendor/presentation/vendor_order_details_page.dart';
 import '../../features/vendor/presentation/vendor_orders_page.dart';
 import '../../features/vendor/presentation/vendor_product_form_page.dart';
@@ -226,6 +227,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'edit',
                     builder: (context, state) =>
                         const VendorRestaurantEditPage(),
+                  ),
+                  GoRoute(
+                    path: 'blacklist',
+                    builder: (context, state) => const VendorBlacklistPage(),
                   ),
                 ],
               ),

@@ -109,6 +109,45 @@ class VendorRepository {
     );
   }
 
+  Future<List<VendorBlacklistEntry>> loadBlacklist(String token) async {
+    final response = await _apiClient.get('/vendor/blacklist', token: token);
+    final entries = (response['entries'] as List<dynamic>? ?? const []);
+    return entries
+        .map(
+          (json) => _vendorBlacklistEntryFromJson(json as Map<String, dynamic>),
+        )
+        .toList(growable: false);
+  }
+
+  Future<VendorBlacklistEntry> blacklistCustomer({
+    required String token,
+    required String customerId,
+    String? reason,
+  }) async {
+    final response = await _apiClient.post(
+      '/vendor/blacklist',
+      token: token,
+      body: {
+        'customerId': customerId,
+        if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+      },
+    );
+    return _vendorBlacklistEntryFromJson(
+      response['entry'] as Map<String, dynamic>,
+    );
+  }
+
+  Future<String> removeBlacklistCustomer({
+    required String token,
+    required String customerId,
+  }) async {
+    final response = await _apiClient.delete(
+      '/vendor/blacklist/$customerId',
+      token: token,
+    );
+    return response['removedCustomerId'] as String? ?? customerId;
+  }
+
   Future<VendorMenuItem> createMenuItem({
     required String token,
     required String restaurantId,
@@ -370,6 +409,8 @@ class VendorRepository {
           ((json['restaurant'] as Map<String, dynamic>?)?['title']
               as String?) ??
           'Restaurant',
+      customerId:
+          ((json['customer'] as Map<String, dynamic>?)?['id'] as String?) ?? '',
       customerName:
           ((json['customer'] as Map<String, dynamic>?)?['name'] as String?) ??
           'Customer',
@@ -390,6 +431,20 @@ class VendorRepository {
       subtotal: subtotal,
       coupon: subtotal - total,
       total: total,
+    );
+  }
+
+  VendorBlacklistEntry _vendorBlacklistEntryFromJson(
+    Map<String, dynamic> json,
+  ) {
+    final customer = json['customer'] as Map<String, dynamic>?;
+    return VendorBlacklistEntry(
+      customerId: customer?['id'] as String? ?? '',
+      customerName: customer?['name'] as String? ?? 'Customer',
+      customerEmail: customer?['email'] as String? ?? '',
+      customerPhone: customer?['phoneNumber'] as String? ?? '',
+      reason: json['reason'] as String? ?? '',
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
 }

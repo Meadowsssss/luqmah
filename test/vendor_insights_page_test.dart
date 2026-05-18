@@ -20,13 +20,18 @@ class _FakeVendorInsightsController extends VendorDataController {
           id: 'ord-1',
           restaurantId: 'rest-1',
           restaurantTitle: 'Planet Donuts',
+          customerId: 'cust-1',
           customerName: 'A',
           customerEmail: 'a@example.com',
           customerPhone: '1',
-          dateTime: DateTime.now().subtract(const Duration(days: 2)).copyWith(hour: 13, minute: 10),
+          dateTime: DateTime.now()
+              .subtract(const Duration(days: 2))
+              .copyWith(hour: 13, minute: 10),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.completed,
-          items: const [VendorOrderItem(name: 'Glazed Donut', quantity: 2, price: 1)],
+          items: const [
+            VendorOrderItem(name: 'Glazed Donut', quantity: 2, price: 1),
+          ],
           subtotal: 2,
           coupon: 0,
           total: 2,
@@ -35,13 +40,18 @@ class _FakeVendorInsightsController extends VendorDataController {
           id: 'ord-2',
           restaurantId: 'rest-1',
           restaurantTitle: 'Planet Donuts',
+          customerId: 'cust-2',
           customerName: 'B',
           customerEmail: 'b@example.com',
           customerPhone: '2',
-          dateTime: DateTime.now().subtract(const Duration(days: 1)).copyWith(hour: 13, minute: 20),
+          dateTime: DateTime.now()
+              .subtract(const Duration(days: 1))
+              .copyWith(hour: 13, minute: 20),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.ready,
-          items: const [VendorOrderItem(name: 'Iced Latte', quantity: 1, price: 2)],
+          items: const [
+            VendorOrderItem(name: 'Iced Latte', quantity: 1, price: 2),
+          ],
           subtotal: 2,
           coupon: 0,
           total: 2,
@@ -50,13 +60,18 @@ class _FakeVendorInsightsController extends VendorDataController {
           id: 'ord-3',
           restaurantId: 'rest-1',
           restaurantTitle: 'Planet Donuts',
+          customerId: 'cust-3',
           customerName: 'C',
           customerEmail: 'c@example.com',
           customerPhone: '3',
-          dateTime: DateTime.now().subtract(const Duration(days: 3)).copyWith(hour: 13, minute: 40),
+          dateTime: DateTime.now()
+              .subtract(const Duration(days: 3))
+              .copyWith(hour: 13, minute: 40),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.completed,
-          items: const [VendorOrderItem(name: 'Glazed Donut', quantity: 1, price: 1)],
+          items: const [
+            VendorOrderItem(name: 'Glazed Donut', quantity: 1, price: 1),
+          ],
           subtotal: 1,
           coupon: 0,
           total: 1,
@@ -65,13 +80,18 @@ class _FakeVendorInsightsController extends VendorDataController {
           id: 'ord-4',
           restaurantId: 'rest-1',
           restaurantTitle: 'Planet Donuts',
+          customerId: 'cust-4',
           customerName: 'D',
           customerEmail: 'd@example.com',
           customerPhone: '4',
-          dateTime: DateTime.now().subtract(const Duration(days: 4)).copyWith(hour: 13, minute: 50),
+          dateTime: DateTime.now()
+              .subtract(const Duration(days: 4))
+              .copyWith(hour: 13, minute: 50),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.completed,
-          items: const [VendorOrderItem(name: 'Glazed Donut', quantity: 1, price: 1)],
+          items: const [
+            VendorOrderItem(name: 'Glazed Donut', quantity: 1, price: 1),
+          ],
           subtotal: 1,
           coupon: 0,
           total: 1,
@@ -80,13 +100,18 @@ class _FakeVendorInsightsController extends VendorDataController {
           id: 'ord-5',
           restaurantId: 'rest-1',
           restaurantTitle: 'Planet Donuts',
+          customerId: 'cust-5',
           customerName: 'E',
           customerEmail: 'e@example.com',
           customerPhone: '5',
-          dateTime: DateTime.now().subtract(const Duration(days: 5)).copyWith(hour: 12, minute: 0),
+          dateTime: DateTime.now()
+              .subtract(const Duration(days: 5))
+              .copyWith(hour: 12, minute: 0),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.completed,
-          items: const [VendorOrderItem(name: 'Iced Latte', quantity: 1, price: 2)],
+          items: const [
+            VendorOrderItem(name: 'Iced Latte', quantity: 1, price: 2),
+          ],
           subtotal: 2,
           coupon: 0,
           total: 2,
@@ -97,25 +122,33 @@ class _FakeVendorInsightsController extends VendorDataController {
 }
 
 void main() {
-  testWidgets('vendor insights page renders per-restaurant recommendation cards', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          vendorDataControllerProvider.overrideWith(_FakeVendorInsightsController.new),
-        ],
-        child: MaterialApp(
-          theme: buildLuqmahTheme(),
-          home: const VendorInsightsPage(),
+  testWidgets(
+    'vendor insights page renders per-restaurant recommendation cards',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            vendorDataControllerProvider.overrideWith(
+              _FakeVendorInsightsController.new,
+            ),
+          ],
+          child: MaterialApp(
+            theme: buildLuqmahTheme(),
+            home: const VendorInsightsPage(),
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    expect(find.text('Restaurant recommendations'), findsOneWidget);
-    expect(find.text('Planet Donuts'), findsOneWidget);
-    expect(find.textContaining('Expected rush:'), findsOneWidget);
-    expect(find.text('Campus Coffee'), findsOneWidget);
-    expect(find.textContaining('Not enough recent order history yet'), findsOneWidget);
-  });
+      expect(find.text('Restaurant recommendations'), findsOneWidget);
+      expect(find.text('Planet Donuts'), findsOneWidget);
+      expect(find.textContaining('Expected rush:'), findsOneWidget);
+      expect(find.text('Campus Coffee'), findsOneWidget);
+      expect(
+        find.textContaining('Not enough recent order history yet'),
+        findsOneWidget,
+      );
+    },
+  );
 }

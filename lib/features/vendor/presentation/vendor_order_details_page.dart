@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../app/theme/luqmah_theme.dart';
+import '../../../features/vendor/vendor_blacklist_controller.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
 import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
@@ -22,6 +23,122 @@ class VendorOrderDetailsPage extends ConsumerStatefulWidget {
 class _VendorOrderDetailsPageState
     extends ConsumerState<VendorOrderDetailsPage> {
   bool _isUpdatingStatus = false;
+
+  Future<void> _showBlacklistDialog(VendorOrder order) async {
+    final controller = TextEditingController();
+
+    final shouldSubmit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Blacklist student'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Block ${order.customerName} from placing future orders?'),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: controller,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Reason (optional)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Blacklist'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSubmit != true) {
+      controller.dispose();
+      return;
+    }
+
+    try {
+      await ref
+          .read(vendorBlacklistControllerProvider.notifier)
+          .blacklistCustomer(
+            customerId: order.customerId,
+            reason: controller.text,
+          );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('${order.customerName} added to the blacklist.'),
+          ),
+        );
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  Future<void> _removeBlacklistEntry(VendorOrder order) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove from blacklist?'),
+        content: Text(
+          'Allow ${order.customerName} to place future orders again?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(vendorBlacklistControllerProvider.notifier)
+          .removeCustomer(order.customerId);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('${order.customerName} removed from the blacklist.'),
+          ),
+        );
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +176,11 @@ class _VendorOrderDetailsPageState
 
         final formatter = DateFormat('dd MMM yyyy, hh:mm a');
         final allowedTransitions = order.status.allowedTransitions;
+        final blacklistEntryAsync = ref.watch(
+          vendorBlacklistEntryByCustomerIdProvider(order.customerId),
+        );
+        final blacklistEntry = blacklistEntryAsync.valueOrNull;
+        final isBlacklisted = blacklistEntry != null;
 
         return Scaffold(
           appBar: AppBar(title: const Text('Order details')),
@@ -138,6 +260,49 @@ class _VendorOrderDetailsPageState
                         ),
                       ),
                     ],
+                    const SizedBox(height: AppSpacing.lg),
+                    if (blacklistEntryAsync.isLoading)
+                      const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else if (isBlacklisted) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.luqmah.warning.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'Blacklisted',
+                          style: TextStyle(
+                            color: context.luqmah.warning,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (blacklistEntry.reason.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          blacklistEntry.reason,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.md),
+                      OutlinedButton(
+                        onPressed: () => _removeBlacklistEntry(order),
+                        child: const Text('Remove from blacklist'),
+                      ),
+                    ] else
+                      FilledButton.icon(
+                        onPressed: () => _showBlacklistDialog(order),
+                        icon: const Icon(Icons.block_rounded),
+                        label: const Text('Blacklist student'),
+                      ),
                   ],
                 ),
               ),

@@ -92,6 +92,7 @@ class VendorOrder {
   final String id;
   final String restaurantId;
   final String restaurantTitle;
+  final String customerId;
   final String customerName;
   final String customerEmail;
   final String customerPhone;
@@ -108,6 +109,7 @@ class VendorOrder {
     required this.id,
     required this.restaurantId,
     required this.restaurantTitle,
+    required this.customerId,
     required this.customerName,
     required this.customerEmail,
     required this.customerPhone,
@@ -126,6 +128,7 @@ class VendorOrder {
       id: id,
       restaurantId: restaurantId,
       restaurantTitle: restaurantTitle,
+      customerId: customerId,
       customerName: customerName,
       customerEmail: customerEmail,
       customerPhone: customerPhone,
@@ -139,6 +142,24 @@ class VendorOrder {
       total: total,
     );
   }
+}
+
+class VendorBlacklistEntry {
+  const VendorBlacklistEntry({
+    required this.customerId,
+    required this.customerName,
+    required this.customerEmail,
+    required this.customerPhone,
+    required this.reason,
+    required this.createdAt,
+  });
+
+  final String customerId;
+  final String customerName;
+  final String customerEmail;
+  final String customerPhone;
+  final String reason;
+  final DateTime createdAt;
 }
 
 class VendorMenuItem {
