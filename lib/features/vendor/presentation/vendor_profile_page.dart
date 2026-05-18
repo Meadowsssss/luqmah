@@ -314,7 +314,7 @@ class VendorProfilePage extends ConsumerWidget {
                 Text('Security', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Vendor passwords are managed by the Luqmah backend.',
+                  'Manage your password to help keep your account secure.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: context.luqmah.mutedText,
                   ),
@@ -322,7 +322,7 @@ class VendorProfilePage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 OutlinedButton(
                   onPressed: () => _showVendorPasswordDialog(context, ref),
-                  child: const Text('Change backend password'),
+                  child: const Text('Change password'),
                 ),
               ],
             ),
