@@ -9,6 +9,10 @@ import '../cart/cart_controller.dart';
 import '../../session/session_controller.dart';
 import 'customer_orders_repository.dart';
 
+bool hasActiveCustomerOrder(List<CustomerOrder> orders) {
+  return orders.any((order) => !order.status.isPast);
+}
+
 class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
   CustomerOrdersRepository get _repository =>
       ref.read(customerOrdersRepositoryProvider);
@@ -32,8 +36,8 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
     state = AsyncData(
       exists
           ? currentOrders
-              .map((item) => item.id == order.id ? order : item)
-              .toList(growable: false)
+                .map((item) => item.id == order.id ? order : item)
+                .toList(growable: false)
           : <CustomerOrder>[order, ...currentOrders],
     );
   }
@@ -46,7 +50,10 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
 
     state = AsyncData(
       currentOrders
-          .map((order) => order.id == orderId ? order.copyWith(status: status) : order)
+          .map(
+            (order) =>
+                order.id == orderId ? order.copyWith(status: status) : order,
+          )
           .toList(growable: false),
     );
   }
@@ -90,6 +97,15 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
     if (invalidLine) {
       throw ApiException(
         'Your cart can only contain items from one restaurant.',
+      );
+    }
+
+    final currentOrders = state.valueOrNull;
+    if (currentOrders != null && hasActiveCustomerOrder(currentOrders)) {
+      throw const ApiException(
+        'You already have an active order. Complete or cancel it before placing a new one.',
+        statusCode: 409,
+        code: 'CUSTOMER_ACTIVE_ORDER_EXISTS',
       );
     }
 
@@ -142,7 +158,9 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
     _replaceOrder(order.copyWith(ratingScore: score));
     await ref.read(restaurantsProvider.notifier).refreshSilently();
     if (order.restaurantId.isNotEmpty) {
-      await ref.read(restaurantByIdProvider(order.restaurantId).notifier).refreshSilently();
+      await ref
+          .read(restaurantByIdProvider(order.restaurantId).notifier)
+          .refreshSilently();
     }
   }
 
@@ -154,8 +172,13 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
       );
     }
 
-    final updatedOrder = await _repository.dismissRatingPrompt(token: token, orderId: order.id);
-    _replaceOrder(updatedOrder ?? order.copyWith(ratingPromptDismissedAt: DateTime.now()));
+    final updatedOrder = await _repository.dismissRatingPrompt(
+      token: token,
+      orderId: order.id,
+    );
+    _replaceOrder(
+      updatedOrder ?? order.copyWith(ratingPromptDismissedAt: DateTime.now()),
+    );
   }
 }
 
