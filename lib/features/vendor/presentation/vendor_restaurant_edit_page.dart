@@ -10,11 +10,136 @@ import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
-class VendorRestaurantEditPage extends ConsumerWidget {
+class VendorRestaurantEditPage extends ConsumerStatefulWidget {
   const VendorRestaurantEditPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VendorRestaurantEditPage> createState() =>
+      _VendorRestaurantEditPageState();
+}
+
+class _VendorRestaurantEditPageState
+    extends ConsumerState<VendorRestaurantEditPage> {
+  final _imagePicker = ImagePicker();
+  final Map<String, _RestaurantDraft> _draftsByRestaurantId =
+      <String, _RestaurantDraft>{};
+
+  @override
+  void dispose() {
+    for (final draft in _draftsByRestaurantId.values) {
+      draft.dispose();
+    }
+    super.dispose();
+  }
+
+  void _syncDrafts(List<VendorRestaurant> restaurants) {
+    final restaurantIds = restaurants
+        .map((restaurant) => restaurant.id)
+        .toSet();
+
+    final removedIds = _draftsByRestaurantId.keys
+        .where((id) => !restaurantIds.contains(id))
+        .toList(growable: false);
+    for (final id in removedIds) {
+      _draftsByRestaurantId.remove(id)?.dispose();
+    }
+
+    for (final restaurant in restaurants) {
+      final existingDraft = _draftsByRestaurantId[restaurant.id];
+      if (existingDraft == null) {
+        _draftsByRestaurantId[restaurant.id] = _RestaurantDraft.fromRestaurant(
+          restaurant,
+        );
+        continue;
+      }
+
+      existingDraft.syncRestaurant(restaurant);
+    }
+  }
+
+  Future<void> _pickCoverImage(String restaurantId) async {
+    final image = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (image == null || !mounted) {
+      return;
+    }
+
+    final bytes = await image.readAsBytes();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      final draft = _draftsByRestaurantId[restaurantId];
+      if (draft == null) {
+        return;
+      }
+      draft.selectedCoverImageBytes = bytes;
+      draft.selectedCoverImageName = image.name;
+      draft.selectedCoverImageMimeType = image.mimeType;
+    });
+  }
+
+  Future<void> _saveRestaurant(_RestaurantDraft draft) async {
+    if (!draft.formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => draft.isSaving = true);
+    try {
+      var coverImage = draft.coverImageUrl;
+      if (draft.selectedCoverImageBytes != null) {
+        coverImage = await ref
+            .read(vendorDataControllerProvider.notifier)
+            .uploadRestaurantCover(
+              bytes: draft.selectedCoverImageBytes!,
+              filename: draft.selectedCoverImageName ?? 'restaurant-cover.jpg',
+              contentType: draft.selectedCoverImageMimeType,
+            );
+      }
+
+      await ref
+          .read(vendorDataControllerProvider.notifier)
+          .updateRestaurant(
+            restaurantId: draft.restaurantId,
+            title: draft.titleController.text.trim(),
+            description: draft.descriptionController.text.trim(),
+            address: draft.addressController.text.trim(),
+            coverImage: coverImage,
+          );
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        draft.coverImageUrl = coverImage;
+        draft.selectedCoverImageBytes = null;
+        draft.selectedCoverImageName = null;
+        draft.selectedCoverImageMimeType = null;
+        draft.isSaving = false;
+        draft.lastSavedTitle = draft.titleController.text.trim();
+        draft.lastSavedDescription = draft.descriptionController.text.trim();
+        draft.lastSavedAddress = draft.addressController.text.trim();
+      });
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Restaurant updated.')));
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => draft.isSaving = false);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final vendorData = ref.watch(vendorDataControllerProvider);
 
     return Scaffold(
@@ -42,11 +167,29 @@ class VendorRestaurantEditPage extends ConsumerWidget {
             );
           }
 
+          _syncDrafts(state.restaurants);
+
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
               for (final restaurant in state.restaurants) ...[
-                _RestaurantEditCard(restaurant: restaurant),
+                _RestaurantEditSection(
+                  key: ValueKey('restaurant-${restaurant.id}'),
+                  draft: _draftsByRestaurantId[restaurant.id]!,
+                  onChooseCover: () => _pickCoverImage(restaurant.id),
+                  onRemoveCover: () => setState(() {
+                    final draft = _draftsByRestaurantId[restaurant.id];
+                    if (draft == null) {
+                      return;
+                    }
+                    draft.selectedCoverImageBytes = null;
+                    draft.selectedCoverImageName = null;
+                    draft.selectedCoverImageMimeType = null;
+                    draft.coverImageUrl = '';
+                  }),
+                  onSave: () =>
+                      _saveRestaurant(_draftsByRestaurantId[restaurant.id]!),
+                ),
                 if (restaurant != state.restaurants.last)
                   const SizedBox(height: AppSpacing.lg),
               ],
@@ -58,136 +201,36 @@ class VendorRestaurantEditPage extends ConsumerWidget {
   }
 }
 
-class _RestaurantEditCard extends ConsumerStatefulWidget {
-  const _RestaurantEditCard({required this.restaurant});
+class _RestaurantEditSection extends StatelessWidget {
+  const _RestaurantEditSection({
+    super.key,
+    required this.draft,
+    required this.onChooseCover,
+    required this.onRemoveCover,
+    required this.onSave,
+  });
 
-  final VendorRestaurant restaurant;
-
-  @override
-  ConsumerState<_RestaurantEditCard> createState() =>
-      _RestaurantEditCardState();
-}
-
-class _RestaurantEditCardState extends ConsumerState<_RestaurantEditCard> {
-  final _formKey = GlobalKey<FormState>();
-  final _imagePicker = ImagePicker();
-  late final TextEditingController _titleController;
-  late final TextEditingController _descriptionController;
-  late final TextEditingController _addressController;
-  Uint8List? _coverImageBytes;
-  String? _coverImageName;
-  String? _coverImageMimeType;
-  late String _coverImageUrl;
-  bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(text: widget.restaurant.title);
-    _descriptionController = TextEditingController(
-      text: widget.restaurant.description,
-    );
-    _addressController = TextEditingController(text: widget.restaurant.address);
-    _coverImageUrl = widget.restaurant.coverImage;
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _addressController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickCoverImage() async {
-    final image = await _imagePicker.pickImage(source: ImageSource.gallery);
-    if (image == null) {
-      return;
-    }
-
-    final bytes = await image.readAsBytes();
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _coverImageBytes = bytes;
-      _coverImageName = image.name;
-      _coverImageMimeType = image.mimeType;
-    });
-  }
-
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() => _saving = true);
-    try {
-      var coverImage = _coverImageUrl;
-      if (_coverImageBytes != null) {
-        coverImage = await ref
-            .read(vendorDataControllerProvider.notifier)
-            .uploadRestaurantCover(
-              bytes: _coverImageBytes!,
-              filename: _coverImageName ?? 'restaurant-cover.jpg',
-              contentType: _coverImageMimeType,
-            );
-      }
-
-      await ref
-          .read(vendorDataControllerProvider.notifier)
-          .updateRestaurant(
-            restaurantId: widget.restaurant.id,
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim(),
-            address: _addressController.text.trim(),
-            coverImage: coverImage,
-          );
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _coverImageUrl = coverImage;
-        _coverImageBytes = null;
-        _coverImageName = null;
-        _coverImageMimeType = null;
-        _saving = false;
-      });
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Restaurant updated.')));
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(error.toString().replaceFirst('Exception: ', '')),
-          ),
-        );
-    }
-  }
+  final _RestaurantDraft draft;
+  final VoidCallback onChooseCover;
+  final VoidCallback onRemoveCover;
+  final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context) {
     return AppSurfaceCard(
       child: Form(
-        key: _formKey,
+        key: draft.formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.restaurant.title,
+              draft.lastSavedTitle,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: AppSpacing.lg),
             TextFormField(
-              controller: _titleController,
+              key: ValueKey('restaurant-${draft.restaurantId}-title'),
+              controller: draft.titleController,
               decoration: const InputDecoration(labelText: 'Restaurant title'),
               validator: (value) => value == null || value.trim().length < 2
                   ? 'Enter at least 2 characters'
@@ -195,35 +238,30 @@ class _RestaurantEditCardState extends ConsumerState<_RestaurantEditCard> {
             ),
             const SizedBox(height: AppSpacing.lg),
             TextFormField(
-              controller: _descriptionController,
+              key: ValueKey('restaurant-${draft.restaurantId}-description'),
+              controller: draft.descriptionController,
               decoration: const InputDecoration(labelText: 'Description'),
               maxLines: 3,
             ),
             const SizedBox(height: AppSpacing.lg),
             TextFormField(
-              controller: _addressController,
+              key: ValueKey('restaurant-${draft.restaurantId}-address'),
+              controller: draft.addressController,
               decoration: const InputDecoration(labelText: 'Address'),
             ),
             const SizedBox(height: AppSpacing.lg),
             _RestaurantCoverPicker(
-              selectedBytes: _coverImageBytes,
-              imageUrl: _coverImageUrl,
-              onChoose: _saving ? null : _pickCoverImage,
-              onRemove: _saving
-                  ? null
-                  : () => setState(() {
-                      _coverImageBytes = null;
-                      _coverImageName = null;
-                      _coverImageMimeType = null;
-                      _coverImageUrl = '';
-                    }),
+              selectedBytes: draft.selectedCoverImageBytes,
+              imageUrl: draft.coverImageUrl,
+              onChoose: draft.isSaving ? null : onChooseCover,
+              onRemove: draft.isSaving ? null : onRemoveCover,
             ),
             const SizedBox(height: AppSpacing.lg),
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
+                onPressed: draft.isSaving ? null : onSave,
+                child: draft.isSaving
                     ? const SizedBox(
                         height: 18,
                         width: 18,
@@ -319,5 +357,74 @@ class _RestaurantCoverPicker extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _RestaurantDraft {
+  _RestaurantDraft({
+    required this.restaurantId,
+    required this.titleController,
+    required this.descriptionController,
+    required this.addressController,
+    required this.coverImageUrl,
+    required this.lastSavedTitle,
+    required this.lastSavedDescription,
+    required this.lastSavedAddress,
+  });
+
+  factory _RestaurantDraft.fromRestaurant(VendorRestaurant restaurant) {
+    return _RestaurantDraft(
+      restaurantId: restaurant.id,
+      titleController: TextEditingController(text: restaurant.title),
+      descriptionController: TextEditingController(
+        text: restaurant.description,
+      ),
+      addressController: TextEditingController(text: restaurant.address),
+      coverImageUrl: restaurant.coverImage,
+      lastSavedTitle: restaurant.title,
+      lastSavedDescription: restaurant.description,
+      lastSavedAddress: restaurant.address,
+    );
+  }
+
+  final String restaurantId;
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final TextEditingController titleController;
+  final TextEditingController descriptionController;
+  final TextEditingController addressController;
+  Uint8List? selectedCoverImageBytes;
+  String? selectedCoverImageName;
+  String? selectedCoverImageMimeType;
+  String coverImageUrl;
+  String lastSavedTitle;
+  String lastSavedDescription;
+  String lastSavedAddress;
+  bool isSaving = false;
+
+  void syncRestaurant(VendorRestaurant restaurant) {
+    if (isSaving) {
+      return;
+    }
+    if (titleController.text == lastSavedTitle) {
+      titleController.text = restaurant.title;
+    }
+    if (descriptionController.text == lastSavedDescription) {
+      descriptionController.text = restaurant.description;
+    }
+    if (addressController.text == lastSavedAddress) {
+      addressController.text = restaurant.address;
+    }
+    if (selectedCoverImageBytes == null) {
+      coverImageUrl = restaurant.coverImage;
+    }
+    lastSavedTitle = restaurant.title;
+    lastSavedDescription = restaurant.description;
+    lastSavedAddress = restaurant.address;
+  }
+
+  void dispose() {
+    titleController.dispose();
+    descriptionController.dispose();
+    addressController.dispose();
   }
 }
