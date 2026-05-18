@@ -245,18 +245,6 @@ class _VendorOrderDetailsPageState
                     ],
                     const SizedBox(height: AppSpacing.lg),
                     _SummaryRow(
-                      label: 'Subtotal',
-                      value: '${order.subtotal.toStringAsFixed(2)} JD',
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _SummaryRow(
-                      label: 'Coupon',
-                      value: order.coupon == 0
-                          ? '0 JD'
-                          : '-${order.coupon.abs().toStringAsFixed(2)} JD',
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _SummaryRow(
                       label: 'Grand total',
                       value: '${order.total.toStringAsFixed(2)} JD',
                       strong: true,
