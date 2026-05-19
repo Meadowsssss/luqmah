@@ -168,13 +168,6 @@ class VendorProfilePage extends ConsumerWidget {
                             : session.email,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Connected to the live Luqmah backend.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: context.luqmah.mutedText,
-                        ),
-                      ),
                     ],
                   ),
                 ),

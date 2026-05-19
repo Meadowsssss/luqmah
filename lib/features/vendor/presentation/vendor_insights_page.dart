@@ -124,7 +124,9 @@ class VendorInsightsPage extends ConsumerWidget {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  if (data.restaurantAnalytics.where((insight) => insight.recommendations.isNotEmpty).isEmpty)
+                  if (data.restaurantAnalytics
+                      .where((insight) => insight.recommendations.isNotEmpty)
+                      .isEmpty)
                     Text(
                       'Recommendations will appear once restaurants have enough recent order history.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -132,7 +134,9 @@ class VendorInsightsPage extends ConsumerWidget {
                       ),
                     )
                   else
-                    for (final insight in data.restaurantAnalytics.where((insight) => insight.recommendations.isNotEmpty)) ...[
+                    for (final insight in data.restaurantAnalytics.where(
+                      (insight) => insight.recommendations.isNotEmpty,
+                    )) ...[
                       Text(
                         insight.restaurantTitle,
                         style: Theme.of(context).textTheme.titleMedium,
@@ -143,7 +147,12 @@ class VendorInsightsPage extends ConsumerWidget {
                         if (recommendation != insight.recommendations.last)
                           const SizedBox(height: AppSpacing.sm),
                       ],
-                      if (insight != data.restaurantAnalytics.where((entry) => entry.recommendations.isNotEmpty).last)
+                      if (insight !=
+                          data.restaurantAnalytics
+                              .where(
+                                (entry) => entry.recommendations.isNotEmpty,
+                              )
+                              .last)
                         const SizedBox(height: AppSpacing.lg),
                     ],
                 ],
@@ -255,8 +264,9 @@ class _RestaurantAnalyticsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.surfaceAlt,
+        color: context.luqmah.surfaceAlt,
         borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(color: context.luqmah.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,22 +285,40 @@ class _RestaurantAnalyticsCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
-            Text(insight.fallbackMessage ?? '', style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              insight.fallbackMessage ?? '',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ] else ...[
-            _InsightLine(label: 'Busiest hour', value: '${insight.busiestHourLabel} · ${insight.busiestHourOrderCount} orders'),
+            _InsightLine(
+              label: 'Busiest hour',
+              value:
+                  '${insight.busiestHourLabel} · ${insight.busiestHourOrderCount} orders',
+            ),
             const SizedBox(height: AppSpacing.xs),
-            _InsightLine(label: 'Slowest hour', value: '${insight.slowestHourLabel} · ${insight.slowestHourOrderCount} orders'),
+            _InsightLine(
+              label: 'Slowest hour',
+              value:
+                  '${insight.slowestHourLabel} · ${insight.slowestHourOrderCount} orders',
+            ),
             const SizedBox(height: AppSpacing.xs),
-            _InsightLine(label: 'Top items in rush hour', value: insight.topItemsInBusiestHour.join(', ')),
+            _InsightLine(
+              label: 'Top items in rush hour',
+              value: insight.topItemsInBusiestHour.join(', '),
+            ),
             const SizedBox(height: AppSpacing.xs),
             _InsightLine(
               label: 'Average prep time',
-              value: insight.averagePrepMinutes == null ? 'Not enough prep data' : '${insight.averagePrepMinutes} min',
+              value: insight.averagePrepMinutes == null
+                  ? 'Not enough prep data'
+                  : '${insight.averagePrepMinutes} min',
             ),
             const SizedBox(height: AppSpacing.xs),
             _InsightLine(
               label: 'Peak-hour prep time',
-              value: insight.peakHourPrepMinutes == null ? 'Not enough prep data' : '${insight.peakHourPrepMinutes} min',
+              value: insight.peakHourPrepMinutes == null
+                  ? 'Not enough prep data'
+                  : '${insight.peakHourPrepMinutes} min',
             ),
           ],
         ],
@@ -336,9 +364,9 @@ class _RecommendationCard extends StatelessWidget {
               children: [
                 Text(
                   recommendation.title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -369,9 +397,9 @@ class _InsightLine extends StatelessWidget {
           width: 132,
           child: Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: context.luqmah.mutedText,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: context.luqmah.mutedText),
           ),
         ),
         const SizedBox(width: AppSpacing.sm),

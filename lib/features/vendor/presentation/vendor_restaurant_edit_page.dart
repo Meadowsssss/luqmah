@@ -310,7 +310,7 @@ class _RestaurantCoverPicker extends StatelessWidget {
           child: AspectRatio(
             aspectRatio: 16 / 9,
             child: Container(
-              color: AppColors.surfaceAlt,
+              color: context.luqmah.surfaceAlt,
               alignment: Alignment.center,
               child: selectedBytes != null
                   ? Image.memory(
@@ -323,12 +323,17 @@ class _RestaurantCoverPicker extends StatelessWidget {
                       imageUrl,
                       fit: BoxFit.cover,
                       width: double.infinity,
-                      errorBuilder: (_, __, ___) => const Icon(
+                      errorBuilder: (_, __, ___) => Icon(
                         Icons.add_photo_alternate_outlined,
                         size: 42,
+                        color: context.luqmah.mutedText,
                       ),
                     )
-                  : const Icon(Icons.add_photo_alternate_outlined, size: 42),
+                  : Icon(
+                      Icons.add_photo_alternate_outlined,
+                      size: 42,
+                      color: context.luqmah.mutedText,
+                    ),
             ),
           ),
         ),
