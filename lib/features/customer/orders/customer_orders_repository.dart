@@ -124,20 +124,20 @@ class CustomerOrdersRepository {
       id: json['id'] as String,
       restaurantId: restaurantJson?['id'] as String? ?? '',
       restaurantName: restaurantJson?['title'] as String? ?? 'Campus order',
-      placedAt: DateTime.parse(json['createdAt'] as String),
+      placedAt: DateTime.parse(json['createdAt'] as String).toLocal(),
       estimatedReadyAt: json['estimatedReadyAt'] == null
           ? null
-          : DateTime.parse(json['estimatedReadyAt'] as String),
+          : DateTime.parse(json['estimatedReadyAt'] as String).toLocal(),
       updatedAt: json['updatedAt'] == null
           ? null
-          : DateTime.parse(json['updatedAt'] as String),
+          : DateTime.parse(json['updatedAt'] as String).toLocal(),
       status: vendorOrderStatusFromApi(json['status'] as String),
       items: items,
       total: (json['totalAmount'] as num).toDouble(),
       ratingScore: (ratingJson?['score'] as num?)?.toInt(),
       ratingPromptDismissedAt: json['ratingPromptDismissedAt'] == null
           ? null
-          : DateTime.parse(json['ratingPromptDismissedAt'] as String),
+          : DateTime.parse(json['ratingPromptDismissedAt'] as String).toLocal(),
     );
   }
 }

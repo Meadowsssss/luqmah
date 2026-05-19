@@ -143,7 +143,7 @@ void main() {
 
       expect(
         workspace.orders.single.estimatedReadyAt,
-        DateTime.parse('2026-05-16T12:15:00.000Z'),
+        DateTime.parse('2026-05-16T12:15:00.000Z').toLocal(),
       );
     },
   );

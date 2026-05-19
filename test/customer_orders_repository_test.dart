@@ -44,11 +44,20 @@ void main() {
     expect(orders.first.id, 'ord_1');
     expect(orders.first.restaurantId, 'rest_1');
     expect(orders.first.restaurantName, 'Al-Salam Grill');
-    expect(orders.first.estimatedReadyAt, DateTime.parse('2026-04-23T12:20:00.000Z'));
-    expect(orders.first.updatedAt, DateTime.parse('2026-04-23T12:30:00.000Z'));
+    expect(
+      orders.first.estimatedReadyAt,
+      DateTime.parse('2026-04-23T12:20:00.000Z').toLocal(),
+    );
+    expect(
+      orders.first.updatedAt,
+      DateTime.parse('2026-04-23T12:30:00.000Z').toLocal(),
+    );
     expect(orders.first.status, VendorOrderStatus.accepted);
     expect(orders.first.ratingScore, 4);
-    expect(orders.first.ratingPromptDismissedAt, isNotNull);
+    expect(
+      orders.first.ratingPromptDismissedAt,
+      DateTime.parse('2026-04-23T13:00:00.000Z').toLocal(),
+    );
     expect(orders.first.items.single.name, 'Chicken Shawarma');
   });
 

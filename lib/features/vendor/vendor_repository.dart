@@ -421,10 +421,10 @@ class VendorRepository {
           ((json['customer'] as Map<String, dynamic>?)?['phoneNumber']
               as String?) ??
           '',
-      dateTime: DateTime.parse(json['createdAt'] as String),
+      dateTime: DateTime.parse(json['createdAt'] as String).toLocal(),
       estimatedReadyAt: json['estimatedReadyAt'] == null
           ? null
-          : DateTime.parse(json['estimatedReadyAt'] as String),
+          : DateTime.parse(json['estimatedReadyAt'] as String).toLocal(),
       paymentMethod: 'Luqmah',
       status: vendorOrderStatusFromApi(json['status'] as String),
       items: items,
@@ -444,7 +444,7 @@ class VendorRepository {
       customerEmail: customer?['email'] as String? ?? '',
       customerPhone: customer?['phoneNumber'] as String? ?? '',
       reason: json['reason'] as String? ?? '',
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String).toLocal(),
     );
   }
 }
