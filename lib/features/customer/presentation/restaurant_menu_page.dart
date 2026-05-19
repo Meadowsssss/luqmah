@@ -71,12 +71,18 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
         final selectedCategory =
             _selectedCategory ??
             (categoryOptions.isEmpty ? null : _allCategories);
-        final items =
+        final visibleItems =
             selectedCategory == null || selectedCategory == _allCategories
             ? restaurant.menu
             : restaurant.menu
                   .where((item) => item.category == selectedCategory)
                   .toList(growable: false);
+        final itemsByCategory = <String, List<MenuItem>>{};
+        for (final item in visibleItems) {
+          itemsByCategory
+              .putIfAbsent(item.category, () => <MenuItem>[])
+              .add(item);
+        }
         final cart = ref.watch(cartControllerProvider);
         final cartTotal = ref.watch(cartTotalProvider);
         final showCheckoutButton =
@@ -140,7 +146,9 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                                   height: 12,
                                   width: 132,
                                   decoration: BoxDecoration(
-                                    color: tokens.primary.withValues(alpha: 0.78),
+                                    color: tokens.primary.withValues(
+                                      alpha: 0.78,
+                                    ),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                 ),
@@ -161,7 +169,9 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.92),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.92,
+                                          ),
                                           borderRadius: BorderRadius.circular(
                                             999,
                                           ),
@@ -200,7 +210,9 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                                   Text(
                                     restaurant.time,
                                     style: textTheme.bodySmall?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.82),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.82,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.xs),
@@ -256,7 +268,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                       const SizedBox(height: AppSpacing.xl),
                       SizedBox(
                         height: 42,
-                          child: ListView.separated(
+                        child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: categoryOptions.length,
                           separatorBuilder: (_, __) => const SizedBox(width: 8),
@@ -296,7 +308,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    if (items.isEmpty)
+                    if (visibleItems.isEmpty)
                       const AppEmptyState(
                         icon: Icons.no_food_outlined,
                         title: 'No menu items yet',
@@ -304,14 +316,21 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                             'This restaurant has not published any available menu items yet.',
                       )
                     else
-                      for (final item in items) ...[
-                        _MenuItemCard(
-                          item: item,
-                          restaurantId: restaurant.id,
-                          restaurantName: restaurant.name,
-                          restaurantIsBusy: restaurant.isBusy,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
+                      for (final entry in itemsByCategory.entries) ...[
+                        Text(entry.key, style: textTheme.titleMedium),
+                        const SizedBox(height: AppSpacing.sm),
+                        for (final item in entry.value) ...[
+                          _MenuItemCard(
+                            item: item,
+                            restaurantId: restaurant.id,
+                            restaurantName: restaurant.name,
+                            restaurantIsBusy: restaurant.isBusy,
+                          ),
+                          if (item != entry.value.last)
+                            const SizedBox(height: AppSpacing.lg),
+                        ],
+                        if (entry != itemsByCategory.entries.last)
+                          const SizedBox(height: AppSpacing.xl),
                       ],
                   ],
                 ),
@@ -541,9 +560,7 @@ class _MenuItemCard extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   '${item.price.toStringAsFixed(2)} JD',
-                  style: textTheme.titleMedium?.copyWith(
-                    color: tokens.primary,
-                  ),
+                  style: textTheme.titleMedium?.copyWith(color: tokens.primary),
                 ),
               ],
             ),
