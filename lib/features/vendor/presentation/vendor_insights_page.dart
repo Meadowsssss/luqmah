@@ -101,6 +101,60 @@ class VendorInsightsPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
+                    'Prep performance',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    data.averagePrepMinutes == null
+                        ? 'Not enough recent prep-time history yet.'
+                        : 'Average prep time: ${data.averagePrepMinutes} min',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Recommendations',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (data.restaurantAnalytics.where((insight) => insight.recommendations.isNotEmpty).isEmpty)
+                    Text(
+                      'Recommendations will appear once restaurants have enough recent order history.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: context.luqmah.mutedText,
+                      ),
+                    )
+                  else
+                    for (final insight in data.restaurantAnalytics.where((insight) => insight.recommendations.isNotEmpty)) ...[
+                      Text(
+                        insight.restaurantTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      for (final recommendation in insight.recommendations) ...[
+                        _RecommendationCard(recommendation: recommendation),
+                        if (recommendation != insight.recommendations.last)
+                          const SizedBox(height: AppSpacing.sm),
+                      ],
+                      if (insight != data.restaurantAnalytics.where((entry) => entry.recommendations.isNotEmpty).last)
+                        const SizedBox(height: AppSpacing.lg),
+                    ],
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
                     'Top items',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
@@ -140,13 +194,13 @@ class VendorInsightsPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Restaurant recommendations',
+                    'Restaurant analytics',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  for (final recommendation in data.restaurantRecommendations) ...[
-                    _RestaurantRecommendationCard(recommendation: recommendation),
-                    if (recommendation != data.restaurantRecommendations.last)
+                  for (final insight in data.restaurantAnalytics) ...[
+                    _RestaurantAnalyticsCard(insight: insight),
+                    if (insight != data.restaurantAnalytics.last)
                       const SizedBox(height: AppSpacing.md),
                   ],
                 ],
@@ -191,10 +245,10 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _RestaurantRecommendationCard extends StatelessWidget {
-  const _RestaurantRecommendationCard({required this.recommendation});
+class _RestaurantAnalyticsCard extends StatelessWidget {
+  const _RestaurantAnalyticsCard({required this.insight});
 
-  final VendorRestaurantRecommendation recommendation;
+  final VendorRestaurantInsight insight;
 
   @override
   Widget build(BuildContext context) {
@@ -208,35 +262,123 @@ class _RestaurantRecommendationCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            recommendation.restaurantTitle,
+            insight.restaurantTitle,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            recommendation.recommendationTitle,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: recommendation.hasEnoughHistory
-                  ? context.luqmah.primary
-                  : context.luqmah.mutedText,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            recommendation.recommendationMessage,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          if (recommendation.hasEnoughHistory && recommendation.peakHourTopItems.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
+          if (!insight.hasEnoughHistory) ...[
             Text(
-              'Top items: ${recommendation.peakHourTopItems.join(', ')}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              insight.fallbackTitle ?? 'Not enough recent order history yet',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: context.luqmah.mutedText,
+                fontWeight: FontWeight.w700,
               ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(insight.fallbackMessage ?? '', style: Theme.of(context).textTheme.bodySmall),
+          ] else ...[
+            _InsightLine(label: 'Busiest hour', value: '${insight.busiestHourLabel} · ${insight.busiestHourOrderCount} orders'),
+            const SizedBox(height: AppSpacing.xs),
+            _InsightLine(label: 'Slowest hour', value: '${insight.slowestHourLabel} · ${insight.slowestHourOrderCount} orders'),
+            const SizedBox(height: AppSpacing.xs),
+            _InsightLine(label: 'Top items in rush hour', value: insight.topItemsInBusiestHour.join(', ')),
+            const SizedBox(height: AppSpacing.xs),
+            _InsightLine(
+              label: 'Average prep time',
+              value: insight.averagePrepMinutes == null ? 'Not enough prep data' : '${insight.averagePrepMinutes} min',
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _InsightLine(
+              label: 'Peak-hour prep time',
+              value: insight.peakHourPrepMinutes == null ? 'Not enough prep data' : '${insight.peakHourPrepMinutes} min',
             ),
           ],
         ],
       ),
+    );
+  }
+}
+
+class _RecommendationCard extends StatelessWidget {
+  const _RecommendationCard({required this.recommendation});
+
+  final VendorRestaurantRecommendation recommendation;
+
+  IconData _icon() {
+    switch (recommendation.type) {
+      case VendorRestaurantRecommendationType.prepareStock:
+        return Icons.schedule_rounded;
+      case VendorRestaurantRecommendationType.slowHourOffer:
+        return Icons.local_offer_outlined;
+      case VendorRestaurantRecommendationType.strongItem:
+        return Icons.trending_up_rounded;
+      case VendorRestaurantRecommendationType.lowPerformingItem:
+        return Icons.inventory_2_outlined;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: context.luqmah.surfaceAlt.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(_icon(), color: context.luqmah.primary),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  recommendation.title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  recommendation.message,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightLine extends StatelessWidget {
+  const _InsightLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 132,
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: context.luqmah.mutedText,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(value, style: Theme.of(context).textTheme.bodySmall),
+        ),
+      ],
     );
   }
 }

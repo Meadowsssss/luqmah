@@ -563,7 +563,8 @@ class VendorInsightsSummary {
     required this.totalRevenue,
     required this.averageOrderValue,
     required this.topItems,
-    required this.restaurantRecommendations,
+    required this.averagePrepMinutes,
+    required this.restaurantAnalytics,
   });
 
   final int activeOrders;
@@ -571,31 +572,59 @@ class VendorInsightsSummary {
   final double totalRevenue;
   final double averageOrderValue;
   final List<VendorTopItem> topItems;
-  final List<VendorRestaurantRecommendation> restaurantRecommendations;
+  final int? averagePrepMinutes;
+  final List<VendorRestaurantInsight> restaurantAnalytics;
 }
 
-class VendorRestaurantRecommendation {
-  const VendorRestaurantRecommendation({
+class VendorRestaurantInsight {
+  const VendorRestaurantInsight({
     required this.restaurantId,
     required this.restaurantTitle,
     required this.hasEnoughHistory,
-    this.peakHour,
-    this.peakHourLabel,
-    this.peakHourOrderCount = 0,
-    this.peakHourTopItems = const [],
-    required this.recommendationTitle,
-    required this.recommendationMessage,
+    this.busiestHourLabel,
+    this.busiestHourOrderCount = 0,
+    this.slowestHourLabel,
+    this.slowestHourOrderCount = 0,
+    this.topItemsInBusiestHour = const [],
+    this.averagePrepMinutes,
+    this.peakHourPrepMinutes,
+    this.fallbackTitle,
+    this.fallbackMessage,
+    this.recommendations = const [],
   });
 
   final String restaurantId;
   final String restaurantTitle;
-  final int? peakHour;
-  final String? peakHourLabel;
-  final int peakHourOrderCount;
-  final List<String> peakHourTopItems;
   final bool hasEnoughHistory;
-  final String recommendationTitle;
-  final String recommendationMessage;
+  final String? busiestHourLabel;
+  final int busiestHourOrderCount;
+  final String? slowestHourLabel;
+  final int slowestHourOrderCount;
+  final List<String> topItemsInBusiestHour;
+  final int? averagePrepMinutes;
+  final int? peakHourPrepMinutes;
+  final String? fallbackTitle;
+  final String? fallbackMessage;
+  final List<VendorRestaurantRecommendation> recommendations;
+}
+
+enum VendorRestaurantRecommendationType {
+  prepareStock,
+  slowHourOffer,
+  strongItem,
+  lowPerformingItem,
+}
+
+class VendorRestaurantRecommendation {
+  const VendorRestaurantRecommendation({
+    required this.type,
+    required this.title,
+    required this.message,
+  });
+
+  final VendorRestaurantRecommendationType type;
+  final String title;
+  final String message;
 }
 
 class VendorTopItem {
@@ -614,6 +643,7 @@ VendorInsightsSummary summarizeVendorInsights(
   List<VendorOrder> orders,
   List<VendorRestaurant> restaurants,
 ) {
+  final recentQualifiedOrders = _recentQualifiedOrders(orders);
   final completedOrders = orders
       .where((order) => order.status.isPast)
       .toList(growable: false);
@@ -642,10 +672,11 @@ VendorInsightsSummary summarizeVendorInsights(
   final topItems = totals.values.toList(growable: false)
     ..sort((a, b) => b.quantity.compareTo(a.quantity));
 
-  final restaurantRecommendations = summarizeRestaurantRecommendations(
-    orders,
+  final restaurantAnalytics = summarizeRestaurantAnalytics(
+    recentQualifiedOrders,
     restaurants,
   );
+  final averagePrepMinutes = _averagePrepMinutes(recentQualifiedOrders);
 
   return VendorInsightsSummary(
     activeOrders: activeOrders,
@@ -653,36 +684,30 @@ VendorInsightsSummary summarizeVendorInsights(
     totalRevenue: totalRevenue,
     averageOrderValue: averageOrderValue,
     topItems: topItems.take(4).toList(growable: false),
-    restaurantRecommendations: restaurantRecommendations,
+    averagePrepMinutes: averagePrepMinutes,
+    restaurantAnalytics: restaurantAnalytics,
   );
 }
 
-List<VendorRestaurantRecommendation> summarizeRestaurantRecommendations(
+List<VendorRestaurantInsight> summarizeRestaurantAnalytics(
   List<VendorOrder> orders,
   List<VendorRestaurant> restaurants,
 ) {
-  final now = DateTime.now();
-  final cutoff = now.subtract(const Duration(days: 30));
   const minimumOrders = 5;
 
   return restaurants
       .map((restaurant) {
         final recentOrders = orders
-            .where((order) {
-              return order.restaurantId == restaurant.id &&
-                  (order.status == VendorOrderStatus.ready ||
-                      order.status == VendorOrderStatus.completed) &&
-                  order.dateTime.isAfter(cutoff);
-            })
+            .where((order) => order.restaurantId == restaurant.id)
             .toList(growable: false);
 
         if (recentOrders.length < minimumOrders) {
-          return VendorRestaurantRecommendation(
+          return VendorRestaurantInsight(
             restaurantId: restaurant.id,
             restaurantTitle: restaurant.title,
             hasEnoughHistory: false,
-            recommendationTitle: 'Not enough recent order history yet',
-            recommendationMessage:
+            fallbackTitle: 'Not enough recent order history yet',
+            fallbackMessage:
                 'We need a few more recent orders before we can predict this restaurant\'s rush hour.',
           );
         }
@@ -719,30 +744,165 @@ List<VendorRestaurantRecommendation> summarizeRestaurantRecommendations(
 
         final peakHourStart = DateTime(2026, 1, 1, peakHourEntry.key);
         final peakHourEnd = peakHourStart.add(const Duration(hours: 1));
-        final prepReminder = peakHourStart.subtract(
-          const Duration(minutes: 15),
-        );
         final peakHourLabel =
             '${formatInsightHour(peakHourStart)} - ${formatInsightHour(peakHourEnd)}';
+        final slowestHourEntry = orderCountByHour.entries.reduce(
+          (worst, current) => current.value < worst.value ? current : worst,
+        );
+        final slowestHourStart = DateTime(2026, 1, 1, slowestHourEntry.key);
+        final slowestHourEnd = slowestHourStart.add(const Duration(hours: 1));
+        final slowestHourLabel =
+            '${formatInsightHour(slowestHourStart)} - ${formatInsightHour(slowestHourEnd)}';
         final topItemNames = topItems
             .take(3)
             .map((entry) => entry.key)
             .toList(growable: false);
+        final averagePrepMinutes = _averagePrepMinutes(recentOrders);
+        final peakHourPrepMinutes = _averagePrepMinutes(peakHourOrders);
 
-        return VendorRestaurantRecommendation(
+        return VendorRestaurantInsight(
           restaurantId: restaurant.id,
           restaurantTitle: restaurant.title,
           hasEnoughHistory: true,
-          peakHour: peakHourEntry.key,
-          peakHourLabel: peakHourLabel,
-          peakHourOrderCount: peakHourEntry.value,
-          peakHourTopItems: topItemNames,
-          recommendationTitle: 'Expected rush: $peakHourLabel',
-          recommendationMessage:
-              'Prepare extra stock before ${formatInsightHour(prepReminder)}. Most ordered in this window: ${topItemNames.join(', ')}.',
+          busiestHourLabel: peakHourLabel,
+          busiestHourOrderCount: peakHourEntry.value,
+          slowestHourLabel: slowestHourLabel,
+          slowestHourOrderCount: slowestHourEntry.value,
+          topItemsInBusiestHour: topItemNames,
+          averagePrepMinutes: averagePrepMinutes,
+          peakHourPrepMinutes: peakHourPrepMinutes,
+          recommendations: _buildRestaurantRecommendations(
+            busiestHourLabel: peakHourLabel,
+            busiestHourOrderCount: peakHourEntry.value,
+            slowestHourLabel: slowestHourLabel,
+            slowestHourOrderCount: slowestHourEntry.value,
+            recentOrders: recentOrders,
+          ),
         );
       })
       .toList(growable: false);
+}
+
+List<VendorRestaurantRecommendation> _buildRestaurantRecommendations({
+  required String busiestHourLabel,
+  required int busiestHourOrderCount,
+  required String slowestHourLabel,
+  required int slowestHourOrderCount,
+  required List<VendorOrder> recentOrders,
+}) {
+  final recommendations = <VendorRestaurantRecommendation>[
+    VendorRestaurantRecommendation(
+      type: VendorRestaurantRecommendationType.prepareStock,
+      title: 'Rush expected at $busiestHourLabel',
+      message:
+          'Prepare extra stock before ${_prepLeadTimeLabel(busiestHourLabel)}. This is your strongest recent demand window with $busiestHourOrderCount orders.',
+    ),
+  ];
+
+  if (busiestHourOrderCount - slowestHourOrderCount >= 2) {
+    recommendations.add(
+      VendorRestaurantRecommendation(
+        type: VendorRestaurantRecommendationType.slowHourOffer,
+        title: '$slowestHourLabel is usually quiet',
+        message:
+            'Consider a small offer or highlight a combo during this hour to increase orders.',
+      ),
+    );
+  }
+
+  final itemTotals = _itemQuantities(recentOrders);
+  if (itemTotals.isNotEmpty) {
+    final sortedItems = itemTotals.entries.toList(growable: false)
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final averageItemQuantity =
+        itemTotals.values.fold<int>(0, (sum, quantity) => sum + quantity) /
+        itemTotals.length;
+    final strongestItem = sortedItems.first;
+    if (strongestItem.value > averageItemQuantity) {
+      recommendations.add(
+        VendorRestaurantRecommendation(
+          type: VendorRestaurantRecommendationType.strongItem,
+          title: '${strongestItem.key} is your strongest item',
+          message:
+              'It sold ${strongestItem.value} times in the last 30 days. Consider featuring it higher in the menu.',
+        ),
+      );
+    }
+
+    if (sortedItems.length >= 3) {
+      final weakestItem = sortedItems.last;
+      if (weakestItem.value < averageItemQuantity * 0.5) {
+        recommendations.add(
+          VendorRestaurantRecommendation(
+            type: VendorRestaurantRecommendationType.lowPerformingItem,
+            title: '${weakestItem.key} is underperforming',
+            message:
+                'It sold only ${weakestItem.value} times in the last 30 days. Consider repositioning it or bundling it.',
+          ),
+        );
+      }
+    }
+  }
+
+  return recommendations;
+}
+
+Map<String, int> _itemQuantities(List<VendorOrder> orders) {
+  final totals = <String, int>{};
+  for (final order in orders) {
+    for (final item in order.items) {
+      totals.update(item.name, (count) => count + item.quantity, ifAbsent: () => item.quantity);
+    }
+  }
+  return totals;
+}
+
+String _prepLeadTimeLabel(String busiestHourLabel) {
+  final startLabel = busiestHourLabel.split(' - ').first;
+  final parts = startLabel.split(' ');
+  final hour = int.parse(parts.first);
+  final suffix = parts.last;
+  var hour24 = hour % 12;
+  if (suffix == 'PM') {
+    hour24 += 12;
+  }
+  final start = DateTime(2026, 1, 1, hour24);
+  final prepLead = start.subtract(const Duration(minutes: 15));
+  return formatInsightHour(prepLead);
+}
+
+List<VendorOrder> _recentQualifiedOrders(List<VendorOrder> orders) {
+  final cutoff = DateTime.now().subtract(const Duration(days: 30));
+  return orders.where((order) {
+    return (order.status == VendorOrderStatus.ready ||
+            order.status == VendorOrderStatus.completed) &&
+        order.dateTime.isAfter(cutoff);
+  }).toList(growable: false);
+}
+
+int? _averagePrepMinutes(List<VendorOrder> orders) {
+  final durations = orders
+      .map((order) {
+        final startedAt = order.inProgressStartedAt;
+        final readyAt = order.readyAt;
+        if (startedAt == null || readyAt == null) {
+          return null;
+        }
+        final minutes = readyAt.difference(startedAt).inMinutes;
+        if (minutes < 1 || minutes > 180) {
+          return null;
+        }
+        return minutes;
+      })
+      .whereType<int>()
+      .toList(growable: false);
+
+  if (durations.isEmpty) {
+    return null;
+  }
+
+  final total = durations.fold<int>(0, (sum, minutes) => sum + minutes);
+  return (total / durations.length).round();
 }
 
 String formatInsightHour(DateTime dateTime) {

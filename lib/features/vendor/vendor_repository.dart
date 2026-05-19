@@ -422,6 +422,12 @@ class VendorRepository {
               as String?) ??
           '',
       dateTime: DateTime.parse(json['createdAt'] as String).toLocal(),
+      inProgressStartedAt: json['inProgressStartedAt'] == null
+          ? null
+          : DateTime.parse(json['inProgressStartedAt'] as String).toLocal(),
+      readyAt: json['readyAt'] == null
+          ? null
+          : DateTime.parse(json['readyAt'] as String).toLocal(),
       estimatedReadyAt: json['estimatedReadyAt'] == null
           ? null
           : DateTime.parse(json['estimatedReadyAt'] as String).toLocal(),

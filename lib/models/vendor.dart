@@ -97,6 +97,8 @@ class VendorOrder {
   final String customerEmail;
   final String customerPhone;
   final DateTime dateTime;
+  final DateTime? inProgressStartedAt;
+  final DateTime? readyAt;
   final DateTime? estimatedReadyAt;
   final String paymentMethod;
   final VendorOrderStatus status;
@@ -114,6 +116,8 @@ class VendorOrder {
     required this.customerEmail,
     required this.customerPhone,
     required this.dateTime,
+    this.inProgressStartedAt,
+    this.readyAt,
     this.estimatedReadyAt,
     required this.paymentMethod,
     required this.status,
@@ -133,6 +137,8 @@ class VendorOrder {
       customerEmail: customerEmail,
       customerPhone: customerPhone,
       dateTime: dateTime,
+      inProgressStartedAt: inProgressStartedAt,
+      readyAt: readyAt,
       estimatedReadyAt: estimatedReadyAt,
       paymentMethod: paymentMethod,
       status: status ?? this.status,

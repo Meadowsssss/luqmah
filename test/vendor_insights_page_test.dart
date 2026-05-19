@@ -27,6 +27,12 @@ class _FakeVendorInsightsController extends VendorDataController {
           dateTime: DateTime.now()
               .subtract(const Duration(days: 2))
               .copyWith(hour: 13, minute: 10),
+          inProgressStartedAt: DateTime.now()
+              .subtract(const Duration(days: 2))
+              .copyWith(hour: 12, minute: 55),
+          readyAt: DateTime.now()
+              .subtract(const Duration(days: 2))
+              .copyWith(hour: 13, minute: 8),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.completed,
           items: const [
@@ -47,6 +53,12 @@ class _FakeVendorInsightsController extends VendorDataController {
           dateTime: DateTime.now()
               .subtract(const Duration(days: 1))
               .copyWith(hour: 13, minute: 20),
+          inProgressStartedAt: DateTime.now()
+              .subtract(const Duration(days: 1))
+              .copyWith(hour: 13, minute: 2),
+          readyAt: DateTime.now()
+              .subtract(const Duration(days: 1))
+              .copyWith(hour: 13, minute: 18),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.ready,
           items: const [
@@ -67,6 +79,12 @@ class _FakeVendorInsightsController extends VendorDataController {
           dateTime: DateTime.now()
               .subtract(const Duration(days: 3))
               .copyWith(hour: 13, minute: 40),
+          inProgressStartedAt: DateTime.now()
+              .subtract(const Duration(days: 3))
+              .copyWith(hour: 13, minute: 24),
+          readyAt: DateTime.now()
+              .subtract(const Duration(days: 3))
+              .copyWith(hour: 13, minute: 36),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.completed,
           items: const [
@@ -87,6 +105,12 @@ class _FakeVendorInsightsController extends VendorDataController {
           dateTime: DateTime.now()
               .subtract(const Duration(days: 4))
               .copyWith(hour: 13, minute: 50),
+          inProgressStartedAt: DateTime.now()
+              .subtract(const Duration(days: 4))
+              .copyWith(hour: 13, minute: 33),
+          readyAt: DateTime.now()
+              .subtract(const Duration(days: 4))
+              .copyWith(hour: 13, minute: 48),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.completed,
           items: const [
@@ -107,6 +131,12 @@ class _FakeVendorInsightsController extends VendorDataController {
           dateTime: DateTime.now()
               .subtract(const Duration(days: 5))
               .copyWith(hour: 12, minute: 0),
+          inProgressStartedAt: DateTime.now()
+              .subtract(const Duration(days: 5))
+              .copyWith(hour: 11, minute: 47),
+          readyAt: DateTime.now()
+              .subtract(const Duration(days: 5))
+              .copyWith(hour: 11, minute: 59),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.completed,
           items: const [
@@ -123,7 +153,7 @@ class _FakeVendorInsightsController extends VendorDataController {
 
 void main() {
   testWidgets(
-    'vendor insights page renders per-restaurant recommendation cards',
+    'vendor insights page renders per-restaurant analytics cards',
     (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -140,10 +170,14 @@ void main() {
       );
 
       await tester.pumpAndSettle();
+      await tester.drag(find.byType(ListView).first, const Offset(0, -800));
+      await tester.pumpAndSettle();
 
-      expect(find.text('Restaurant recommendations'), findsOneWidget);
-      expect(find.text('Planet Donuts'), findsOneWidget);
-      expect(find.textContaining('Expected rush:'), findsOneWidget);
+      expect(find.text('Recommendations'), findsOneWidget);
+      expect(find.textContaining('Rush expected at'), findsOneWidget);
+      expect(find.text('Restaurant analytics'), findsOneWidget);
+      expect(find.text('Planet Donuts'), findsWidgets);
+      expect(find.text('Busiest hour'), findsOneWidget);
       expect(find.text('Campus Coffee'), findsOneWidget);
       expect(
         find.textContaining('Not enough recent order history yet'),
