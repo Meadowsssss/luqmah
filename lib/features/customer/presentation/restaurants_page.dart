@@ -404,84 +404,60 @@ class _RestaurantCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final tokens = context.luqmah;
+    final visibleCategories = restaurant.tags.take(2).toList(growable: false);
+    final hiddenCategoryCount = restaurant.tags.length - visibleCategories.length;
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadii.xl),
       child: Container(
-        height: 168,
         decoration: BoxDecoration(
-          color: const Color(0xFF101510),
+          color: tokens.surface,
           borderRadius: BorderRadius.circular(AppRadii.xl),
           border: Border.all(color: tokens.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.10),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(
-              restaurant.image,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: tokens.surfaceAlt,
-                alignment: Alignment.center,
-                child: Icon(Icons.restaurant_rounded, color: tokens.mutedText),
-              ),
-            ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.08),
-                    Colors.black.withValues(alpha: 0.34),
-                    Colors.black.withValues(alpha: 0.80),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              right: -20,
-              top: 18,
-              child: Transform.rotate(
-                angle: -0.24,
-                child: Container(
-                  height: 10,
-                  width: 112,
-                  decoration: BoxDecoration(
-                    color: tokens.primary.withValues(alpha: 0.82),
-                    borderRadius: BorderRadius.circular(999),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              child: SizedBox(
+                height: 104,
+                width: 104,
+                child: Image.network(
+                  restaurant.image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: tokens.surfaceAlt,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.restaurant_rounded,
+                      color: tokens.mutedText,
+                    ),
                   ),
                 ),
               ),
             ),
-            Positioned(
-              left: AppSpacing.lg,
-              right: AppSpacing.lg,
-              bottom: AppSpacing.lg,
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     restaurant.name,
-                    style: textTheme.titleMedium?.copyWith(color: Colors.white),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    restaurant.tags.take(3).join(' · '),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.78),
+                    style: textTheme.titleMedium?.copyWith(
+                      color: tokens.strongText,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -492,38 +468,89 @@ class _RestaurantCard extends StatelessWidget {
                         size: 16,
                         color: Color(0xFFD1A340),
                       ),
-                      const SizedBox(width: 3),
+                      const SizedBox(width: 4),
                       Text(
                         restaurant.ratingCount > 0
                             ? '${restaurant.rating} (${restaurant.ratingCount})'
                             : restaurant.rating,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: Colors.white,
+                        style: textTheme.bodySmall,
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 16,
+                        color: tokens.info,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          '${restaurant.estimatedPrepMinutes}-${restaurant.estimatedPrepMinutes + 10} min',
+                          style: textTheme.bodySmall?.copyWith(color: tokens.info),
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Text(
-                        '· ${restaurant.estimatedPrepMinutes}-${restaurant.estimatedPrepMinutes + 10} min',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.76),
-                        ),
-                      ),
-                      if (restaurant.isBusy) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        Text(
-                          '· Busy',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: tokens.warning,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    restaurant.time,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final category in visibleCategories)
+                        _CategoryBadge(label: category),
+                      if (hiddenCategoryCount > 0)
+                        _CategoryBadge(label: '+ more'),
+                      if (restaurant.isBusy)
+                        _CategoryBadge(label: 'Busy', tone: _BadgeTone.warning),
                     ],
                   ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _BadgeTone { neutral, warning }
+
+class _CategoryBadge extends StatelessWidget {
+  const _CategoryBadge({required this.label, this.tone = _BadgeTone.neutral});
+
+  final String label;
+  final _BadgeTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+    final backgroundColor = switch (tone) {
+      _BadgeTone.neutral => tokens.surfaceAlt,
+      _BadgeTone.warning => tokens.warning.withValues(alpha: 0.12),
+    };
+    final foregroundColor = switch (tone) {
+      _BadgeTone.neutral => tokens.strongText,
+      _BadgeTone.warning => tokens.warning,
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: foregroundColor,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

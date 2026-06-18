@@ -124,17 +124,10 @@ class ApiRestaurantRepository implements RestaurantRepository {
   }
 
   Restaurant _restaurantSummaryFromJson(Map<String, dynamic> json) {
-    final tags = <String>[];
-    final vendor = json['vendor'] as Map<String, dynamic>?;
-    final vendorName =
-        (vendor?['user'] as Map<String, dynamic>?)?['name'] as String?;
-    final menuCount = (json['_count'] as Map<String, dynamic>?)?['menuItems'];
-    if (vendorName != null && vendorName.isNotEmpty) {
-      tags.add(vendorName);
-    }
-    if (menuCount != null) {
-      tags.add('$menuCount items');
-    }
+    final categories = ((json['menuCategories'] as List<dynamic>?) ?? const [])
+        .map((entry) => (entry as Map<String, dynamic>)['title'] as String)
+        .where((title) => title.trim().isNotEmpty)
+        .toList(growable: false);
 
     return Restaurant(
       id: json['id'] as String,
@@ -148,7 +141,7 @@ class ApiRestaurantRepository implements RestaurantRepository {
       estimatedPrepMinutes: (json['estimatedPrepMinutes'] as num?)?.toInt() ?? 15,
       time: (json['address'] as String?) ?? 'Campus pickup',
       isBusy: json['isBusy'] as bool? ?? false,
-      tags: tags.isEmpty ? <String>['Open now'] : tags,
+      tags: categories,
       menu: const [],
     );
   }

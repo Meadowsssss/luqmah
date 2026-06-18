@@ -4,6 +4,7 @@ import 'package:luqmah/models/vendor.dart';
 
 void main() {
   test('vendor insights summarizes orders and top items', () {
+    final now = DateTime.now();
     final insights = summarizeVendorInsights(
       [
         VendorOrder(
@@ -14,9 +15,9 @@ void main() {
           customerName: 'Customer A',
           customerEmail: 'a@example.com',
           customerPhone: '0790000001',
-          dateTime: DateTime(2026, 4, 23, 12),
-          inProgressStartedAt: DateTime(2026, 4, 23, 11, 50),
-          readyAt: DateTime(2026, 4, 23, 12, 5),
+          dateTime: now.subtract(const Duration(days: 2)).copyWith(hour: 12),
+          inProgressStartedAt: now.subtract(const Duration(days: 2)).copyWith(hour: 11, minute: 50),
+          readyAt: now.subtract(const Duration(days: 2)).copyWith(hour: 12, minute: 5),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.completed,
           items: const [
@@ -35,7 +36,7 @@ void main() {
           customerName: 'Customer B',
           customerEmail: 'b@example.com',
           customerPhone: '0790000002',
-          dateTime: DateTime(2026, 4, 23, 13),
+          dateTime: now.subtract(const Duration(days: 1)).copyWith(hour: 13),
           paymentMethod: 'Luqmah',
           status: VendorOrderStatus.accepted,
           items: const [VendorOrderItem(name: 'Wrap', quantity: 1, price: 4)],

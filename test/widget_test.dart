@@ -27,7 +27,7 @@ class _FakeRestaurantRepository implements RestaurantRepository {
     estimatedPrepMinutes: 14,
     time: 'Campus pickup',
     isBusy: isBusy,
-    tags: const ['Open now'],
+    tags: const ['Donuts', 'Coffee', 'Pastries'],
     menu: const [
       MenuItem(
         id: 'm1',
@@ -67,7 +67,7 @@ class _FakeRestaurantRepository implements RestaurantRepository {
       estimatedPrepMinutes: 14,
       time: 'Campus pickup',
       isBusy: isBusy,
-      tags: const ['Open now'],
+      tags: const ['Donuts', 'Coffee', 'Pastries'],
       menu: const [],
     ),
   ];
@@ -125,9 +125,8 @@ void main() {
       ),
     );
 
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Luqmah'), findsOneWidget);
     expect(find.text('Good food. Great mood. On campus.'), findsOneWidget);
   });
 
@@ -170,6 +169,32 @@ void main() {
     expect(find.text('Planet Donuts'), findsOneWidget);
     expect(find.text('Preparing'), findsOneWidget);
     expect(find.textContaining('Expected by'), findsOneWidget);
+  });
+
+  testWidgets('restaurants card shows compact meta and first two categories plus more', (
+    WidgetTester tester,
+  ) async {
+    final container = await _createHomeContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: buildLuqmahTheme(),
+          home: const RestaurantsPage(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Campus Bites'), findsOneWidget);
+    expect(find.text('Campus pickup'), findsOneWidget);
+    expect(find.text('14-24 min'), findsOneWidget);
+    expect(find.text('Donuts'), findsOneWidget);
+    expect(find.text('Coffee'), findsOneWidget);
+    expect(find.text('+ more'), findsOneWidget);
   });
 
   testWidgets('restaurants screen keeps hero for completed orders', (tester) async {
