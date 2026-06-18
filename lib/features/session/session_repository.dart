@@ -8,6 +8,7 @@ import 'session_models.dart';
 
 class SessionRepository {
   static const _backendSessionKey = 'backend_session';
+  static const _pendingCustomerProfileKey = 'pending_customer_profile';
 
   SharedPreferences? _prefs;
 
@@ -33,6 +34,31 @@ class SessionRepository {
   Future<void> clearBackendSession() async {
     final prefs = await _instance;
     await prefs.remove(_backendSessionKey);
+  }
+
+  Future<void> savePendingCustomerProfile(PendingCustomerProfile profile) async {
+    final prefs = await _instance;
+    await prefs.setString(
+      _pendingCustomerProfileKey,
+      jsonEncode(profile.toJson()),
+    );
+  }
+
+  Future<PendingCustomerProfile?> loadPendingCustomerProfile() async {
+    final prefs = await _instance;
+    final raw = prefs.getString(_pendingCustomerProfileKey);
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+
+    return PendingCustomerProfile.fromJson(
+      jsonDecode(raw) as Map<String, dynamic>,
+    );
+  }
+
+  Future<void> clearPendingCustomerProfile() async {
+    final prefs = await _instance;
+    await prefs.remove(_pendingCustomerProfileKey);
   }
 
   Future<SessionSnapshot> buildSnapshot(User? firebaseUser) async {

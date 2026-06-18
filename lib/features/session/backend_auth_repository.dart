@@ -81,10 +81,17 @@ class BackendAuthRepository {
 
   Future<BackendAuthSession> syncCustomerWithFirebase({
     required String idToken,
+    String? name,
+    String? phoneNumber,
   }) async {
     final response = await _apiClient.post(
       '/auth/firebase/customer',
-      body: {'idToken': idToken},
+      body: {
+        'idToken': idToken,
+        if (name != null && name.isNotEmpty) 'name': name,
+        if (phoneNumber != null && phoneNumber.isNotEmpty)
+          'phoneNumber': phoneNumber,
+      },
     );
     final session = BackendAuthSession.fromJson(response);
     if (session.user.role != 'CUSTOMER') {
@@ -154,6 +161,18 @@ class BackendAuthRepository {
       body: {'phoneNumber': phoneNumber},
     );
     return response['phoneNumber'] as String? ?? '';
+  }
+
+  Future<String> updateCustomerName({
+    required String token,
+    required String name,
+  }) async {
+    final response = await _apiClient.patch(
+      '/users/me/name',
+      token: token,
+      body: {'name': name},
+    );
+    return response['name'] as String? ?? '';
   }
 
   Future<void> registerPushToken({

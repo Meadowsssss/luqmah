@@ -23,6 +23,19 @@ class AuthRepository {
     return _auth.createUserWithEmailAndPassword(email: email, password: password);
   }
 
+  Future<void> updateCurrentUserDisplayName(String displayName) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No signed-in Firebase user is available.',
+      );
+    }
+
+    await user.updateDisplayName(displayName);
+    await user.reload();
+  }
+
   Future<void> sendEmailVerification() async {
     await _auth.currentUser?.sendEmailVerification();
   }

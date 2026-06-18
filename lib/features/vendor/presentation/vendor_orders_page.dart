@@ -28,7 +28,7 @@ class _VendorOrdersPageState extends ConsumerState<VendorOrdersPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Vendor workspace', style: Theme.of(context).textTheme.titleLarge),
+            Text('Orders', style: Theme.of(context).textTheme.titleLarge),
             Text('Luqmah operations', style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
@@ -41,39 +41,75 @@ class _VendorOrdersPageState extends ConsumerState<VendorOrdersPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      height: 42,
-                      width: 42,
+                      height: 48,
+                      width: 48,
                       decoration: BoxDecoration(
                         color: context.luqmah.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadii.md),
+                        borderRadius: BorderRadius.circular(AppRadii.lg),
                       ),
                       child: Icon(Icons.receipt_long_rounded, color: context.luqmah.primary),
                     ),
-                    const SizedBox(width: AppSpacing.md),
+                    const SizedBox(width: AppSpacing.lg),
                     Expanded(
-                      child: Text('Order queue', style: Theme.of(context).textTheme.titleLarge),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Order queue',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Track what is active now, keep your history tidy, and respond faster from one calmer workspace.',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: context.luqmah.mutedText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.luqmah.surfaceAlt,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: context.luqmah.border),
+                      ),
+                      child: Text(
+                        _showPastOrders ? 'History' : 'Active',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: context.luqmah.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Track what is active now and move completed orders into history.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: context.luqmah.mutedText,
-                  ),
-                ),
                 const SizedBox(height: AppSpacing.lg),
-                SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment<bool>(value: false, label: Text('Active')),
-                    ButtonSegment<bool>(value: true, label: Text('History')),
-                  ],
-                  selected: <bool>{_showPastOrders},
-                  onSelectionChanged: (value) {
-                    setState(() => _showPastOrders = value.first);
-                  },
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: context.luqmah.surfaceAlt.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    border: Border.all(color: context.luqmah.border),
+                  ),
+                  child: SegmentedButton<bool>(
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment<bool>(value: false, label: Text('Active')),
+                      ButtonSegment<bool>(value: true, label: Text('History')),
+                    ],
+                    selected: <bool>{_showPastOrders},
+                    onSelectionChanged: (value) {
+                      setState(() => _showPastOrders = value.first);
+                    },
+                  ),
                 ),
               ],
             ),

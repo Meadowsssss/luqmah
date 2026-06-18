@@ -4,6 +4,24 @@ import 'backend_auth_repository.dart';
 
 enum AppRole { customer, vendor, admin }
 
+class PendingCustomerProfile {
+  const PendingCustomerProfile({required this.name, required this.phoneNumber});
+
+  final String name;
+  final String phoneNumber;
+
+  Map<String, dynamic> toJson() {
+    return {'name': name, 'phoneNumber': phoneNumber};
+  }
+
+  factory PendingCustomerProfile.fromJson(Map<String, dynamic> json) {
+    return PendingCustomerProfile(
+      name: json['name'] as String? ?? '',
+      phoneNumber: json['phoneNumber'] as String? ?? '',
+    );
+  }
+}
+
 class SessionSnapshot {
   const SessionSnapshot({
     required this.firebaseUser,

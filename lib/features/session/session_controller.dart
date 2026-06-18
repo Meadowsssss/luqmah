@@ -82,6 +82,7 @@ class SessionController extends ChangeNotifier {
   Future<void> login({required String email, required String password}) async {
     final normalizedEmail = email.trim();
     await _sessionRepository.clearBackendSession();
+    await _sessionRepository.clearPendingCustomerProfile();
 
     try {
       if (_authRepository.currentUser != null) {
@@ -117,6 +118,7 @@ class SessionController extends ChangeNotifier {
   }) async {
     final normalizedEmail = email.trim();
     await _sessionRepository.clearBackendSession();
+    await _sessionRepository.clearPendingCustomerProfile();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
     }
@@ -135,6 +137,7 @@ class SessionController extends ChangeNotifier {
   }) async {
     final normalizedEmail = email.trim();
     await _sessionRepository.clearBackendSession();
+    await _sessionRepository.clearPendingCustomerProfile();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
     }
@@ -148,11 +151,16 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> registerCustomer({
+    required String name,
+    required String phoneNumber,
     required String email,
     required String password,
   }) async {
+    final normalizedName = name.trim();
+    final normalizedPhoneNumber = phoneNumber.trim();
     final normalizedEmail = email.trim();
     await _sessionRepository.clearBackendSession();
+    await _sessionRepository.clearPendingCustomerProfile();
 
     try {
       if (_authRepository.currentUser != null) {
@@ -163,6 +171,13 @@ class SessionController extends ChangeNotifier {
         email: normalizedEmail,
         password: password,
       );
+      await _authRepository.updateCurrentUserDisplayName(normalizedName);
+      await _sessionRepository.savePendingCustomerProfile(
+        PendingCustomerProfile(
+          name: normalizedName,
+          phoneNumber: normalizedPhoneNumber,
+        ),
+      );
       await credential.user?.sendEmailVerification();
       await refresh();
     } catch (error) {
@@ -171,6 +186,7 @@ class SessionController extends ChangeNotifier {
         await user.delete();
       }
       await _sessionRepository.clearBackendSession();
+      await _sessionRepository.clearPendingCustomerProfile();
       rethrow;
     }
   }
@@ -229,6 +245,27 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateCustomerName(String name) async {
+    final session = _snapshot.backendSession;
+    if (session == null || session.token.isEmpty) {
+      throw StateError(
+        'A backend session is required to update this name.',
+      );
+    }
+
+    final updatedName = await _backendAuthRepository.updateCustomerName(
+      token: session.token,
+      name: name,
+    );
+    final updatedSession = session.copyWith(
+      user: session.user.copyWith(name: updatedName),
+    );
+
+    await _sessionRepository.saveBackendSession(updatedSession);
+    _snapshot = _snapshot.copyWith(backendSession: updatedSession);
+    notifyListeners();
+  }
+
   Future<void> changeVendorPassword({
     required String currentPassword,
     required String newPassword,
@@ -249,6 +286,7 @@ class SessionController extends ChangeNotifier {
 
   Future<void> logout() async {
     await _sessionRepository.clearBackendSession();
+    await _sessionRepository.clearPendingCustomerProfile();
     if (_authRepository.currentUser != null) {
       await _authRepository.logout();
     }
@@ -280,12 +318,18 @@ class SessionController extends ChangeNotifier {
     }
 
     try {
+      final pendingProfile = await _sessionRepository.loadPendingCustomerProfile();
       final idToken = await _authRepository.getIdToken(
         forceRefresh: forceRefreshFirebaseToken,
       );
       final backendSession = await _backendAuthRepository
-          .syncCustomerWithFirebase(idToken: idToken);
+          .syncCustomerWithFirebase(
+            idToken: idToken,
+            name: pendingProfile?.name,
+            phoneNumber: pendingProfile?.phoneNumber,
+          );
       await _sessionRepository.saveBackendSession(backendSession);
+      await _sessionRepository.clearPendingCustomerProfile();
       _snapshot = SessionSnapshot(
         firebaseUser: _authRepository.currentUser,
         backendSession: backendSession,

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../app/theme/theme_mode_controller.dart';
+import '../../../core/validation/customer_profile_validators.dart';
 import '../../../features/customer/orders/customer_orders_controller.dart';
 import '../../../features/session/auth_error_formatter.dart';
 import '../../../features/session/session_controller.dart';
@@ -11,6 +12,24 @@ import '../../../shared/widgets/app_surface_card.dart';
 
 class CustomerSettingsPage extends ConsumerWidget {
   const CustomerSettingsPage({super.key});
+
+  Future<void> _showCustomerNameDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String currentName,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => _CustomerNameDialog(
+        currentName: currentName,
+        onSaved: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Name updated.')),
+          );
+        },
+      ),
+    );
+  }
 
   Future<void> _showPhoneNumberDialog(
     BuildContext context,
@@ -127,57 +146,172 @@ class CustomerSettingsPage extends ConsumerWidget {
     final session = ref.watch(sessionControllerProvider).snapshot;
     final recentOrders = ref.watch(customerOrdersControllerProvider);
     final themeMode = ref.watch(themeModeControllerProvider);
+    final displayName = session.displayName.trim();
     final phoneNumber = session.phoneNumber.trim();
+    final tokens = context.luqmah;
+    final leadingInitial =
+        displayName.isEmpty ? 'C' : displayName.characters.first.toUpperCase();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         children: [
           AppSurfaceCard(
+            padding: const EdgeInsets.all(AppSpacing.xl),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Profile', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.lg),
-                const _SettingRow(label: 'Account type', value: 'Customer'),
-                const SizedBox(height: AppSpacing.md),
-                _SettingRow(
-                  label: 'Signed in as',
-                  value: session.email.isEmpty ? 'No email available' : session.email,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 56,
+                      width: 56,
+                      decoration: BoxDecoration(
+                        color: tokens.primary.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        leadingInitial,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: tokens.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName.isEmpty ? 'Customer profile' : displayName,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Keep your profile, preferences, and recent activity neatly in sync.',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: tokens.mutedText),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tokens.surfaceAlt,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: tokens.border),
+                      ),
+                      child: Text(
+                        'Customer',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.md),
-                _SettingRow(
-                  label: 'Phone number',
-                  value: phoneNumber.isEmpty
-                      ? 'No phone number added'
-                      : phoneNumber,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                OutlinedButton(
-                  onPressed: () => _showPhoneNumberDialog(context, ref, phoneNumber),
-                  child: Text(
-                    phoneNumber.isEmpty
-                        ? 'Add phone number'
-                        : 'Change phone number',
+                const SizedBox(height: AppSpacing.xl),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: tokens.surfaceAlt.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    border: Border.all(color: tokens.border),
                   ),
+                  child: Column(
+                    children: [
+                      _SettingInfoRow(
+                        icon: Icons.badge_outlined,
+                        label: 'Name',
+                        value: displayName.isEmpty ? 'No name available' : displayName,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _SettingInfoRow(
+                        icon: Icons.mail_outline_rounded,
+                        label: 'Signed in as',
+                        value: session.email.isEmpty
+                            ? 'No email available'
+                            : session.email,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _SettingInfoRow(
+                        icon: Icons.phone_outlined,
+                        label: 'Phone number',
+                        value: phoneNumber.isEmpty
+                            ? 'No phone number added'
+                            : phoneNumber,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Wrap(
+                  spacing: AppSpacing.md,
+                  runSpacing: AppSpacing.md,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          _showCustomerNameDialog(context, ref, displayName),
+                      icon: const Icon(Icons.badge_outlined),
+                      label: const Text('Change name'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          _showPhoneNumberDialog(context, ref, phoneNumber),
+                      icon: const Icon(Icons.phone_outlined),
+                      label: Text(
+                        phoneNumber.isEmpty
+                            ? 'Add phone number'
+                            : 'Change phone number',
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
           AppSurfaceCard(
-            child: SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                'Dark mode',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              subtitle: const Text('Use a darker premium Luqmah theme.'),
-              value: themeMode.isDark,
-              onChanged: (value) => ref
-                  .read(themeModeControllerProvider)
-                  .setDarkMode(value),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionIntro(
+                  icon: Icons.tune_rounded,
+                  title: 'Preferences',
+                  subtitle: 'Adjust how Luqmah feels day to day without digging through raw settings blocks.',
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Container(
+                  decoration: BoxDecoration(
+                    color: tokens.surfaceAlt.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    border: Border.all(color: tokens.border),
+                  ),
+                  child: SwitchListTile.adaptive(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.xs,
+                    ),
+                    title: Text(
+                      'Dark mode',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    subtitle: const Text('Use a darker premium Luqmah theme.'),
+                    value: themeMode.isDark,
+                    onChanged: (value) => ref
+                        .read(themeModeControllerProvider)
+                        .setDarkMode(value),
+                  ),
+                ),
+              ],
             ),
           ),
           if (session.customerSyncError != null) ...[
@@ -203,13 +337,10 @@ class CustomerSettingsPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Security', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Manage your password to help keep your account secure.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: context.luqmah.mutedText,
-                  ),
+                _SectionIntro(
+                  icon: Icons.shield_outlined,
+                  title: 'Security',
+                  subtitle: 'Keep your account details protected with quick access to password management.',
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 OutlinedButton(
@@ -224,8 +355,12 @@ class CustomerSettingsPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Orders', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.sm),
+                _SectionIntro(
+                  icon: Icons.receipt_long_rounded,
+                  title: 'Orders',
+                  subtitle: 'See what you ordered last and jump back into your full order history.',
+                ),
+                const SizedBox(height: AppSpacing.lg),
                 recentOrders.when(
                   loading: () => const Text('Loading recent orders...'),
                   error: (error, stackTrace) => Text(
@@ -236,30 +371,64 @@ class CustomerSettingsPage extends ConsumerWidget {
                   ),
                   data: (orders) {
                     if (orders.isEmpty) {
-                      return Text(
-                        'No order history yet. Orders saved from checkout will appear here.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: context.luqmah.mutedText,
+                      return Container(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: tokens.surfaceAlt.withValues(alpha: 0.68),
+                          borderRadius: BorderRadius.circular(AppRadii.lg),
+                        ),
+                        child: Text(
+                          'No order history yet. Orders saved from checkout will appear here.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: context.luqmah.mutedText,
+                          ),
                         ),
                       );
                     }
 
                     final latest = orders.first;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          latest.restaurantName,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          '${latest.status.name} - ${latest.total.toStringAsFixed(2)} JD',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: context.luqmah.mutedText,
+                    return Container(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: tokens.surfaceAlt.withValues(alpha: 0.68),
+                        borderRadius: BorderRadius.circular(AppRadii.lg),
+                        border: Border.all(color: tokens.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            height: 42,
+                            width: 42,
+                            decoration: BoxDecoration(
+                              color: tokens.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(AppRadii.md),
+                            ),
+                            child: Icon(
+                              Icons.local_dining_rounded,
+                              color: tokens.primary,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  latest.restaurantName,
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: AppSpacing.xs),
+                                Text(
+                                  '${latest.status.name} · ${latest.total.toStringAsFixed(2)} JD',
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: context.luqmah.mutedText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -276,13 +445,10 @@ class CustomerSettingsPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Session', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Sign out to return to the Luqmah entry flow.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: context.luqmah.mutedText,
-                  ),
+                _SectionIntro(
+                  icon: Icons.logout_rounded,
+                  title: 'Session',
+                  subtitle: 'Sign out when you want to return to the Luqmah entry flow.',
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 ElevatedButton.icon(
@@ -412,29 +578,208 @@ class _PhoneNumberDialogState extends ConsumerState<_PhoneNumberDialog> {
   }
 }
 
-class _SettingRow extends StatelessWidget {
-  const _SettingRow({required this.label, required this.value});
+class _SectionIntro extends StatelessWidget {
+  const _SectionIntro({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
 
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 40,
+          width: 40,
+          decoration: BoxDecoration(
+            color: tokens.primary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppRadii.md),
+          ),
+          child: Icon(icon, color: tokens.primary),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: tokens.mutedText,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CustomerNameDialog extends ConsumerStatefulWidget {
+  const _CustomerNameDialog({
+    required this.currentName,
+    required this.onSaved,
+  });
+
+  final String currentName;
+  final VoidCallback onSaved;
+
+  @override
+  ConsumerState<_CustomerNameDialog> createState() =>
+      _CustomerNameDialogState();
+}
+
+class _CustomerNameDialogState extends ConsumerState<_CustomerNameDialog> {
+  late final TextEditingController _nameController;
+  String? _error;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.currentName);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final validationError = validateCustomerDisplayName(_nameController.text);
+    if (validationError != null) {
+      setState(() => _error = validationError);
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+
+    try {
+      await ref
+          .read(sessionControllerProvider)
+          .updateCustomerName(_nameController.text.trim());
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop();
+      widget.onSaved();
+    } catch (err) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _saving = false;
+        _error = formatAuthError(err);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Change name'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Full name',
+              hintText: 'Your full name',
+              prefixIcon: Icon(Icons.badge_outlined),
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _saving ? null : _save,
+          child: _saving
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingInfoRow extends StatelessWidget {
+  const _SettingInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 110,
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+        Container(
+          height: 36,
+          width: 36,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.82),
+            borderRadius: BorderRadius.circular(AppRadii.md),
           ),
+          child: Icon(icon, size: 18, color: tokens.primary),
         ),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: tokens.mutedText,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(value, style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
         ),
       ],
     );

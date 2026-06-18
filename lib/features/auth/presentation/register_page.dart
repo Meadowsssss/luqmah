@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
+import '../../../core/validation/customer_profile_validators.dart';
 import '../../../features/session/auth_error_formatter.dart';
 import '../../../features/session/session_controller.dart';
 import '../../../shared/widgets/app_surface_card.dart';
@@ -16,6 +17,8 @@ class RegisterPage extends ConsumerStatefulWidget {
 
 class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _loading = false;
@@ -24,6 +27,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -43,6 +48,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
     try {
       await ref.read(sessionControllerProvider).registerCustomer(
+        name: _nameController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -59,6 +66,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
@@ -70,24 +79,95 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               child: AppSurfaceCard(
                 child: Form(
                   key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Create your account',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Create your Firebase-backed Luqmah customer account with your Hashemite University email.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: context.luqmah.mutedText,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xl),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
+                   child: Column(
+                     crossAxisAlignment: CrossAxisAlignment.stretch,
+                     children: [
+                       Container(
+                         padding: const EdgeInsets.all(AppSpacing.lg),
+                         decoration: BoxDecoration(
+                           color: tokens.surfaceAlt.withValues(alpha: 0.68),
+                           borderRadius: BorderRadius.circular(AppRadii.lg),
+                           border: Border.all(color: tokens.border),
+                         ),
+                         child: Row(
+                           children: [
+                             Container(
+                               height: 46,
+                               width: 46,
+                               decoration: BoxDecoration(
+                                 color: tokens.primary.withValues(alpha: 0.12),
+                                 borderRadius: BorderRadius.circular(
+                                   AppRadii.md,
+                                 ),
+                               ),
+                               child: Icon(
+                                 Icons.person_add_alt_1_rounded,
+                                 color: tokens.primary,
+                               ),
+                             ),
+                             const SizedBox(width: AppSpacing.md),
+                             Expanded(
+                               child: Column(
+                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                 children: [
+                                   Text(
+                                     'Create your account',
+                                     style: Theme.of(context)
+                                         .textTheme
+                                         .titleLarge,
+                                   ),
+                                   const SizedBox(height: AppSpacing.xs),
+                                   Text(
+                                     'Set up your Luqmah profile with your name, phone number, and Hashemite University email.',
+                                     style: Theme.of(context)
+                                         .textTheme
+                                         .bodyMedium
+                                         ?.copyWith(
+                                           color: context.luqmah.mutedText,
+                                         ),
+                                   ),
+                                 ],
+                               ),
+                             ),
+                           ],
+                         ),
+                       ),
+                       const SizedBox(height: AppSpacing.xl),
+                       Text(
+                         'Profile details',
+                         style: Theme.of(context).textTheme.titleMedium,
+                       ),
+                       const SizedBox(height: AppSpacing.lg),
+                       TextFormField(
+                         controller: _nameController,
+                         textCapitalization: TextCapitalization.words,
+                         decoration: const InputDecoration(
+                           labelText: 'Full name',
+                           hintText: 'Your full name',
+                           prefixIcon: Icon(Icons.person_outline_rounded),
+                         ),
+                         validator: validateCustomerDisplayName,
+                       ),
+                       const SizedBox(height: AppSpacing.lg),
+                       TextFormField(
+                         controller: _phoneController,
+                         keyboardType: TextInputType.phone,
+                         decoration: const InputDecoration(
+                           labelText: 'Phone number',
+                           hintText: '07...',
+                           prefixIcon: Icon(Icons.phone_outlined),
+                         ),
+                         validator: validateCustomerPhoneNumber,
+                       ),
+                       const SizedBox(height: AppSpacing.xl),
+                       Text(
+                         'Account access',
+                         style: Theme.of(context).textTheme.titleMedium,
+                       ),
+                       const SizedBox(height: AppSpacing.lg),
+                       TextFormField(
+                         controller: _emailController,
+                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
                           labelText: 'HU email',
                           hintText: 'your_id@hu.edu.jo',

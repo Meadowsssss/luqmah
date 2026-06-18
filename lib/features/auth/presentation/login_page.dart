@@ -242,13 +242,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: tokens.surface,
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              tokens.surface,
+                              tokens.surfaceAlt.withValues(alpha: 0.92),
+                            ],
+                          ),
                           borderRadius: BorderRadius.circular(AppRadii.hero),
                           border: Border.all(color: tokens.border),
                           boxShadow: [
                             BoxShadow(
-                              color: tokens.primary.withValues(alpha: 0.10),
-                              blurRadius: 36,
+                              color: tokens.primary.withValues(alpha: 0.08),
+                              blurRadius: 26,
                               offset: const Offset(0, 16),
                             ),
                           ],
@@ -292,24 +299,59 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 padding: const EdgeInsets.all(AppSpacing.xxl),
                                 child: ConstrainedBox(
                                   constraints: const BoxConstraints(
-                                    maxWidth: 250,
+                                    maxWidth: 320,
                                   ),
-                                   child: Column(
-                                     crossAxisAlignment:
-                                         CrossAxisAlignment.start,
-                                     children: [
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Image.asset(
+                                        'assets/Luqmah_transparent.png',
+                                        height: 42,
+                                        fit: BoxFit.contain,
+                                      ),
+                                      const SizedBox(height: AppSpacing.lg),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: tokens.primary.withValues(
+                                            alpha: 0.10,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _vendorMode
+                                              ? 'Vendor workspace access'
+                                              : 'Customer sign in',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: tokens.primary,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: AppSpacing.lg),
                                       GestureDetector(
                                         onLongPress: _promptAdminCode,
                                         child: Text(
                                           'Welcome back to Luqmah',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.headlineLarge,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineMedium,
                                         ),
                                       ),
-                                      const SizedBox(height: AppSpacing.md),
+                                      const SizedBox(height: AppSpacing.sm),
                                       Text(
-                                        'Sign in as a customer or vendor. Admin access stays hidden behind the private entry code.',
+                                        _vendorMode
+                                            ? 'Sign in to manage orders, menus, and your storefront from one place.'
+                                            : 'Sign in to browse campus favourites, track orders, and get back to checkout quickly.',
                                         style: mutedTextStyle,
                                       ),
                                     ],
@@ -328,11 +370,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              Text(
+                                'Choose how you are signing in',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                'Customer and vendor access share one screen, with a clearer path for each role.',
+                                style: mutedTextStyle?.copyWith(fontSize: 13),
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
                               SegmentedButton<bool>(
                                 style: ButtonStyle(
                                   visualDensity: VisualDensity.standard,
                                   padding: WidgetStateProperty.all(
-                                    const EdgeInsets.symmetric(vertical: 12),
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                  ),
+                                  backgroundColor: WidgetStateProperty.resolveWith(
+                                    (states) => states.contains(WidgetState.selected)
+                                        ? tokens.primary.withValues(alpha: 0.12)
+                                        : tokens.surfaceAlt.withValues(alpha: 0.6),
                                   ),
                                   side: WidgetStateProperty.all(
                                     BorderSide(color: tokens.border),
@@ -367,6 +424,67 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                           _error = null;
                                         });
                                       },
+                              ),
+                              const SizedBox(height: AppSpacing.xl),
+                              Container(
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                decoration: BoxDecoration(
+                                  color: tokens.surfaceAlt.withValues(alpha: 0.72),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.lg,
+                                  ),
+                                  border: Border.all(color: tokens.border),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      height: 38,
+                                      width: 38,
+                                      decoration: BoxDecoration(
+                                        color: tokens.primary.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadii.md,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        _vendorMode
+                                            ? Icons.storefront_rounded
+                                            : Icons.person_rounded,
+                                        color: tokens.primary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.md),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _vendorMode
+                                                ? 'Vendor access'
+                                                : 'Customer access',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                          const SizedBox(height: AppSpacing.xs),
+                                          Text(
+                                            _vendorMode
+                                                ? 'Manage restaurant operations and monitor incoming orders.'
+                                                : 'Browse restaurants, manage your cart, and follow order updates.',
+                                            style: mutedTextStyle?.copyWith(
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: AppSpacing.xl),
                               TextFormField(
