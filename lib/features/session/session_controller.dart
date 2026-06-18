@@ -30,6 +30,8 @@ final sessionControllerProvider = ChangeNotifierProvider<SessionController>((
 });
 
 class SessionController extends ChangeNotifier {
+  static const _minimumStartupLoadingDuration = Duration(seconds: 2);
+
   SessionController({
     required AuthRepository authRepository,
     required BackendAuthRepository backendAuthRepository,
@@ -62,9 +64,15 @@ class SessionController extends ChangeNotifier {
       notifyListeners();
     }
 
+    final minimumLoading = showLoading
+        ? Future<void>.delayed(_minimumStartupLoadingDuration)
+        : null;
     final next = await _sessionRepository.buildSnapshot(
       _authRepository.currentUser,
     );
+    if (minimumLoading != null) {
+      await minimumLoading;
+    }
     _snapshot = next;
     notifyListeners();
 

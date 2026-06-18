@@ -294,34 +294,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   constraints: const BoxConstraints(
                                     maxWidth: 250,
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            height: 14,
-                                            width: 14,
-                                            decoration: BoxDecoration(
-                                              color: tokens.primary,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          const SizedBox(width: AppSpacing.sm),
-                                          Text(
-                                            'Luqmah',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleLarge
-                                                ?.copyWith(
-                                                  color: tokens.primary,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: AppSpacing.xxl),
+                                   child: Column(
+                                     crossAxisAlignment:
+                                         CrossAxisAlignment.start,
+                                     children: [
                                       GestureDetector(
                                         onLongPress: _promptAdminCode,
                                         child: Text(

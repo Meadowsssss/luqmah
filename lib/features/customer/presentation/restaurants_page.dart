@@ -34,9 +34,10 @@ class RestaurantsPage extends ConsumerWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Luqmah',
-              style: textTheme.titleLarge?.copyWith(color: tokens.primary),
+            Image.asset(
+              'assets/Luqmah_transparent.png',
+              height: 28,
+              fit: BoxFit.contain,
             ),
             Text(
               'Campus favourites, ready when you are',
