@@ -370,16 +370,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Text(
-                                'Choose how you are signing in',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              Text(
-                                'Customer and vendor access share one screen, with a clearer path for each role.',
-                                style: mutedTextStyle?.copyWith(fontSize: 13),
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
                               SegmentedButton<bool>(
                                 style: ButtonStyle(
                                   visualDensity: VisualDensity.standard,
@@ -388,8 +378,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   ),
                                   backgroundColor: WidgetStateProperty.resolveWith(
                                     (states) => states.contains(WidgetState.selected)
-                                        ? tokens.primary.withValues(alpha: 0.12)
+                                        ? tokens.primary
                                         : tokens.surfaceAlt.withValues(alpha: 0.6),
+                                  ),
+                                  foregroundColor: WidgetStateProperty.resolveWith(
+                                    (states) => states.contains(WidgetState.selected)
+                                        ? Colors.white
+                                        : tokens.strongText,
                                   ),
                                   side: WidgetStateProperty.all(
                                     BorderSide(color: tokens.border),
@@ -463,8 +458,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                         children: [
                                           Text(
                                             _vendorMode
-                                                ? 'Vendor access'
-                                                : 'Customer access',
+                                                ? 'Managing your restaurant'
+                                                : 'Ordering for yourself',
                                             style: Theme.of(
                                               context,
                                             ).textTheme.bodyMedium?.copyWith(
@@ -474,8 +469,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                           const SizedBox(height: AppSpacing.xs),
                                           Text(
                                             _vendorMode
-                                                ? 'Manage restaurant operations and monitor incoming orders.'
-                                                : 'Browse restaurants, manage your cart, and follow order updates.',
+                                                ? 'Track incoming orders, update your menu, and keep your storefront running smoothly.'
+                                                : 'Browse campus favourites, manage your cart, and keep up with your orders.',
                                             style: mutedTextStyle?.copyWith(
                                               fontSize: 13,
                                             ),

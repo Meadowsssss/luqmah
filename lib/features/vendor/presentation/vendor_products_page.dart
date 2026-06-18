@@ -261,11 +261,19 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                         ).textTheme.titleMedium,
                                       ),
                                       const SizedBox(height: AppSpacing.xs),
-                                      Text(
-                                        '${item.restaurantTitle} · ${item.category}${item.isAvailable ? '' : ' · Unavailable'}',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall,
+                                      Wrap(
+                                        spacing: AppSpacing.sm,
+                                        runSpacing: AppSpacing.xs,
+                                        children: [
+                                          _ProductMetaPill(
+                                            icon: Icons.storefront_outlined,
+                                            label: item.restaurantTitle,
+                                          ),
+                                          _ProductMetaPill(
+                                            icon: Icons.label_outline_rounded,
+                                            label: item.category,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -403,6 +411,41 @@ class _ProductThumb extends StatelessWidget {
                 errorBuilder: (_, __, ___) =>
                     Icon(Icons.fastfood_rounded, color: context.luqmah.primary),
               ),
+      ),
+    );
+  }
+}
+
+class _ProductMetaPill extends StatelessWidget {
+  const _ProductMetaPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: tokens.surfaceAlt.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: tokens.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: tokens.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tokens.strongText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

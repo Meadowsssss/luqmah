@@ -192,15 +192,16 @@ class _VendorOrderDetailsPageState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          height: 42,
-                          width: 42,
+                          height: 48,
+                          width: 48,
                           decoration: BoxDecoration(
                             color: context.luqmah.primary.withValues(
                               alpha: 0.12,
                             ),
-                            borderRadius: BorderRadius.circular(AppRadii.md),
+                            borderRadius: BorderRadius.circular(AppRadii.lg),
                           ),
                           child: Icon(
                             Icons.person_rounded,
@@ -209,23 +210,29 @@ class _VendorOrderDetailsPageState
                         ),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
-                          child: Text(
-                            order.customerName,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: context.luqmah.surfaceAlt,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            order.id,
-                            style: Theme.of(context).textTheme.bodySmall,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                order.customerName,
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Wrap(
+                                spacing: AppSpacing.sm,
+                                runSpacing: AppSpacing.xs,
+                                children: [
+                                  _DetailMetaPill(
+                                    icon: Icons.receipt_long_outlined,
+                                    label: order.id,
+                                  ),
+                                  _DetailMetaPill(
+                                    icon: Icons.schedule_rounded,
+                                    label: formatter.format(order.dateTime),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -244,14 +251,9 @@ class _VendorOrderDetailsPageState
                           ? 'No phone number added'
                           : order.customerPhone,
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      formatter.format(order.dateTime),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
                     if (order.status == VendorOrderStatus.inProgress &&
                         order.estimatedReadyAt != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
+                      const SizedBox(height: AppSpacing.sm),
                       Text(
                         'Expected by ${DateFormat('hh:mm a').format(order.estimatedReadyAt!)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -260,6 +262,21 @@ class _VendorOrderDetailsPageState
                         ),
                       ),
                     ],
+                    const SizedBox(height: AppSpacing.lg),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        _DetailMetaPill(
+                          icon: Icons.inventory_2_outlined,
+                          label: '${order.items.length} items',
+                        ),
+                        _DetailMetaPill(
+                          icon: Icons.payments_outlined,
+                          label: '${order.total.toStringAsFixed(2)} JD',
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: AppSpacing.lg),
                     if (blacklistEntryAsync.isLoading)
                       const SizedBox(
@@ -318,7 +335,11 @@ class _VendorOrderDetailsPageState
                     const SizedBox(height: AppSpacing.md),
                     for (final item in order.items) ...[
                       _OrderItemRow(item: item),
-                      if (item != order.items.last) const Divider(),
+                      if (item != order.items.last)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                          child: Divider(height: 1),
+                        ),
                     ],
                   ],
                 ),
@@ -441,6 +462,41 @@ class _ContactLine extends StatelessWidget {
           child: Text(value, style: Theme.of(context).textTheme.bodySmall),
         ),
       ],
+    );
+  }
+}
+
+class _DetailMetaPill extends StatelessWidget {
+  const _DetailMetaPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: tokens.surfaceAlt.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: tokens.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: tokens.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tokens.strongText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
+import '../../../features/customer/data/restaurant_repository.dart';
 import '../../../features/customer/orders/customer_orders_controller.dart';
 import '../../../models/customer_order.dart';
+import '../../../models/restaurant.dart';
 import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_surface_card.dart';
@@ -139,6 +141,10 @@ class _OrderHistoryCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formatter = DateFormat('dd MMM yyyy, hh:mm a');
+    final restaurantAsync = order.restaurantId.isEmpty
+        ? null
+        : ref.watch(restaurantByIdProvider(order.restaurantId));
+    final restaurant = restaurantAsync?.valueOrNull;
     final statusColor = switch (order.status) {
       VendorOrderStatus.accepted => context.luqmah.success,
       VendorOrderStatus.inProgress => context.luqmah.warning,
@@ -153,7 +159,10 @@ class _OrderHistoryCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _OrderRestaurantThumbnail(restaurant: restaurant),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,9 +172,19 @@ class _OrderHistoryCard extends ConsumerWidget {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      order.id,
-                      style: Theme.of(context).textTheme.bodySmall,
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        _OrderMetaPill(
+                          icon: Icons.receipt_long_outlined,
+                          label: order.id,
+                        ),
+                        _OrderMetaPill(
+                          icon: Icons.schedule_rounded,
+                          label: formatter.format(order.placedAt),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -189,16 +208,11 @@ class _OrderHistoryCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.lg),
           _OrderProgressTrack(status: order.status, color: statusColor),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            formatter.format(order.placedAt),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
           if (order.status == VendorOrderStatus.inProgress &&
               order.estimatedReadyAt != null) ...[
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               'Expected by ${DateFormat('hh:mm a').format(order.estimatedReadyAt!)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -346,6 +360,91 @@ class _SavedRating extends StatelessWidget {
             color: const Color(0xFFD1A340),
           ),
       ],
+    );
+  }
+}
+
+class _OrderMetaPill extends StatelessWidget {
+  const _OrderMetaPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: tokens.surfaceAlt.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: tokens.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: tokens.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tokens.strongText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrderRestaurantThumbnail extends StatelessWidget {
+  const _OrderRestaurantThumbnail({required this.restaurant});
+
+  final Restaurant? restaurant;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+    final imageUrl = restaurant?.image.trim() ?? '';
+
+    if (imageUrl.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        child: SizedBox(
+          height: 68,
+          width: 68,
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _OrderRestaurantPlaceholder(tokens: tokens),
+          ),
+        ),
+      );
+    }
+
+    return _OrderRestaurantPlaceholder(tokens: tokens);
+  }
+}
+
+class _OrderRestaurantPlaceholder extends StatelessWidget {
+  const _OrderRestaurantPlaceholder({required this.tokens});
+
+  final LuqmahThemeTokens tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 68,
+      width: 68,
+      decoration: BoxDecoration(
+        color: tokens.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(color: tokens.border),
+      ),
+      alignment: Alignment.center,
+      child: Icon(Icons.storefront_rounded, color: tokens.primary),
     );
   }
 }

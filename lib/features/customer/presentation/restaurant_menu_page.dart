@@ -374,9 +374,9 @@ class _CheckoutFloatingButton extends StatelessWidget {
             curve: Curves.easeOut,
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => context.push('/cart'),
-                style: ElevatedButton.styleFrom(
+               child: ElevatedButton.icon(
+                 onPressed: () => context.go('/cart'),
+                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.luqmah.primary,
                   foregroundColor: Colors.white,
                   elevation: 12,

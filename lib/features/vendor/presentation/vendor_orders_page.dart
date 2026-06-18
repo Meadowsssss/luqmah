@@ -193,16 +193,30 @@ class _VendorOrderCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(order.id, style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: AppSpacing.xs),
                       Text(
-                        '${order.customerName} · ${formatter.format(order.dateTime)}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        order.customerName,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.xs,
+                        children: [
+                          _OrderMetaPill(
+                            icon: Icons.receipt_long_outlined,
+                            label: order.id,
+                          ),
+                          _OrderMetaPill(
+                            icon: Icons.schedule_rounded,
+                            label: formatter.format(order.dateTime),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -221,11 +235,19 @@ class _VendorOrderCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text(
-              '${order.items.length} items · ${order.total.toStringAsFixed(2)} JD',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.xs,
+              children: [
+                _OrderMetaPill(
+                  icon: Icons.inventory_2_outlined,
+                  label: '${order.items.length} items',
+                ),
+                _OrderMetaPill(
+                  icon: Icons.payments_outlined,
+                  label: '${order.total.toStringAsFixed(2)} JD',
+                ),
+              ],
             ),
             if (order.status == VendorOrderStatus.inProgress && order.estimatedReadyAt != null) ...[
               const SizedBox(height: AppSpacing.sm),
@@ -239,6 +261,41 @@ class _VendorOrderCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _OrderMetaPill extends StatelessWidget {
+  const _OrderMetaPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: tokens.surfaceAlt.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: tokens.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: tokens.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tokens.strongText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
