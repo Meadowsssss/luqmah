@@ -311,33 +311,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                         fit: BoxFit.contain,
                                       ),
                                       const SizedBox(height: AppSpacing.lg),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: tokens.primary.withValues(
-                                            alpha: 0.10,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            999,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _vendorMode
-                                              ? 'Vendor workspace access'
-                                              : 'Customer sign in',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: tokens.primary,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: AppSpacing.lg),
                                       GestureDetector(
                                         onLongPress: _promptAdminCode,
                                         child: Text(
@@ -350,8 +323,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                       const SizedBox(height: AppSpacing.sm),
                                       Text(
                                         _vendorMode
-                                            ? 'Sign in to manage orders, menus, and your storefront from one place.'
-                                            : 'Sign in to browse campus favourites, track orders, and get back to checkout quickly.',
+                                            ? 'Sign in to track incoming orders, update your menu, and keep your storefront running smoothly.'
+                                            : 'Sign in to browse campus favourites, manage your cart, and keep up with your orders.',
                                         style: mutedTextStyle,
                                       ),
                                     ],
@@ -419,67 +392,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                           _error = null;
                                         });
                                       },
-                              ),
-                              const SizedBox(height: AppSpacing.xl),
-                              Container(
-                                padding: const EdgeInsets.all(AppSpacing.md),
-                                decoration: BoxDecoration(
-                                  color: tokens.surfaceAlt.withValues(alpha: 0.72),
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadii.lg,
-                                  ),
-                                  border: Border.all(color: tokens.border),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      height: 38,
-                                      width: 38,
-                                      decoration: BoxDecoration(
-                                        color: tokens.primary.withValues(
-                                          alpha: 0.12,
-                                        ),
-                                        borderRadius: BorderRadius.circular(
-                                          AppRadii.md,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        _vendorMode
-                                            ? Icons.storefront_rounded
-                                            : Icons.person_rounded,
-                                        color: tokens.primary,
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.md),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            _vendorMode
-                                                ? 'Managing your restaurant'
-                                                : 'Ordering for yourself',
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.bodyMedium?.copyWith(
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                          const SizedBox(height: AppSpacing.xs),
-                                          Text(
-                                            _vendorMode
-                                                ? 'Track incoming orders, update your menu, and keep your storefront running smoothly.'
-                                                : 'Browse campus favourites, manage your cart, and keep up with your orders.',
-                                            style: mutedTextStyle?.copyWith(
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
                               const SizedBox(height: AppSpacing.xl),
                               TextFormField(

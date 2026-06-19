@@ -152,7 +152,7 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Add and review menu items with the same Luqmah design system used on the customer side.',
+                  'Add dishes, update items, and keep your menu ready to order from.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: context.luqmah.mutedText,
                   ),
@@ -217,14 +217,28 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                       scrollDirection: Axis.horizontal,
                       itemCount: categoryEntries.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 8),
-                      itemBuilder: (context, index) {
-                        final category = categoryEntries[index];
-                        return ChoiceChip(
-                          label: Text(category.value),
-                          selected: effectiveSelectedCategoryId == category.key,
-                          onSelected: (_) {
-                            setState(() => _selectedCategoryId = category.key);
-                          },
+                        itemBuilder: (context, index) {
+                          final category = categoryEntries[index];
+                          return ChoiceChip(
+                            backgroundColor: Colors.transparent,
+                            selectedColor: Colors.transparent,
+                            side: BorderSide(
+                              color: effectiveSelectedCategoryId == category.key
+                                  ? context.luqmah.primary.withValues(alpha: 0.45)
+                                  : context.luqmah.border,
+                            ),
+                            labelStyle: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: effectiveSelectedCategoryId == category.key
+                                      ? context.luqmah.primary
+                                      : context.luqmah.strongText,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                            label: Text(category.value),
+                            selected: effectiveSelectedCategoryId == category.key,
+                            onSelected: (_) {
+                              setState(() => _selectedCategoryId = category.key);
+                            },
                         );
                       },
                     ),
@@ -284,12 +298,15 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: item.isAvailable
-                                        ? context.luqmah.primary.withValues(
-                                            alpha: 0.10,
-                                          )
-                                        : context.luqmah.surfaceAlt,
+                                    color: Colors.transparent,
                                     borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color: item.isAvailable
+                                          ? context.luqmah.primary.withValues(
+                                              alpha: 0.4,
+                                            )
+                                          : context.luqmah.border,
+                                    ),
                                   ),
                                   child: Text(
                                     item.isAvailable ? 'Available' : 'Hidden',
@@ -429,7 +446,7 @@ class _ProductMetaPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: tokens.surfaceAlt.withValues(alpha: 0.78),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: tokens.border),
       ),

@@ -350,26 +350,20 @@ class _VendorOrderDetailsPageState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Status',
+                      'Order status',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Move this order through the kitchen workflow.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
                     const SizedBox(height: AppSpacing.md),
-                    if (allowedTransitions.isEmpty)
-                      Text(
-                        'Current status: ${order.status.label}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      )
-                    else
+                    if (allowedTransitions.isEmpty) ...[
+                      _StatusBadge(status: order.status),
+                    ] else ...[
+                      _StatusBadge(status: order.status),
+                      const SizedBox(height: AppSpacing.md),
                       DropdownButtonFormField<VendorOrderStatus>(
                         key: ValueKey(
                           'vendor-order-status-${order.id}-${order.status.name}',
                         ),
-                        hint: Text('Current: ${order.status.label}'),
+                        hint: Text('Update status'),
                         items: allowedTransitions
                             .map(
                               (status) => DropdownMenuItem(
@@ -422,6 +416,7 @@ class _VendorOrderDetailsPageState
                                 }
                               },
                       ),
+                    ],
                     if (_isUpdatingStatus) ...[
                       const SizedBox(height: AppSpacing.sm),
                       Text(
@@ -430,10 +425,19 @@ class _VendorOrderDetailsPageState
                       ),
                     ],
                     const SizedBox(height: AppSpacing.lg),
-                    _SummaryRow(
-                      label: 'Grand total',
-                      value: '${order.total.toStringAsFixed(2)} JD',
-                      strong: true,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Grand total',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        Text(
+                          '${order.total.toStringAsFixed(2)} JD',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -479,7 +483,7 @@ class _DetailMetaPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: tokens.surfaceAlt.withValues(alpha: 0.78),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: tokens.border),
       ),
@@ -542,27 +546,31 @@ class _OrderItemRow extends StatelessWidget {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({
-    required this.label,
-    required this.value,
-    this.strong = false,
-  });
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.status});
 
-  final String label;
-  final String value;
-  final bool strong;
+  final VendorOrderStatus status;
 
   @override
   Widget build(BuildContext context) {
-    final style = strong
-        ? Theme.of(context).textTheme.titleMedium
-        : Theme.of(context).textTheme.bodyMedium;
-    return Row(
-      children: [
-        Expanded(child: Text(label, style: style)),
-        Text(value, style: style),
-      ],
+    final color = switch (status) {
+      VendorOrderStatus.accepted => context.luqmah.success,
+      VendorOrderStatus.inProgress => context.luqmah.warning,
+      VendorOrderStatus.ready => context.luqmah.info,
+      VendorOrderStatus.completed => context.luqmah.mutedText,
+      VendorOrderStatus.cancelled => AppColors.error,
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        status.label,
+        style: TextStyle(color: color, fontWeight: FontWeight.w700),
+      ),
     );
   }
 }

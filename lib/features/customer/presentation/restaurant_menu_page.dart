@@ -36,7 +36,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(title: const Text('Restaurant menu')),
         body: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: AppEmptyState(
@@ -49,7 +49,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
       data: (restaurant) {
         if (restaurant == null) {
           return Scaffold(
-            appBar: AppBar(),
+            appBar: AppBar(title: const Text('Restaurant menu')),
             body: const Padding(
               padding: EdgeInsets.all(AppSpacing.lg),
               child: AppEmptyState(
@@ -90,7 +90,13 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
         final tokens = context.luqmah;
 
         return Scaffold(
-          appBar: AppBar(),
+          appBar: AppBar(
+            title: Text(
+              restaurant.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           body: Stack(
             children: [
               RefreshIndicator(

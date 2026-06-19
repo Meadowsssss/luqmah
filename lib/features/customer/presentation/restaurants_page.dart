@@ -532,12 +532,16 @@ class _CategoryBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.luqmah;
     final backgroundColor = switch (tone) {
-      _BadgeTone.neutral => tokens.surfaceAlt,
+      _BadgeTone.neutral => Colors.transparent,
       _BadgeTone.warning => tokens.warning.withValues(alpha: 0.12),
     };
     final foregroundColor = switch (tone) {
       _BadgeTone.neutral => tokens.strongText,
       _BadgeTone.warning => tokens.warning,
+    };
+    final borderColor = switch (tone) {
+      _BadgeTone.neutral => tokens.border,
+      _BadgeTone.warning => tokens.warning.withValues(alpha: 0.26),
     };
 
     return Container(
@@ -545,6 +549,7 @@ class _CategoryBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: borderColor),
       ),
       child: Text(
         label,

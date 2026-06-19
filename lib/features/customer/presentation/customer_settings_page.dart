@@ -284,14 +284,14 @@ class CustomerSettingsPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _SectionIntro(
-                  icon: Icons.tune_rounded,
-                  title: 'Preferences',
-                  subtitle: 'Adjust how Luqmah feels day to day without digging through raw settings blocks.',
+                  icon: Icons.palette_outlined,
+                  title: 'Appearance',
+                  subtitle: 'Choose how Luqmah looks for you.',
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Container(
                   decoration: BoxDecoration(
-                    color: tokens.surfaceAlt.withValues(alpha: 0.6),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(AppRadii.lg),
                     border: Border.all(color: tokens.border),
                   ),
@@ -304,7 +304,6 @@ class CustomerSettingsPage extends ConsumerWidget {
                       'Dark mode',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    subtitle: const Text('Use a darker premium Luqmah theme.'),
                     value: themeMode.isDark,
                     onChanged: (value) => ref
                         .read(themeModeControllerProvider)
@@ -358,7 +357,7 @@ class CustomerSettingsPage extends ConsumerWidget {
                 _SectionIntro(
                   icon: Icons.receipt_long_rounded,
                   title: 'Orders',
-                  subtitle: 'See what you ordered last and jump back into your full order history.',
+                  subtitle: 'See your recent activity and view your full order history here.',
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 recentOrders.when(
@@ -441,23 +440,10 @@ class CustomerSettingsPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          AppSurfaceCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SectionIntro(
-                  icon: Icons.logout_rounded,
-                  title: 'Session',
-                  subtitle: 'Sign out when you want to return to the Luqmah entry flow.',
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                ElevatedButton.icon(
-                  onPressed: () => ref.read(sessionControllerProvider).logout(),
-                  icon: const Icon(Icons.logout_rounded),
-                  label: const Text('Sign out'),
-                ),
-              ],
-            ),
+          FilledButton.icon(
+            onPressed: () => ref.read(sessionControllerProvider).logout(),
+            icon: const Icon(Icons.logout_rounded),
+            label: const Text('Sign out'),
           ),
         ],
       ),

@@ -63,7 +63,7 @@ class _VendorOrdersPageState extends ConsumerState<VendorOrdersPage> {
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
-                            'Track what is active now, keep your history tidy, and respond faster from one calmer workspace.',
+                            'See what’s active now and review past orders here.',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: context.luqmah.mutedText,
                             ),
@@ -94,12 +94,27 @@ class _VendorOrdersPageState extends ConsumerState<VendorOrdersPage> {
                 const SizedBox(height: AppSpacing.lg),
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: context.luqmah.surfaceAlt.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(AppRadii.lg),
-                    border: Border.all(color: context.luqmah.border),
-                  ),
-                  child: SegmentedButton<bool>(
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                      border: Border.all(color: context.luqmah.border),
+                    ),
+                    child: SegmentedButton<bool>(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.resolveWith(
+                          (states) => states.contains(WidgetState.selected)
+                              ? context.luqmah.primary
+                              : Colors.transparent,
+                        ),
+                        side: WidgetStateProperty.all(
+                          BorderSide(color: Colors.transparent),
+                        ),
+                        foregroundColor: WidgetStateProperty.resolveWith(
+                          (states) => states.contains(WidgetState.selected)
+                              ? Colors.white
+                              : context.luqmah.mutedText,
+                        ),
+                      ),
                     showSelectedIcon: false,
                     segments: const [
                       ButtonSegment<bool>(value: false, label: Text('Active')),
@@ -279,7 +294,7 @@ class _OrderMetaPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: tokens.surfaceAlt.withValues(alpha: 0.78),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: tokens.border),
       ),

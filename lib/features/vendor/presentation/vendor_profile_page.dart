@@ -14,9 +14,6 @@ import '../../../shared/widgets/app_surface_card.dart';
 class VendorProfilePage extends ConsumerWidget {
   const VendorProfilePage({super.key});
 
-  static const _busyMessage =
-      'This restaurant is busy right now. You can browse the menu, but ordering is temporarily unavailable.';
-
   Future<void> _showVendorPasswordDialog(
     BuildContext context,
     WidgetRef ref,
@@ -131,11 +128,13 @@ class VendorProfilePage extends ConsumerWidget {
     final vendorData = ref.watch(vendorDataControllerProvider);
     final blacklist = ref.watch(vendorBlacklistControllerProvider);
     final themeMode = ref.watch(themeModeControllerProvider);
+    final displayName = session.displayName.trim();
+    final leadingInitial =
+        displayName.isEmpty ? 'V' : displayName.characters.first.toUpperCase();
 
     return Scaffold(
-      appBar: AppBar(),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         children: [
           AppSurfaceCard(
             child: Column(
@@ -148,11 +147,15 @@ class VendorProfilePage extends ConsumerWidget {
                       width: 56,
                       decoration: BoxDecoration(
                         color: context.luqmah.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadii.lg),
+                        shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        Icons.storefront_rounded,
-                        color: context.luqmah.primary,
+                      alignment: Alignment.center,
+                      child: Text(
+                        leadingInitial,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: context.luqmah.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.lg),
@@ -161,7 +164,7 @@ class VendorProfilePage extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Vendor workspace',
+                            displayName.isEmpty ? 'Vendor workspace' : displayName,
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: AppSpacing.xs),
@@ -199,7 +202,7 @@ class VendorProfilePage extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.xs),
                             Text(
                               session.email.isEmpty
-                                  ? 'Vendor account'
+                                  ? 'No email available'
                                   : session.email,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
@@ -342,18 +345,26 @@ class VendorProfilePage extends ConsumerWidget {
                 _VendorSectionIntro(
                   icon: Icons.palette_outlined,
                   title: 'Appearance',
-                  subtitle: 'Keep your workspace comfortable while preserving the same visual language used across Luqmah.',
+                  subtitle: 'Choose how Luqmah looks for you.',
                 ),
-                const SizedBox(height: AppSpacing.md),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Dark mode'),
-                  subtitle: const Text(
-                    'Use a darker premium Luqmah workspace.',
+                const SizedBox(height: AppSpacing.lg),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    border: Border.all(color: context.luqmah.border),
                   ),
-                  value: themeMode.isDark,
-                  onChanged: (value) =>
-                      ref.read(themeModeControllerProvider).setDarkMode(value),
+                  child: SwitchListTile.adaptive(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.xs,
+                    ),
+                    title: const Text('Dark mode'),
+                    value: themeMode.isDark,
+                    onChanged: (value) => ref
+                        .read(themeModeControllerProvider)
+                        .setDarkMode(value),
+                  ),
                 ),
               ],
             ),
@@ -416,7 +427,8 @@ class VendorProfilePage extends ConsumerWidget {
                 _VendorSectionIntro(
                   icon: Icons.schedule_rounded,
                   title: 'Restaurant availability',
-                  subtitle: _busyMessage,
+                  subtitle:
+                      'Choose whether customers can order from your restaurant right now.',
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 vendorData.when(
@@ -493,10 +505,38 @@ class _BusyToggleTileState extends ConsumerState<_BusyToggleTile> {
 
   @override
   Widget build(BuildContext context) {
+    final isBusy = widget.restaurant.isBusy;
+    final tokens = context.luqmah;
+    final statusColor = isBusy ? context.luqmah.warning : context.luqmah.primary;
+
     return SwitchListTile.adaptive(
       contentPadding: EdgeInsets.zero,
       title: Text(widget.restaurant.title),
-      subtitle: Text(widget.restaurant.isBusy ? 'Busy' : 'Available'),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.xs),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: isBusy ? statusColor.withValues(alpha: 0.12) : Colors.transparent,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: isBusy
+                    ? statusColor.withValues(alpha: 0.30)
+                    : tokens.primary.withValues(alpha: 0.40),
+              ),
+            ),
+            child: Text(
+              isBusy ? 'Busy' : 'Available',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+        ),
+      ),
       value: widget.restaurant.isBusy,
       onChanged: _saving
           ? null
