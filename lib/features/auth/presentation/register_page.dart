@@ -21,8 +21,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _loading = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   String? _error;
 
   @override
@@ -31,6 +33,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -184,9 +187,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         },
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
+                       TextFormField(
+                         controller: _passwordController,
+                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           labelText: 'Password',
                           prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -201,17 +204,48 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             ),
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Password is required';
-                          }
+                         validator: (value) {
+                           if (value == null || value.isEmpty) {
+                             return 'Password is required';
+                           }
                           if (value.length < 6) {
                             return 'Minimum 6 characters';
                           }
-                          return null;
-                        },
-                      ),
-                      if (_error != null) ...[
+                           return null;
+                         },
+                       ),
+                       const SizedBox(height: AppSpacing.lg),
+                       TextFormField(
+                         controller: _confirmPasswordController,
+                         obscureText: _obscureConfirmPassword,
+                         decoration: InputDecoration(
+                           labelText: 'Confirm password',
+                           prefixIcon: const Icon(Icons.lock_outline_rounded),
+                           suffixIcon: IconButton(
+                             onPressed: () {
+                               setState(
+                                 () => _obscureConfirmPassword =
+                                     !_obscureConfirmPassword,
+                               );
+                             },
+                             icon: Icon(
+                               _obscureConfirmPassword
+                                   ? Icons.visibility_off_outlined
+                                   : Icons.visibility_outlined,
+                             ),
+                           ),
+                         ),
+                         validator: (value) {
+                           if (value == null || value.isEmpty) {
+                             return 'Confirm your password';
+                           }
+                           if (value != _passwordController.text) {
+                             return 'Passwords do not match';
+                           }
+                           return null;
+                         },
+                       ),
+                       if (_error != null) ...[
                         const SizedBox(height: AppSpacing.lg),
                         Text(
                           _error!,

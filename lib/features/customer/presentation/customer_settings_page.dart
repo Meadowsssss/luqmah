@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../app/theme/theme_mode_controller.dart';
@@ -52,6 +53,7 @@ class CustomerSettingsPage extends ConsumerWidget {
   Future<void> _showCustomerPasswordDialog(BuildContext context, WidgetRef ref) async {
     final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
     String? error;
     bool saving = false;
 
@@ -76,6 +78,14 @@ class CustomerSettingsPage extends ConsumerWidget {
                     obscureText: true,
                     decoration: const InputDecoration(labelText: 'New password'),
                   ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: confirmPasswordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Confirm new password',
+                    ),
+                  ),
                   if (error != null) ...[
                     const SizedBox(height: AppSpacing.md),
                     Text(
@@ -94,6 +104,42 @@ class CustomerSettingsPage extends ConsumerWidget {
                   onPressed: saving
                       ? null
                       : () async {
+                          final currentPassword =
+                              currentPasswordController.text.trim();
+                          final newPassword = newPasswordController.text;
+                          final confirmPassword = confirmPasswordController.text;
+
+                          if (currentPassword.isEmpty) {
+                            setState(() {
+                              error = 'Enter your current password.';
+                            });
+                            return;
+                          }
+                          if (newPassword.isEmpty) {
+                            setState(() {
+                              error = 'Enter a new password.';
+                            });
+                            return;
+                          }
+                          if (newPassword.length < 6) {
+                            setState(() {
+                              error = 'Use at least 6 characters.';
+                            });
+                            return;
+                          }
+                          if (confirmPassword.isEmpty) {
+                            setState(() {
+                              error = 'Confirm your new password.';
+                            });
+                            return;
+                          }
+                          if (newPassword != confirmPassword) {
+                            setState(() {
+                              error = 'Passwords do not match.';
+                            });
+                            return;
+                          }
+
                           setState(() {
                             saving = true;
                             error = null;
@@ -101,21 +147,29 @@ class CustomerSettingsPage extends ConsumerWidget {
 
                           try {
                             await ref.read(sessionControllerProvider).changeCustomerPassword(
-                                  currentPassword: currentPasswordController.text,
-                                  newPassword: newPasswordController.text,
+                                  currentPassword: currentPassword,
+                                  newPassword: newPassword,
                                 );
                             if (context.mounted) {
                               Navigator.of(dialogContext).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Customer password updated in Firebase.'),
+                                  content: Text('Your password has been updated'),
                                 ),
                               );
                             }
                           } catch (err) {
                             setState(() {
                               saving = false;
-                              error = formatAuthError(err);
+                              error = err is FirebaseAuthException &&
+                                      (err.code == 'wrong-password' ||
+                                          err.code == 'invalid-credential' ||
+                                          err.code ==
+                                              'invalid-login-credentials' ||
+                                          err.code ==
+                                              'INVALID_LOGIN_CREDENTIALS')
+                                  ? 'Your current password is incorrect.'
+                                  : formatAuthError(err);
                             });
                           }
                         },
@@ -139,6 +193,7 @@ class CustomerSettingsPage extends ConsumerWidget {
 
     currentPasswordController.dispose();
     newPasswordController.dispose();
+    confirmPasswordController.dispose();
   }
 
   @override

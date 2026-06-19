@@ -20,6 +20,7 @@ class VendorProfilePage extends ConsumerWidget {
   ) async {
     final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
     String? error;
     bool saving = false;
 
@@ -48,6 +49,14 @@ class VendorProfilePage extends ConsumerWidget {
                       labelText: 'New password',
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: confirmPasswordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Confirm new password',
+                    ),
+                  ),
                   if (error != null) ...[
                     const SizedBox(height: AppSpacing.md),
                     Text(
@@ -70,6 +79,42 @@ class VendorProfilePage extends ConsumerWidget {
                   onPressed: saving
                       ? null
                       : () async {
+                          final currentPassword =
+                              currentPasswordController.text.trim();
+                          final newPassword = newPasswordController.text;
+                          final confirmPassword = confirmPasswordController.text;
+
+                          if (currentPassword.isEmpty) {
+                            setState(() {
+                              error = 'Enter your current password.';
+                            });
+                            return;
+                          }
+                          if (newPassword.isEmpty) {
+                            setState(() {
+                              error = 'Enter a new password.';
+                            });
+                            return;
+                          }
+                          if (newPassword.length < 8) {
+                            setState(() {
+                              error = 'Use at least 8 characters.';
+                            });
+                            return;
+                          }
+                          if (confirmPassword.isEmpty) {
+                            setState(() {
+                              error = 'Confirm your new password.';
+                            });
+                            return;
+                          }
+                          if (newPassword != confirmPassword) {
+                            setState(() {
+                              error = 'Passwords do not match.';
+                            });
+                            return;
+                          }
+
                           setState(() {
                             saving = true;
                             error = null;
@@ -79,17 +124,14 @@ class VendorProfilePage extends ConsumerWidget {
                             await ref
                                 .read(sessionControllerProvider)
                                 .changeVendorPassword(
-                                  currentPassword:
-                                      currentPasswordController.text,
-                                  newPassword: newPasswordController.text,
+                                  currentPassword: currentPassword,
+                                  newPassword: newPassword,
                                 );
                             if (context.mounted) {
                               Navigator.of(dialogContext).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text(
-                                    'Vendor password updated on the backend.',
-                                  ),
+                                  content: Text('Your password has been updated'),
                                 ),
                               );
                             }
@@ -120,6 +162,7 @@ class VendorProfilePage extends ConsumerWidget {
 
     currentPasswordController.dispose();
     newPasswordController.dispose();
+    confirmPasswordController.dispose();
   }
 
   @override
@@ -376,8 +419,9 @@ class VendorProfilePage extends ConsumerWidget {
               children: [
                 _VendorSectionIntro(
                   icon: Icons.block_rounded,
-                  title: 'Blocked students',
-                  subtitle: 'Review who is restricted from future orders and manage that list with less friction.',
+                  title: 'Blacklisted students',
+                  subtitle:
+                      'Review and manage restricted customers from future orders.',
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
