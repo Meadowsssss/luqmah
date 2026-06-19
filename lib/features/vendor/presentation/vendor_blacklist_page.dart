@@ -6,10 +6,27 @@ import '../../../app/theme/luqmah_theme.dart';
 import '../../../core/network/api_client.dart';
 import '../../../features/vendor/vendor_blacklist_controller.dart';
 import '../../../shared/widgets/app_empty_state.dart';
+import '../../../shared/widgets/premium_page_app_bar.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
-class VendorBlacklistPage extends ConsumerWidget {
+class VendorBlacklistPage extends ConsumerStatefulWidget {
   const VendorBlacklistPage({super.key});
+
+  @override
+  ConsumerState<VendorBlacklistPage> createState() =>
+      _VendorBlacklistPageState();
+}
+
+class _VendorBlacklistPageState extends ConsumerState<VendorBlacklistPage> {
+  bool _isScrolled = false;
+
+  void _handleScroll(double offset) {
+    final next = offset > 0;
+    if (next == _isScrolled) {
+      return;
+    }
+    setState(() => _isScrolled = next);
+  }
 
   Future<void> _removeEntry(
     BuildContext context,
@@ -62,12 +79,17 @@ class VendorBlacklistPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final blacklist = ref.watch(vendorBlacklistControllerProvider);
     final formatter = DateFormat('dd MMM yyyy');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Blocked students')),
+      appBar: PremiumPageAppBar(
+        icon: Icons.block_rounded,
+        title: 'Blacklisted students',
+        subtitle: 'Review and manage restricted customers from future orders.',
+        isScrolled: _isScrolled,
+      ),
       body: blacklist.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Padding(
@@ -84,20 +106,25 @@ class VendorBlacklistPage extends ConsumerWidget {
               padding: EdgeInsets.all(AppSpacing.lg),
               child: AppEmptyState(
                 icon: Icons.shield_outlined,
-                title: 'No blocked students',
+                title: 'No blacklisted students',
                 message:
                     'Students you blacklist will appear here for quick review and unblocking.',
               ),
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            itemCount: entries.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
-            itemBuilder: (context, index) {
-              final entry = entries[index];
-              return AppSurfaceCard(
+          return NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              _handleScroll(notification.metrics.pixels);
+              return false;
+            },
+            child: ListView.separated(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              itemCount: entries.length,
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                return AppSurfaceCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -153,8 +180,9 @@ class VendorBlacklistPage extends ConsumerWidget {
                     ),
                   ],
                 ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),

@@ -8,6 +8,7 @@ import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
 import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
+import '../../../shared/widgets/premium_page_app_bar.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
 class VendorRestaurantEditPage extends ConsumerStatefulWidget {
@@ -23,6 +24,15 @@ class _VendorRestaurantEditPageState
   final _imagePicker = ImagePicker();
   final Map<String, _RestaurantDraft> _draftsByRestaurantId =
       <String, _RestaurantDraft>{};
+  bool _isScrolled = false;
+
+  void _handleScroll(double offset) {
+    final next = offset > 0;
+    if (next == _isScrolled) {
+      return;
+    }
+    setState(() => _isScrolled = next);
+  }
 
   @override
   void dispose() {
@@ -143,7 +153,12 @@ class _VendorRestaurantEditPageState
     final vendorData = ref.watch(vendorDataControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit restaurant')),
+      appBar: PremiumPageAppBar(
+        icon: Icons.edit_rounded,
+        title: 'Edit restaurant',
+        subtitle: 'Update your storefront details and keep everything clear for customers.',
+        isScrolled: _isScrolled,
+      ),
       body: vendorData.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Padding(
@@ -169,9 +184,14 @@ class _VendorRestaurantEditPageState
 
           _syncDrafts(state.restaurants);
 
-          return ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            children: [
+          return NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              _handleScroll(notification.metrics.pixels);
+              return false;
+            },
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              children: [
               for (final restaurant in state.restaurants) ...[
                 _RestaurantEditSection(
                   key: ValueKey('restaurant-${restaurant.id}'),
@@ -193,7 +213,8 @@ class _VendorRestaurantEditPageState
                 if (restaurant != state.restaurants.last)
                   const SizedBox(height: AppSpacing.lg),
               ],
-            ],
+              ],
+            ),
           );
         },
       ),

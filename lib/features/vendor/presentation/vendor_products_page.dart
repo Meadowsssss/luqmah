@@ -6,6 +6,7 @@ import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_surface_card.dart';
+import '../../../shared/widgets/premium_page_app_bar.dart';
 
 class VendorProductsPage extends ConsumerStatefulWidget {
   const VendorProductsPage({super.key});
@@ -18,6 +19,15 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
   static const _allCategory = 'All';
 
   String _selectedCategoryId = _allCategory;
+  bool _isScrolled = false;
+
+  void _handleScroll(double offset) {
+    final next = offset > 0;
+    if (next == _isScrolled) {
+      return;
+    }
+    setState(() => _isScrolled = next);
+  }
 
   Future<void> _toggleAvailability(
     BuildContext context,
@@ -86,9 +96,7 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
     }
 
     try {
-      await ref
-          .read(vendorDataControllerProvider.notifier)
-          .deleteMenuItem(itemId);
+      await ref.read(vendorDataControllerProvider.notifier).deleteMenuItem(itemId);
       if (!context.mounted) {
         return;
       }
@@ -112,7 +120,12 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
     final data = ref.watch(vendorDataControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Products')),
+      appBar: PremiumPageAppBar(
+        icon: Icons.restaurant_menu_rounded,
+        title: 'Products',
+        subtitle: 'Add dishes, update items, and keep your menu ready to order from.',
+        isScrolled: _isScrolled,
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/vendor/products/new'),
         backgroundColor: context.luqmah.primary,
@@ -120,103 +133,69 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add item'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          AppSurfaceCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      height: 42,
-                      width: 42,
-                      decoration: BoxDecoration(
-                        color: context.luqmah.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadii.md),
-                      ),
-                      child: Icon(
-                        Icons.restaurant_menu_rounded,
-                        color: context.luqmah.primary,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Text(
-                        'Menu management',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                  ],
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          _handleScroll(notification.metrics.pixels);
+          return false;
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            data.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.xl),
+                  child: CircularProgressIndicator(),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Add dishes, update items, and keep your menu ready to order from.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: context.luqmah.mutedText,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          data.when(
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(AppSpacing.xl),
-                child: CircularProgressIndicator(),
               ),
-            ),
-            error: (error, _) => AppEmptyState(
-              icon: Icons.error_outline_rounded,
-              title: 'Unable to load products',
-              message: error.toString(),
-            ),
-            data: (state) {
-              final items = state.menuItems;
-              final categoryEntries = <MapEntry<String, String>>[
-                const MapEntry(_allCategory, _allCategory),
-                ...{
-                  for (final item in items) item.categoryId: item.category,
-                }.entries,
-              ];
-              final effectiveSelectedCategoryId =
-                  categoryEntries.any(
-                    (entry) => entry.key == _selectedCategoryId,
-                  )
-                  ? _selectedCategoryId
-                  : _allCategory;
-              final selectedCategoryTitle = categoryEntries
-                  .firstWhere(
-                    (entry) => entry.key == effectiveSelectedCategoryId,
-                  )
-                  .value;
-              final visibleItems = effectiveSelectedCategoryId == _allCategory
-                  ? items
-                  : items
+              error: (error, _) => AppEmptyState(
+                icon: Icons.error_outline_rounded,
+                title: 'Unable to load products',
+                message: error.toString(),
+              ),
+              data: (state) {
+                final items = state.menuItems;
+                final categoryEntries = <MapEntry<String, String>>[
+                  const MapEntry(_allCategory, _allCategory),
+                  ...{
+                    for (final item in items) item.categoryId: item.category,
+                  }.entries,
+                ];
+                final effectiveSelectedCategoryId = categoryEntries.any(
+                      (entry) => entry.key == _selectedCategoryId,
+                    )
+                    ? _selectedCategoryId
+                    : _allCategory;
+                final selectedCategoryTitle = categoryEntries
+                    .firstWhere(
+                      (entry) => entry.key == effectiveSelectedCategoryId,
+                    )
+                    .value;
+                final visibleItems = effectiveSelectedCategoryId == _allCategory
+                    ? items
+                    : items
                         .where(
-                          (item) =>
-                              item.categoryId == effectiveSelectedCategoryId,
+                          (item) => item.categoryId == effectiveSelectedCategoryId,
                         )
                         .toList(growable: false);
-              if (items.isEmpty) {
-                return const AppEmptyState(
-                  icon: Icons.soup_kitchen_outlined,
-                  title: 'No products yet',
-                  message:
-                      'Add your first vendor item to publish it to the customer menu.',
-                );
-              }
 
-              return Column(
-                children: [
-                  SizedBox(
-                    height: 42,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: categoryEntries.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                if (items.isEmpty) {
+                  return const AppEmptyState(
+                    icon: Icons.soup_kitchen_outlined,
+                    title: 'No products yet',
+                    message:
+                        'Add your first vendor item to publish it to the customer menu.',
+                  );
+                }
+
+                return Column(
+                  children: [
+                    SizedBox(
+                      height: 42,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: categoryEntries.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
                           final category = categoryEntries[index];
                           return ChoiceChip(
@@ -239,169 +218,159 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                             onSelected: (_) {
                               setState(() => _selectedCategoryId = category.key);
                             },
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  if (visibleItems.isEmpty)
-                    AppEmptyState(
-                      icon: Icons.inventory_2_outlined,
-                      title: 'No products in $selectedCategoryTitle',
-                      message:
-                          'Add an item in this category or switch filters to review the rest of the menu.',
-                    )
-                  else ...[
-                    for (final item in visibleItems) ...[
-                      AppSurfaceCard(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _ProductThumb(imageUrl: item.image),
-                                const SizedBox(width: AppSpacing.md),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.title,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleMedium,
+                    const SizedBox(height: AppSpacing.lg),
+                    if (visibleItems.isEmpty)
+                      AppEmptyState(
+                        icon: Icons.inventory_2_outlined,
+                        title: 'No products in $selectedCategoryTitle',
+                        message:
+                            'Add an item in this category or switch filters to review the rest of the menu.',
+                      )
+                    else ...[
+                      for (final item in visibleItems) ...[
+                        AppSurfaceCard(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _ProductThumb(imageUrl: item.image),
+                                  const SizedBox(width: AppSpacing.md),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.title,
+                                          style: Theme.of(context).textTheme.titleMedium,
+                                        ),
+                                        const SizedBox(height: AppSpacing.xs),
+                                        Wrap(
+                                          spacing: AppSpacing.sm,
+                                          runSpacing: AppSpacing.xs,
+                                          children: [
+                                            _ProductMetaPill(
+                                              icon: Icons.storefront_outlined,
+                                              label: item.restaurantTitle,
+                                            ),
+                                            _ProductMetaPill(
+                                              icon: Icons.label_outline_rounded,
+                                              label: item.category,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: item.isAvailable
+                                            ? context.luqmah.primary.withValues(alpha: 0.4)
+                                            : context.luqmah.border,
                                       ),
-                                      const SizedBox(height: AppSpacing.xs),
-                                      Wrap(
-                                        spacing: AppSpacing.sm,
-                                        runSpacing: AppSpacing.xs,
-                                        children: [
-                                          _ProductMetaPill(
-                                            icon: Icons.storefront_outlined,
-                                            label: item.restaurantTitle,
-                                          ),
-                                          _ProductMetaPill(
-                                            icon: Icons.label_outline_rounded,
-                                            label: item.category,
-                                          ),
-                                        ],
+                                    ),
+                                    child: Text(
+                                      item.isAvailable ? 'Available' : 'Hidden',
+                                      style: TextStyle(
+                                        color: item.isAvailable
+                                            ? context.luqmah.primary
+                                            : context.luqmah.mutedText,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Text(
+                                    '${item.price.toStringAsFixed(2)} JD',
+                                    style: TextStyle(
+                                      color: context.luqmah.accent,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  PopupMenuButton<String>(
+                                    onSelected: (value) async {
+                                      switch (value) {
+                                        case 'edit':
+                                          await context.push('/vendor/products/${item.id}/edit');
+                                          break;
+                                        case 'availability':
+                                          await _toggleAvailability(
+                                            context,
+                                            ref,
+                                            item.id,
+                                            item.isAvailable,
+                                          );
+                                          break;
+                                        case 'delete':
+                                          await _deleteItem(context, ref, item.id);
+                                          break;
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem<String>(
+                                        value: 'edit',
+                                        child: Text('Edit'),
+                                      ),
+                                      PopupMenuItem<String>(
+                                        value: 'availability',
+                                        child: Text(item.isAvailable ? 'Hide' : 'Show'),
+                                      ),
+                                      const PopupMenuItem<String>(
+                                        value: 'delete',
+                                        child: Text('Delete'),
                                       ),
                                     ],
                                   ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(
-                                      color: item.isAvailable
-                                          ? context.luqmah.primary.withValues(
-                                              alpha: 0.4,
-                                            )
-                                          : context.luqmah.border,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    item.isAvailable ? 'Available' : 'Hidden',
-                                    style: TextStyle(
-                                      color: item.isAvailable
-                                          ? context.luqmah.primary
-                                          : context.luqmah.mutedText,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
+                                ],
+                              ),
+                              if (item.description.isNotEmpty) ...[
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(item.description),
+                              ],
+                              if (item.ingredients.isNotEmpty) ...[
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(item.ingredients.join(', ')),
+                              ],
+                              if (item.optionGroups.isNotEmpty) ...[
+                                const SizedBox(height: AppSpacing.sm),
                                 Text(
-                                  '${item.price.toStringAsFixed(2)} JD',
-                                  style: TextStyle(
-                                    color: context.luqmah.accent,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                PopupMenuButton<String>(
-                                  onSelected: (value) async {
-                                    switch (value) {
-                                      case 'edit':
-                                        await context.push(
-                                          '/vendor/products/${item.id}/edit',
-                                        );
-                                        break;
-                                      case 'availability':
-                                        await _toggleAvailability(
-                                          context,
-                                          ref,
-                                          item.id,
-                                          item.isAvailable,
-                                        );
-                                        break;
-                                      case 'delete':
-                                        await _deleteItem(
-                                          context,
-                                          ref,
-                                          item.id,
-                                        );
-                                        break;
-                                    }
-                                  },
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem<String>(
-                                      value: 'edit',
-                                      child: Text('Edit'),
-                                    ),
-                                    PopupMenuItem<String>(
-                                      value: 'availability',
-                                      child: Text(
-                                        item.isAvailable ? 'Hide' : 'Show',
-                                      ),
-                                    ),
-                                    const PopupMenuItem<String>(
-                                      value: 'delete',
-                                      child: Text('Delete'),
-                                    ),
-                                  ],
+                                  item.optionGroups
+                                      .map(
+                                        (group) =>
+                                            '${group.title}: ${group.options.map((option) => option.label).join(', ')}',
+                                      )
+                                      .join(' | '),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: context.luqmah.mutedText),
                                 ),
                               ],
-                            ),
-                            if (item.description.isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(item.description),
                             ],
-                            if (item.ingredients.isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(item.ingredients.join(', ')),
-                            ],
-                            if (item.optionGroups.isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                item.optionGroups
-                                    .map(
-                                      (group) =>
-                                          '${group.title}: ${group.options.map((option) => option.label).join(', ')}',
-                                    )
-                                    .join(' | '),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: context.luqmah.mutedText),
-                              ),
-                            ],
-                          ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
                     ],
                   ],
-                ],
-              );
-            },
-          ),
-        ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -458,9 +427,9 @@ class _ProductMetaPill extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: tokens.strongText,
-              fontWeight: FontWeight.w700,
-            ),
+                  color: tokens.strongText,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ],
       ),

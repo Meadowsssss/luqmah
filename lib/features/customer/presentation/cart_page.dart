@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../core/network/api_client.dart';
@@ -7,9 +8,10 @@ import '../../../features/customer/cart/cart_controller.dart';
 import '../../../features/customer/data/restaurant_repository.dart';
 import '../../../features/customer/orders/customer_orders_controller.dart';
 import '../../../shared/widgets/app_empty_state.dart';
+import '../../../shared/widgets/premium_page_app_bar.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
-class CartPage extends ConsumerWidget {
+class CartPage extends ConsumerStatefulWidget {
   const CartPage({super.key});
 
   static const _busyMessage =
@@ -17,7 +19,22 @@ class CartPage extends ConsumerWidget {
   static const _contentMaxWidth = 760.0;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CartPage> createState() => _CartPageState();
+}
+
+class _CartPageState extends ConsumerState<CartPage> {
+  bool _isScrolled = false;
+
+  void _handleScroll(double offset) {
+    final next = offset > 0;
+    if (next == _isScrolled) {
+      return;
+    }
+    setState(() => _isScrolled = next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final lines = ref.watch(cartLinesProvider);
     final total = ref.watch(cartTotalProvider);
     final restaurantAsync = lines.isEmpty
@@ -28,7 +45,12 @@ class CartPage extends ConsumerWidget {
     final tokens = context.luqmah;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Your cart')),
+      appBar: PremiumPageAppBar(
+        icon: Icons.shopping_bag_rounded,
+        title: 'Your cart',
+        subtitle: 'Review your items and place the order when you are ready.',
+        isScrolled: _isScrolled,
+      ),
       body: SafeArea(
         child: lines.isEmpty
             ? const Padding(
@@ -44,227 +66,60 @@ class CartPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      children: [
-                        Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              maxWidth: _contentMaxWidth,
-                            ),
-                            child: Column(
-                              children: [
-                                AppSurfaceCard(
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Your cart',
-                                              style: textTheme.titleLarge,
-                                            ),
-                                            const SizedBox(height: AppSpacing.xs),
-                                            Text(
-                                              'Review your items before placing the order.',
-                                              style: textTheme.bodyMedium?.copyWith(
-                                                color: context.luqmah.mutedText,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: tokens.primary.withValues(
-                                            alpha: 0.10,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            999,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          '${lines.length} items',
-                                          style: TextStyle(
-                                            color: tokens.primary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.lg),
-                                for (final line in lines) ...[
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        _handleScroll(notification.metrics.pixels);
+                        return false;
+                      },
+                      child: ListView(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        children: [
+                          Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                maxWidth: CartPage._contentMaxWidth,
+                              ),
+                              child: Column(
+                                children: [
                                   AppSurfaceCard(
-                                    padding: const EdgeInsets.all(AppSpacing.md),
-                                    child: Row(
+                                    child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            AppRadii.lg,
-                                          ),
-                                          child: SizedBox(
-                                            height: 84,
-                                            width: 84,
-                                            child: Image.network(
-                                              line.item.image,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) =>
-                                                      Container(
-                                                        color: tokens.surfaceAlt,
-                                                        alignment: Alignment.center,
-                                                        child: const Icon(
-                                                          Icons.fastfood_rounded,
-                                                        ),
-                                                      ),
+                                      Text(
+                                        'Your cart',
+                                        style: textTheme.titleLarge,
+                                      ),
+                                      const SizedBox(height: AppSpacing.lg),
+                                      Row(
+                                          children: [
+                                            Text(
+                                              '${lines.length} ${lines.length == 1 ? 'item' : 'items'}',
+                                              style: textTheme.bodyMedium,
                                             ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: AppSpacing.lg),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                line.item.name,
-                                                style: textTheme.titleMedium,
-                                              ),
-                                              const SizedBox(height: AppSpacing.xs),
-                                              Text(
-                                                line.item.restaurantName,
-                                                style: textTheme.bodySmall,
-                                              ),
-                                              if (line
-                                                  .item
-                                                  .selectedOptions
-                                                  .isNotEmpty) ...[
-                                                const SizedBox(height: AppSpacing.xs),
-                                                Text(
-                                                  line.item.selectedOptions
-                                                      .map(
-                                                        (option) =>
-                                                            '${option.groupTitle}: ${option.title}',
-                                                      )
-                                                      .join(', '),
-                                                  style: textTheme.bodySmall
-                                                      ?.copyWith(
-                                                        color: context
-                                                            .luqmah
-                                                            .mutedText,
-                                                      ),
-                                                ),
-                                              ],
-                                              const SizedBox(height: AppSpacing.sm),
-                                              Text(
-                                                '${line.item.price.toStringAsFixed(2)} JD each',
-                                                style: textTheme.bodySmall
-                                                    ?.copyWith(
-                                                      color: context
-                                                          .luqmah
-                                                          .mutedText,
-                                                    ),
-                                              ),
-                                              const SizedBox(height: AppSpacing.md),
-                                              Text(
-                                                '${line.lineTotal.toStringAsFixed(2)} JD',
-                                                style: textTheme.titleMedium
+                                            const Spacer(),
+                                            TextButton(
+                                              onPressed: () {
+                                                final restaurantId = lines
+                                                    .first
+                                                    .item
+                                                    .restaurantId;
+                                                if (restaurantId.isEmpty) {
+                                                  context.go('/restaurants');
+                                                  return;
+                                                }
+                                                context.go(
+                                                  '/restaurants/$restaurantId',
+                                                );
+                                              },
+                                              child: Text(
+                                                '+ Add more items',
+                                                style: textTheme.bodyMedium
                                                     ?.copyWith(
                                                       color: tokens.primary,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: AppSpacing.md),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            IconButton(
-                                              onPressed: () {
-                                                ref
-                                                    .read(
-                                                      cartControllerProvider
-                                                          .notifier,
-                                                    )
-                                                    .deleteItem(
-                                                      line.item.lineId,
-                                                    );
-                                              },
-                                              icon: const Icon(
-                                                Icons.delete_outline_rounded,
-                                                color: AppColors.error,
-                                              ),
-                                            ),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 6,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: tokens.surfaceAlt,
-                                                border: Border.all(
-                                                  color: tokens.border,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(999),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  IconButton(
-                                                    onPressed: () {
-                                                      ref
-                                                          .read(
-                                                            cartControllerProvider
-                                                                .notifier,
-                                                          )
-                                                          .removeItem(
-                                                            line.item.lineId,
-                                                          );
-                                                    },
-                                                    visualDensity:
-                                                        VisualDensity.compact,
-                                                    icon: const Icon(
-                                                      Icons.remove_rounded,
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    '${line.quantity}',
-                                                    style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.w700,
                                                     ),
-                                                  ),
-                                                  IconButton(
-                                                    onPressed: () {
-                                                      ref
-                                                          .read(
-                                                            cartControllerProvider
-                                                                .notifier,
-                                                          )
-                                                          .incrementItem(
-                                                            line.item.lineId,
-                                                          );
-                                                    },
-                                                    visualDensity:
-                                                        VisualDensity.compact,
-                                                    icon: const Icon(
-                                                      Icons.add_rounded,
-                                                    ),
-                                                  ),
-                                                ],
                                               ),
                                             ),
                                           ],
@@ -273,12 +128,203 @@ class CartPage extends ConsumerWidget {
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.lg),
+                                  for (final line in lines) ...[
+                                    AppSurfaceCard(
+                                      padding: const EdgeInsets.all(
+                                        AppSpacing.md,
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              AppRadii.lg,
+                                            ),
+                                            child: SizedBox(
+                                              height: 84,
+                                              width: 84,
+                                              child: Image.network(
+                                                line.item.image,
+                                                fit: BoxFit.cover,
+                                                errorBuilder:
+                                                    (
+                                                      context,
+                                                      error,
+                                                      stackTrace,
+                                                    ) => Container(
+                                                      color: tokens.surfaceAlt,
+                                                      alignment:
+                                                          Alignment.center,
+                                                      child: const Icon(
+                                                        Icons.fastfood_rounded,
+                                                      ),
+                                                    ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: AppSpacing.lg),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  line.item.name,
+                                                  style: textTheme.titleMedium,
+                                                ),
+                                                const SizedBox(
+                                                  height: AppSpacing.xs,
+                                                ),
+                                                Text(
+                                                  line.item.restaurantName,
+                                                  style: textTheme.bodySmall,
+                                                ),
+                                                if (line
+                                                    .item
+                                                    .selectedOptions
+                                                    .isNotEmpty) ...[
+                                                  const SizedBox(
+                                                    height: AppSpacing.xs,
+                                                  ),
+                                                  Text(
+                                                    line.item.selectedOptions
+                                                        .map(
+                                                          (option) =>
+                                                              '${option.groupTitle}: ${option.title}',
+                                                        )
+                                                        .join(', '),
+                                                    style: textTheme.bodySmall
+                                                        ?.copyWith(
+                                                          color: context
+                                                              .luqmah
+                                                              .mutedText,
+                                                        ),
+                                                  ),
+                                                ],
+                                                const SizedBox(
+                                                  height: AppSpacing.sm,
+                                                ),
+                                                Text(
+                                                  '${line.item.price.toStringAsFixed(2)} JD each',
+                                                  style: textTheme.bodySmall
+                                                      ?.copyWith(
+                                                        color: context
+                                                            .luqmah
+                                                            .mutedText,
+                                                      ),
+                                                ),
+                                                const SizedBox(
+                                                  height: AppSpacing.md,
+                                                ),
+                                                Text(
+                                                  '${line.lineTotal.toStringAsFixed(2)} JD',
+                                                  style: textTheme.titleMedium
+                                                      ?.copyWith(
+                                                        color: tokens.primary,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: AppSpacing.md),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              IconButton(
+                                                onPressed: () {
+                                                  ref
+                                                      .read(
+                                                        cartControllerProvider
+                                                            .notifier,
+                                                      )
+                                                      .deleteItem(
+                                                        line.item.lineId,
+                                                      );
+                                                },
+                                                icon: const Icon(
+                                                  Icons.delete_outline_rounded,
+                                                  color: AppColors.error,
+                                                ),
+                                              ),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: tokens.surfaceAlt,
+                                                  border: Border.all(
+                                                    color: tokens.border,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        999,
+                                                      ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    IconButton(
+                                                      onPressed: () {
+                                                        ref
+                                                            .read(
+                                                              cartControllerProvider
+                                                                  .notifier,
+                                                            )
+                                                            .removeItem(
+                                                              line.item.lineId,
+                                                            );
+                                                      },
+                                                      visualDensity:
+                                                          VisualDensity.compact,
+                                                      icon: const Icon(
+                                                        Icons.remove_rounded,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      '${line.quantity}',
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                    ),
+                                                    IconButton(
+                                                      onPressed: () {
+                                                        ref
+                                                            .read(
+                                                              cartControllerProvider
+                                                                  .notifier,
+                                                            )
+                                                            .incrementItem(
+                                                              line.item.lineId,
+                                                            );
+                                                      },
+                                                      visualDensity:
+                                                          VisualDensity.compact,
+                                                      icon: const Icon(
+                                                        Icons.add_rounded,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.lg),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   Container(
@@ -294,7 +340,7 @@ class CartPage extends ConsumerWidget {
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(
-                          maxWidth: _contentMaxWidth,
+                          maxWidth: CartPage._contentMaxWidth,
                         ),
                         child: AppSurfaceCard(
                           child: Row(
@@ -322,7 +368,9 @@ class CartPage extends ConsumerWidget {
                                     ScaffoldMessenger.of(context)
                                       ..hideCurrentSnackBar()
                                       ..showSnackBar(
-                                        const SnackBar(content: Text(_busyMessage)),
+                                        const SnackBar(
+                                          content: Text(CartPage._busyMessage),
+                                        ),
                                       );
                                     return;
                                   }
@@ -330,7 +378,8 @@ class CartPage extends ConsumerWidget {
                                   try {
                                     final order = await ref
                                         .read(
-                                          customerOrdersControllerProvider.notifier,
+                                          customerOrdersControllerProvider
+                                              .notifier,
                                         )
                                         .placeOrder(lines: lines, total: total);
                                     if (!context.mounted) {
@@ -362,6 +411,7 @@ class CartPage extends ConsumerWidget {
                                     ref
                                         .read(cartControllerProvider.notifier)
                                         .clear();
+                                    context.go('/restaurants');
                                   } catch (error) {
                                     if (!context.mounted) {
                                       return;

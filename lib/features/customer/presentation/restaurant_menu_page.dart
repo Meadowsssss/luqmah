@@ -7,6 +7,7 @@ import '../../../features/customer/cart/cart_controller.dart';
 import '../../../features/customer/data/restaurant_repository.dart';
 import '../../../models/restaurant.dart';
 import '../../../shared/widgets/app_empty_state.dart';
+import '../../../shared/widgets/premium_page_app_bar.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
 class RestaurantMenuPage extends ConsumerStatefulWidget {
@@ -24,6 +25,15 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
   static const _allCategories = 'All';
 
   String? _selectedCategory;
+  bool _isScrolled = false;
+
+  void _handleScroll(double offset) {
+    final next = offset > 0;
+    if (next == _isScrolled) {
+      return;
+    }
+    setState(() => _isScrolled = next);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +46,12 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: const Text('Restaurant menu')),
+        appBar: PremiumPageAppBar(
+          icon: Icons.storefront_rounded,
+          title: 'Restaurant menu',
+          subtitle: 'Browse the menu and pick what you want next.',
+          isScrolled: _isScrolled,
+        ),
         body: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: AppEmptyState(
@@ -49,7 +64,12 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
       data: (restaurant) {
         if (restaurant == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Restaurant menu')),
+            appBar: PremiumPageAppBar(
+              icon: Icons.storefront_rounded,
+              title: 'Restaurant menu',
+              subtitle: 'Browse the menu and pick what you want next.',
+              isScrolled: _isScrolled,
+            ),
             body: const Padding(
               padding: EdgeInsets.all(AppSpacing.lg),
               child: AppEmptyState(
@@ -90,27 +110,31 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
         final tokens = context.luqmah;
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text(
-              restaurant.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+          appBar: PremiumPageAppBar(
+            icon: Icons.storefront_rounded,
+            title: restaurant.name,
+            subtitle: 'Restaurant menu',
+            isScrolled: _isScrolled,
           ),
           body: Stack(
             children: [
-              RefreshIndicator(
-                onRefresh: () => ref.refresh(
-                  restaurantByIdProvider(widget.restaurantId).future,
-                ),
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    0,
-                    16,
-                    showCheckoutButton ? 112 : 24,
+              NotificationListener<ScrollNotification>(
+                onNotification: (notification) {
+                  _handleScroll(notification.metrics.pixels);
+                  return false;
+                },
+                child: RefreshIndicator(
+                  onRefresh: () => ref.refresh(
+                    restaurantByIdProvider(widget.restaurantId).future,
                   ),
-                  children: [
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      showCheckoutButton ? 112 : 24,
+                    ),
+                    children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(AppRadii.xl),
                       child: AspectRatio(
@@ -209,15 +233,6 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                                     style: textTheme.bodyMedium?.copyWith(
                                       color: Colors.white.withValues(
                                         alpha: 0.86,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  Text(
-                                    restaurant.time,
-                                    style: textTheme.bodySmall?.copyWith(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.82,
                                       ),
                                     ),
                                   ),
@@ -338,7 +353,8 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                         if (entry != itemsByCategory.entries.last)
                           const SizedBox(height: AppSpacing.xl),
                       ],
-                  ],
+                    ],
+                  ),
                 ),
               ),
               Positioned(

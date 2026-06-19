@@ -8,6 +8,7 @@ import '../../../features/vendor/vendor_blacklist_controller.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
 import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
+import '../../../shared/widgets/premium_page_app_bar.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
 class VendorOrderDetailsPage extends ConsumerStatefulWidget {
@@ -23,6 +24,15 @@ class VendorOrderDetailsPage extends ConsumerStatefulWidget {
 class _VendorOrderDetailsPageState
     extends ConsumerState<VendorOrderDetailsPage> {
   bool _isUpdatingStatus = false;
+  bool _isScrolled = false;
+
+  void _handleScroll(double offset) {
+    final next = offset > 0;
+    if (next == _isScrolled) {
+      return;
+    }
+    setState(() => _isScrolled = next);
+  }
 
   Future<void> _showBlacklistDialog(VendorOrder order) async {
     final controller = TextEditingController();
@@ -149,7 +159,12 @@ class _VendorOrderDetailsPageState
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
-        appBar: AppBar(),
+        appBar: PremiumPageAppBar(
+          icon: Icons.receipt_long_rounded,
+          title: 'Order details',
+          subtitle: 'Review customer details, items, and order status in one place.',
+          isScrolled: _isScrolled,
+        ),
         body: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: AppEmptyState(
@@ -162,7 +177,12 @@ class _VendorOrderDetailsPageState
       data: (order) {
         if (order == null) {
           return Scaffold(
-            appBar: AppBar(),
+            appBar: PremiumPageAppBar(
+              icon: Icons.receipt_long_rounded,
+              title: 'Order details',
+              subtitle: 'Review customer details, items, and order status in one place.',
+              isScrolled: _isScrolled,
+            ),
             body: const Padding(
               padding: EdgeInsets.all(AppSpacing.lg),
               child: AppEmptyState(
@@ -183,10 +203,20 @@ class _VendorOrderDetailsPageState
         final isBlacklisted = blacklistEntry != null;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Order details')),
-          body: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            children: [
+          appBar: PremiumPageAppBar(
+            icon: Icons.receipt_long_rounded,
+            title: 'Order details',
+            subtitle: 'Review customer details, items, and order status in one place.',
+            isScrolled: _isScrolled,
+          ),
+          body: NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              _handleScroll(notification.metrics.pixels);
+              return false;
+            },
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              children: [
               AppSurfaceCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,7 +472,8 @@ class _VendorOrderDetailsPageState
                   ],
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         );
       },

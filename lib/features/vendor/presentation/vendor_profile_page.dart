@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../app/theme/theme_mode_controller.dart';
@@ -208,7 +209,10 @@ class VendorProfilePage extends ConsumerWidget {
                         children: [
                           Text(
                             displayName.isEmpty ? 'Vendor workspace' : displayName,
-                            style: Theme.of(context).textTheme.titleLarge,
+                            style: GoogleFonts.plusJakartaSans(
+                              textStyle: Theme.of(context).textTheme.titleLarge,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
@@ -453,7 +457,7 @@ class VendorProfilePage extends ConsumerWidget {
                 _VendorSectionIntro(
                   icon: Icons.shield_outlined,
                   title: 'Security',
-                  subtitle: 'Manage your vendor password with a little more confidence and less visual clutter.',
+                  subtitle: 'Update your password and keep your account secure.',
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 OutlinedButton(

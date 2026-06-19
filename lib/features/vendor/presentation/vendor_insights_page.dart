@@ -3,59 +3,49 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
+import '../../../shared/widgets/premium_page_app_bar.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
-class VendorInsightsPage extends ConsumerWidget {
+class VendorInsightsPage extends ConsumerStatefulWidget {
   const VendorInsightsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VendorInsightsPage> createState() => _VendorInsightsPageState();
+}
+
+class _VendorInsightsPageState extends ConsumerState<VendorInsightsPage> {
+  bool _isScrolled = false;
+
+  void _handleScroll(double offset) {
+    final next = offset > 0;
+    if (next == _isScrolled) {
+      return;
+    }
+    setState(() => _isScrolled = next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final insights = ref.watch(vendorInsightsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Insights')),
+      appBar: PremiumPageAppBar(
+        icon: Icons.bar_chart_rounded,
+        title: 'Insights',
+        subtitle: 'A clean pulse check for today and recent orders.',
+        isScrolled: _isScrolled,
+      ),
       body: insights.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text(error.toString())),
-        data: (data) => ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          children: [
-            AppSurfaceCard(
-              child: Row(
-                children: [
-                  Container(
-                    height: 42,
-                    width: 42,
-                    decoration: BoxDecoration(
-                      color: context.luqmah.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                    ),
-                    child: Icon(
-                      Icons.bar_chart_rounded,
-                      color: context.luqmah.primary,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Performance',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'A clean pulse check for today and recent orders.',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
+        data: (data) => NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            _handleScroll(notification.metrics.pixels);
+            return false;
+          },
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
             Row(
               children: [
                 Expanded(
@@ -215,7 +205,8 @@ class VendorInsightsPage extends ConsumerWidget {
                 ],
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

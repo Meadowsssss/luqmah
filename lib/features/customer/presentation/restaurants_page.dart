@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
@@ -10,12 +11,28 @@ import '../../../models/customer_order.dart';
 import '../../../models/restaurant.dart';
 import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
+import '../../../shared/widgets/premium_page_app_bar.dart';
 
-class RestaurantsPage extends ConsumerWidget {
+class RestaurantsPage extends ConsumerStatefulWidget {
   const RestaurantsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RestaurantsPage> createState() => _RestaurantsPageState();
+}
+
+class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
+  bool _isScrolled = false;
+
+  void _handleScroll(double offset) {
+    final next = offset > 0;
+    if (next == _isScrolled) {
+      return;
+    }
+    setState(() => _isScrolled = next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final restaurants = ref.watch(restaurantsProvider);
     final orders = ref.watch(customerOrdersControllerProvider);
     final textTheme = Theme.of(context).textTheme;
@@ -30,25 +47,37 @@ class RestaurantsPage extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
+      appBar: PremiumPageAppBar(
+        icon: Icons.storefront_rounded,
+        title: '',
+        subtitle: 'Campus favourites, ready when you are',
+        isScrolled: _isScrolled,
+        leading: const SizedBox(width: 0),
+        titleContent: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Image.asset(
               'assets/Luqmah_transparent.png',
-              height: 28,
+              height: 30,
               fit: BoxFit.contain,
             ),
+            const SizedBox(height: 2),
             Text(
               'Campus favourites, ready when you are',
-              style: textTheme.bodySmall,
+              style: textTheme.bodySmall?.copyWith(color: tokens.mutedText),
             ),
           ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          _handleScroll(notification.metrics.pixels);
+          return false;
+        },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [
           if (activeOrder == null)
             _CustomerHeroCard(textTheme: textTheme, tokens: tokens)
           else
@@ -82,7 +111,10 @@ class RestaurantsPage extends ConsumerWidget {
                           children: [
                             Text(
                               'Popular restaurants',
-                              style: textTheme.titleLarge,
+                              style: GoogleFonts.plusJakartaSans(
+                                textStyle: textTheme.titleLarge,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.xs),
                             Text(
@@ -112,7 +144,8 @@ class RestaurantsPage extends ConsumerWidget {
               );
             },
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

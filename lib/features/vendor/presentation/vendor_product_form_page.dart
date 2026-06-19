@@ -8,6 +8,7 @@ import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/vendor/vendor_data_controller.dart';
 import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
+import '../../../shared/widgets/premium_page_app_bar.dart';
 import '../../../shared/widgets/app_surface_card.dart';
 
 class VendorProductFormPage extends ConsumerStatefulWidget {
@@ -41,6 +42,15 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
   bool _didInitializeForm = false;
   bool _clearExistingImage = false;
   List<_OptionGroupDraft> _optionGroups = <_OptionGroupDraft>[];
+  bool _isScrolled = false;
+
+  void _handleScroll(double offset) {
+    final next = offset > 0;
+    if (next == _isScrolled) {
+      return;
+    }
+    setState(() => _isScrolled = next);
+  }
 
   @override
   void dispose() {
@@ -330,7 +340,14 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: Text(pageTitle)),
+        appBar: PremiumPageAppBar(
+          icon: Icons.add_box_rounded,
+          title: pageTitle,
+          subtitle: isEditMode
+              ? 'Update item details and keep the menu clear for customers.'
+              : 'Add a new item and keep your menu ready to order from.',
+          isScrolled: _isScrolled,
+        ),
         body: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Text(error.toString()),
@@ -356,7 +373,14 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
 
         if (restaurants.isEmpty) {
           return Scaffold(
-            appBar: AppBar(title: Text(pageTitle)),
+            appBar: PremiumPageAppBar(
+              icon: Icons.add_box_rounded,
+              title: pageTitle,
+              subtitle: isEditMode
+                  ? 'Update item details and keep the menu clear for customers.'
+                  : 'Add a new item and keep your menu ready to order from.',
+              isScrolled: _isScrolled,
+            ),
             body: const Padding(
               padding: EdgeInsets.all(AppSpacing.lg),
               child: AppEmptyState(
@@ -371,7 +395,14 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
 
         if (isEditMode && editingItem == null) {
           return Scaffold(
-            appBar: AppBar(title: Text(pageTitle)),
+            appBar: PremiumPageAppBar(
+              icon: Icons.add_box_rounded,
+              title: pageTitle,
+              subtitle: isEditMode
+                  ? 'Update item details and keep the menu clear for customers.'
+                  : 'Add a new item and keep your menu ready to order from.',
+              isScrolled: _isScrolled,
+            ),
             body: const Padding(
               padding: EdgeInsets.all(AppSpacing.lg),
               child: AppEmptyState(
@@ -400,12 +431,24 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
             : (categories.isEmpty ? null : categories.first.id);
 
         return Scaffold(
-          appBar: AppBar(title: Text(pageTitle)),
+          appBar: PremiumPageAppBar(
+            icon: Icons.add_box_rounded,
+            title: pageTitle,
+            subtitle: isEditMode
+                ? 'Update item details and keep the menu clear for customers.'
+                : 'Add a new item and keep your menu ready to order from.',
+            isScrolled: _isScrolled,
+          ),
           body: Form(
             key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              children: [
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                _handleScroll(notification.metrics.pixels);
+                return false;
+              },
+              child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                children: [
                 AppSurfaceCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,7 +713,8 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
                         )
                       : Text(isEditMode ? 'Save changes' : 'Add product'),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         );

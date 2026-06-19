@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/session/session_controller.dart';
@@ -315,9 +316,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                         onLongPress: _promptAdminCode,
                                         child: Text(
                                           'Welcome back to Luqmah',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineMedium,
+                                          style: GoogleFonts.plusJakartaSans(
+                                            textStyle: Theme.of(context)
+                                                .textTheme
+                                                .headlineMedium,
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(height: AppSpacing.sm),
