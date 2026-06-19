@@ -89,10 +89,7 @@ class SessionController extends ChangeNotifier {
         await _authRepository.logout();
       }
 
-      await _authRepository.login(
-        email: normalizedEmail,
-        password: password,
-      );
+      await _authRepository.login(email: normalizedEmail, password: password);
       await _authRepository.reloadCurrentUser();
 
       if (_authRepository.currentUser?.emailVerified ?? false) {
@@ -248,9 +245,7 @@ class SessionController extends ChangeNotifier {
   Future<void> updateCustomerName(String name) async {
     final session = _snapshot.backendSession;
     if (session == null || session.token.isEmpty) {
-      throw StateError(
-        'A backend session is required to update this name.',
-      );
+      throw StateError('A backend session is required to update this name.');
     }
 
     final updatedName = await _backendAuthRepository.updateCustomerName(
@@ -260,6 +255,10 @@ class SessionController extends ChangeNotifier {
     final updatedSession = session.copyWith(
       user: session.user.copyWith(name: updatedName),
     );
+
+    if (_authRepository.currentUser != null) {
+      await _authRepository.updateCurrentUserDisplayName(updatedName);
+    }
 
     await _sessionRepository.saveBackendSession(updatedSession);
     _snapshot = _snapshot.copyWith(backendSession: updatedSession);
@@ -318,7 +317,8 @@ class SessionController extends ChangeNotifier {
     }
 
     try {
-      final pendingProfile = await _sessionRepository.loadPendingCustomerProfile();
+      final pendingProfile = await _sessionRepository
+          .loadPendingCustomerProfile();
       final idToken = await _authRepository.getIdToken(
         forceRefresh: forceRefreshFirebaseToken,
       );
