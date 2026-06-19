@@ -300,6 +300,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                             return ChoiceChip(
                               label: Text(category),
                               selected: selected,
+                              checkmarkColor: context.luqmah.primary,
                               onSelected: (_) {
                                 setState(() => _selectedCategory = category);
                               },

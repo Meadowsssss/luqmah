@@ -439,6 +439,9 @@ class _RestaurantCard extends StatelessWidget {
     final tokens = context.luqmah;
     final visibleCategories = restaurant.tags.take(2).toList(growable: false);
     final hiddenCategoryCount = restaurant.tags.length - visibleCategories.length;
+    final prepTimeLabel = restaurant.estimatedPrepMinutes > 50
+        ? '50+ min'
+        : '${restaurant.estimatedPrepMinutes}-${restaurant.estimatedPrepMinutes + 10} min';
 
     return InkWell(
       onTap: onTap,
@@ -517,7 +520,7 @@ class _RestaurantCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          '${restaurant.estimatedPrepMinutes}-${restaurant.estimatedPrepMinutes + 10} min',
+                          prepTimeLabel,
                           style: textTheme.bodySmall?.copyWith(color: tokens.info),
                         ),
                       ),
