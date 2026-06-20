@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/customer/cart/cart_controller.dart';
@@ -339,7 +340,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
                       )
                     else
                       for (final entry in itemsByCategory.entries) ...[
-                        Text(entry.key, style: textTheme.titleMedium),
+                        _MenuSectionTitle(title: entry.key),
                         const SizedBox(height: AppSpacing.sm),
                         for (final item in entry.value) ...[
                           _MenuItemCard(
@@ -371,6 +372,44 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _MenuSectionTitle extends StatelessWidget {
+  const _MenuSectionTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.luqmah;
+
+    return Row(
+      children: [
+        Container(
+          height: 12,
+          width: 28,
+          decoration: BoxDecoration(
+            color: tokens.primary.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: tokens.primary.withValues(alpha: 0.28),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            title,
+            style: GoogleFonts.plusJakartaSans(
+              textStyle: Theme.of(context).textTheme.titleLarge,
+              fontWeight: FontWeight.w800,
+              color: tokens.strongText,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

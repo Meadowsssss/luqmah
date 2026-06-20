@@ -83,7 +83,7 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.luqmah.warning,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
             child: const Text('Delete'),
           ),
