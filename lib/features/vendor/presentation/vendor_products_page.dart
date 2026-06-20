@@ -201,6 +201,7 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                           return ChoiceChip(
                             backgroundColor: Colors.transparent,
                             selectedColor: Colors.transparent,
+                            checkmarkColor: context.luqmah.primary,
                             side: BorderSide(
                               color: effectiveSelectedCategoryId == category.key
                                   ? context.luqmah.primary.withValues(alpha: 0.45)

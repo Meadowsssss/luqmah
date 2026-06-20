@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/network/api_client.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
@@ -139,7 +140,12 @@ class VendorProfilePage extends ConsumerWidget {
                           } catch (err) {
                             setState(() {
                               saving = false;
-                              error = formatAuthError(err);
+                              error = err is ApiException &&
+                                      (err.code == 'CURRENT_PASSWORD_INCORRECT' ||
+                                          err.message.toLowerCase() ==
+                                              'validation failed')
+                                  ? 'Your current password is incorrect.'
+                                  : formatAuthError(err);
                             });
                           }
                         },

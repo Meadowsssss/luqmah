@@ -419,7 +419,26 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
           (item) => item.id == currentRestaurantId,
           orElse: () => restaurants.first,
         );
-        final categories = selectedRestaurant.categories;
+        final derivedCategories = state.menuItems
+            .where((item) => item.restaurantId == selectedRestaurant.id)
+            .fold<Map<String, VendorRestaurantCategory>>(
+              <String, VendorRestaurantCategory>{},
+              (categoriesById, item) {
+                categoriesById.putIfAbsent(
+                  item.categoryId,
+                  () => VendorRestaurantCategory(
+                    id: item.categoryId,
+                    title: item.category,
+                  ),
+                );
+                return categoriesById;
+              },
+            )
+            .values
+            .toList(growable: false);
+        final categories = selectedRestaurant.categories.isNotEmpty
+            ? selectedRestaurant.categories
+            : derivedCategories;
         final existingImageUrl = isEditMode && !_clearExistingImage
             ? editingItem?.image ?? ''
             : '';
