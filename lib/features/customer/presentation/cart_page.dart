@@ -44,7 +44,13 @@ class _CartPageState extends ConsumerState<CartPage> {
     final textTheme = Theme.of(context).textTheme;
     final tokens = context.luqmah;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        context.go('/restaurants');
+      },
+      child: Scaffold(
       appBar: PremiumPageAppBar(
         icon: Icons.shopping_bag_rounded,
         title: 'Your cart',
@@ -440,6 +446,6 @@ class _CartPageState extends ConsumerState<CartPage> {
                 ],
               ),
       ),
-    );
+    ),);
   }
 }

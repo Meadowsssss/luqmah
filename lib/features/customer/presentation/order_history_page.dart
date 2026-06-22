@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
@@ -19,39 +20,50 @@ class OrderHistoryPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final orders = ref.watch(customerOrdersControllerProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Order history')),
-      body: orders.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: AppEmptyState(
-            icon: Icons.error_outline_rounded,
-            title: 'Unable to load orders',
-            message: error.toString(),
-          ),
-        ),
-        data: (data) {
-          if (data.isEmpty) {
-            return const Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: AppEmptyState(
-                icon: Icons.receipt_long_outlined,
-                title: 'No orders yet',
-                message:
-                    'Orders saved from checkout will appear here with their latest status.',
-              ),
-            );
-          }
-
-          return ListView.separated(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/settings');
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Order history')),
+        body: orders.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stackTrace) => Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            itemBuilder: (context, index) =>
-                _OrderHistoryCard(order: data[index]),
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
-            itemCount: data.length,
-          );
-        },
+            child: AppEmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Unable to load orders',
+              message: error.toString(),
+            ),
+          ),
+          data: (data) {
+            if (data.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                child: AppEmptyState(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'No orders yet',
+                  message:
+                      'Orders saved from checkout will appear here with their latest status.',
+                ),
+              );
+            }
+
+            return ListView.separated(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              itemBuilder: (context, index) =>
+                  _OrderHistoryCard(order: data[index]),
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
+              itemCount: data.length,
+            );
+          },
+        ),
       ),
     );
   }

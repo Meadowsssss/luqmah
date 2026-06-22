@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
@@ -336,7 +337,17 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
     final isEditMode = widget.isEditMode;
     final pageTitle = isEditMode ? 'Edit product' : 'Add product';
 
-    return data.when(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/vendor/products');
+        }
+      },
+      child: data.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
@@ -740,7 +751,7 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
           ),
         );
       },
-    );
+    ),);
   }
 }
 

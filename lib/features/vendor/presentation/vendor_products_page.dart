@@ -259,17 +259,114 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          item.title,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleMedium,
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                item.title,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleMedium,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              width: AppSpacing.sm,
+                                            ),
+                                            Text(
+                                              '${item.price.toStringAsFixed(2)} JD',
+                                              style: TextStyle(
+                                                color: context.luqmah.accent,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                            PopupMenuButton<String>(
+                                              onSelected: (value) async {
+                                                switch (value) {
+                                                  case 'edit':
+                                                    await context.push(
+                                                      '/vendor/products/${item.id}/edit',
+                                                    );
+                                                    break;
+                                                  case 'availability':
+                                                    await _toggleAvailability(
+                                                      context,
+                                                      ref,
+                                                      item.id,
+                                                      item.isAvailable,
+                                                    );
+                                                    break;
+                                                  case 'delete':
+                                                    await _deleteItem(
+                                                      context,
+                                                      ref,
+                                                      item.id,
+                                                    );
+                                                    break;
+                                                }
+                                              },
+                                              itemBuilder: (context) => [
+                                                const PopupMenuItem<String>(
+                                                  value: 'edit',
+                                                  child: Text('Edit'),
+                                                ),
+                                                PopupMenuItem<String>(
+                                                  value: 'availability',
+                                                  child: Text(
+                                                    item.isAvailable
+                                                        ? 'Hide'
+                                                        : 'Show',
+                                                  ),
+                                                ),
+                                                const PopupMenuItem<String>(
+                                                  value: 'delete',
+                                                  child: Text('Delete'),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(height: AppSpacing.xs),
+                                        const SizedBox(height: AppSpacing.sm),
                                         Wrap(
                                           spacing: AppSpacing.sm,
                                           runSpacing: AppSpacing.xs,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
                                           children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.transparent,
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                                border: Border.all(
+                                                  color: item.isAvailable
+                                                      ? context.luqmah.primary
+                                                          .withValues(
+                                                          alpha: 0.4,
+                                                        )
+                                                      : context.luqmah.border,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                item.isAvailable
+                                                    ? 'Available'
+                                                    : 'Hidden',
+                                                style: TextStyle(
+                                                  color: item.isAvailable
+                                                      ? context.luqmah.primary
+                                                      : context.luqmah
+                                                          .mutedText,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
                                             _ProductMetaPill(
                                               icon: Icons.storefront_outlined,
                                               label: item.restaurantTitle,
@@ -282,82 +379,6 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.transparent,
-                                      borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(
-                                        color: item.isAvailable
-                                            ? context.luqmah.primary.withValues(
-                                                alpha: 0.4,
-                                              )
-                                            : context.luqmah.border,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      item.isAvailable ? 'Available' : 'Hidden',
-                                      style: TextStyle(
-                                        color: item.isAvailable
-                                            ? context.luqmah.primary
-                                            : context.luqmah.mutedText,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Text(
-                                    '${item.price.toStringAsFixed(2)} JD',
-                                    style: TextStyle(
-                                      color: context.luqmah.accent,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  PopupMenuButton<String>(
-                                    onSelected: (value) async {
-                                      switch (value) {
-                                        case 'edit':
-                                          await context.push(
-                                            '/vendor/products/${item.id}/edit',
-                                          );
-                                          break;
-                                        case 'availability':
-                                          await _toggleAvailability(
-                                            context,
-                                            ref,
-                                            item.id,
-                                            item.isAvailable,
-                                          );
-                                          break;
-                                        case 'delete':
-                                          await _deleteItem(
-                                            context,
-                                            ref,
-                                            item.id,
-                                          );
-                                          break;
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem<String>(
-                                        value: 'edit',
-                                        child: Text('Edit'),
-                                      ),
-                                      PopupMenuItem<String>(
-                                        value: 'availability',
-                                        child: Text(
-                                          item.isAvailable ? 'Hide' : 'Show',
-                                        ),
-                                      ),
-                                      const PopupMenuItem<String>(
-                                        value: 'delete',
-                                        child: Text('Delete'),
-                                      ),
-                                    ],
                                   ),
                                 ],
                               ),
@@ -449,11 +470,15 @@ class _ProductMetaPill extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: tokens.primary),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: tokens.strongText,
-              fontWeight: FontWeight.w700,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: tokens.strongText,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

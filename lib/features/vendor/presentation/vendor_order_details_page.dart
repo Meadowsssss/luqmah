@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/network/api_client.dart';
@@ -155,7 +156,17 @@ class _VendorOrderDetailsPageState
     final decodedId = Uri.decodeComponent(widget.orderId);
     final orderAsync = ref.watch(vendorOrderByIdProvider(decodedId));
 
-    return orderAsync.when(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/vendor/orders');
+        }
+      },
+      child: orderAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
@@ -477,7 +488,7 @@ class _VendorOrderDetailsPageState
           ),
         );
       },
-    );
+    ),);
   }
 }
 

@@ -43,7 +43,17 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
     );
     final textTheme = Theme.of(context).textTheme;
 
-    return restaurantAsync.when(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/restaurants');
+        }
+      },
+      child: restaurantAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
@@ -372,7 +382,7 @@ class _RestaurantMenuPageState extends ConsumerState<RestaurantMenuPage> {
           ),
         );
       },
-    );
+    ),);
   }
 }
 

@@ -184,142 +184,202 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
         ? snapshot.email
         : (pendingProfile?.email ?? 'your email');
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Verify your email'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => ref.read(sessionControllerProvider).logout(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        ref.read(sessionControllerProvider).logout();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Verify your email'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => ref.read(sessionControllerProvider).logout(),
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.xxl),
-              child: AppSurfaceCard(
-                child: _showDetailsForm
-                    ? Form(
-                        key: _formKey,
-                        child: Column(
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.xxl),
+                child: AppSurfaceCard(
+                  child: _showDetailsForm
+                      ? Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'Complete Registration',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                'We detected a verification link. Since your session details are missing (e.g. different device or cleared storage), please fill in your details to secure your account.',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: context.luqmah.mutedText,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              TextFormField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  labelText: 'HU email',
+                                  hintText: 'your_id@hu.edu.jo',
+                                  prefixIcon: Icon(Icons.school_outlined),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Email is required';
+                                  }
+                                  if (!_isHuEmail(value.trim())) {
+                                    return 'Use your university email';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              TextFormField(
+                                controller: _nameController,
+                                textCapitalization: TextCapitalization.words,
+                                decoration: const InputDecoration(
+                                  labelText: 'Full name',
+                                  hintText: 'Your full name',
+                                  prefixIcon: Icon(Icons.person_outline_rounded),
+                                ),
+                                validator: validateCustomerDisplayName,
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              TextFormField(
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
+                                decoration: const InputDecoration(
+                                  labelText: 'Phone number',
+                                  hintText: '07...',
+                                  prefixIcon: Icon(Icons.phone_outlined),
+                                ),
+                                validator: validateCustomerPhoneNumber,
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              TextFormField(
+                                controller: _passwordController,
+                                obscureText: _obscurePassword,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                                  suffixIcon: IconButton(
+                                    onPressed: () {
+                                      setState(() => _obscurePassword = !_obscurePassword);
+                                    },
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                    ),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Password is required';
+                                  }
+                                  if (value.length < 6) {
+                                    return 'Minimum 6 characters';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              TextFormField(
+                                controller: _confirmPasswordController,
+                                obscureText: _obscureConfirmPassword,
+                                decoration: InputDecoration(
+                                  labelText: 'Confirm password',
+                                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                                  suffixIcon: IconButton(
+                                    onPressed: () {
+                                      setState(
+                                        () => _obscureConfirmPassword =
+                                            !_obscureConfirmPassword,
+                                      );
+                                    },
+                                    icon: Icon(
+                                      _obscureConfirmPassword
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                    ),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Confirm your password';
+                                  }
+                                  if (value != _passwordController.text) {
+                                    return 'Passwords do not match';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppSpacing.xl),
+                              ElevatedButton(
+                                onPressed: _checking ? null : _submitDetailsForm,
+                                child: _checking
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text('Complete & Sign In'),
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              TextButton(
+                                onPressed: () => ref.read(sessionControllerProvider).logout(),
+                                child: const Text('Cancel & Back to login'),
+                              ),
+                              if (_message != null) ...[
+                                const SizedBox(height: AppSpacing.lg),
+                                Text(
+                                  _message!,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ],
+                          ),
+                        )
+                      : Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
-                              'Complete Registration',
+                              'Check your inbox',
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             Text(
-                              'We detected a verification link. Since your session details are missing (e.g. different device or cleared storage), please fill in your details to secure your account.',
+                              'We sent a verification link to $emailAddress.',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: context.luqmah.mutedText,
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.lg),
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'HU email',
-                                hintText: 'your_id@hu.edu.jo',
-                                prefixIcon: Icon(Icons.school_outlined),
+                            if (snapshot.customerSyncError != null) ...[
+                              const SizedBox(height: AppSpacing.lg),
+                              Text(
+                                snapshot.customerSyncError!,
+                                style: TextStyle(color: Theme.of(context).colorScheme.error),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Email is required';
-                                }
-                                if (!_isHuEmail(value.trim())) {
-                                  return 'Use your university email';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            TextFormField(
-                              controller: _nameController,
-                              textCapitalization: TextCapitalization.words,
-                              decoration: const InputDecoration(
-                                labelText: 'Full name',
-                                hintText: 'Your full name',
-                                prefixIcon: Icon(Icons.person_outline_rounded),
-                              ),
-                              validator: validateCustomerDisplayName,
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            TextFormField(
-                              controller: _phoneController,
-                              keyboardType: TextInputType.phone,
-                              decoration: const InputDecoration(
-                                labelText: 'Phone number',
-                                hintText: '07...',
-                                prefixIcon: Icon(Icons.phone_outlined),
-                              ),
-                              validator: validateCustomerPhoneNumber,
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                prefixIcon: const Icon(Icons.lock_outline_rounded),
-                                suffixIcon: IconButton(
-                                  onPressed: () {
-                                    setState(() => _obscurePassword = !_obscurePassword);
-                                  },
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                  ),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Password is required';
-                                }
-                                if (value.length < 6) {
-                                  return 'Minimum 6 characters';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            TextFormField(
-                              controller: _confirmPasswordController,
-                              obscureText: _obscureConfirmPassword,
-                              decoration: InputDecoration(
-                                labelText: 'Confirm password',
-                                prefixIcon: const Icon(Icons.lock_outline_rounded),
-                                suffixIcon: IconButton(
-                                  onPressed: () {
-                                    setState(
-                                      () => _obscureConfirmPassword =
-                                          !_obscureConfirmPassword,
-                                    );
-                                  },
-                                  icon: Icon(
-                                    _obscureConfirmPassword
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                  ),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Confirm your password';
-                                }
-                                if (value != _passwordController.text) {
-                                  return 'Passwords do not match';
-                                }
-                                return null;
-                              },
-                            ),
+                            ],
                             const SizedBox(height: AppSpacing.xl),
                             ElevatedButton(
-                              onPressed: _checking ? null : _submitDetailsForm,
+                              onPressed: _checking ? null : _refresh,
                               child: _checking
                                   ? const SizedBox(
                                       height: 18,
@@ -329,82 +389,29 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Text('Complete & Sign In'),
+                                  : const Text('I verified, continue'),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            OutlinedButton(
+                              onPressed: _resend,
+                              child: const Text('Resend verification email'),
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             TextButton(
                               onPressed: () => ref.read(sessionControllerProvider).logout(),
-                              child: const Text('Cancel & Back to login'),
+                              child: const Text('Back to login'),
                             ),
                             if (_message != null) ...[
                               const SizedBox(height: AppSpacing.lg),
                               Text(
                                 _message!,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall,
                                 textAlign: TextAlign.center,
                               ),
                             ],
                           ],
                         ),
-                      )
-                    : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Check your inbox',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            'We sent a verification link to $emailAddress.',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: context.luqmah.mutedText,
-                            ),
-                          ),
-                          if (snapshot.customerSyncError != null) ...[
-                            const SizedBox(height: AppSpacing.lg),
-                            Text(
-                              snapshot.customerSyncError!,
-                              style: TextStyle(color: Theme.of(context).colorScheme.error),
-                            ),
-                          ],
-                          const SizedBox(height: AppSpacing.xl),
-                          ElevatedButton(
-                            onPressed: _checking ? null : _refresh,
-                            child: _checking
-                                ? const SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text('I verified, continue'),
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          OutlinedButton(
-                            onPressed: _resend,
-                            child: const Text('Resend verification email'),
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          TextButton(
-                            onPressed: () => ref.read(sessionControllerProvider).logout(),
-                            child: const Text('Back to login'),
-                          ),
-                          if (_message != null) ...[
-                            const SizedBox(height: AppSpacing.lg),
-                            Text(
-                              _message!,
-                              style: Theme.of(context).textTheme.bodySmall,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ],
-                      ),
+                ),
               ),
             ),
           ),

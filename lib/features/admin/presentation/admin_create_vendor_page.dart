@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
@@ -118,7 +119,17 @@ class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/admin/vendors');
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(title: const Text('Create vendor')),
       body: Form(
         key: _formKey,
@@ -238,7 +249,7 @@ class _AdminCreateVendorPageState extends ConsumerState<AdminCreateVendorPage> {
           ],
         ),
       ),
-    );
+    ),);
   }
 }
 

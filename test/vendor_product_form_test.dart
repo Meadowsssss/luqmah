@@ -171,8 +171,8 @@ void main() {
 
     await tester.drag(find.byType(ListView).first, const Offset(0, -2000));
     await tester.pumpAndSettle();
-    expect(find.text('Single choice (radio buttons)'), findsOneWidget);
-    expect(find.text('Multiple choice (checkboxes)'), findsOneWidget);
+    expect(find.text('Single choice'), findsOneWidget);
+    expect(find.text('Multiple choice'), findsOneWidget);
   });
 
   test('vendor controller can create a product with a new category name', () async {

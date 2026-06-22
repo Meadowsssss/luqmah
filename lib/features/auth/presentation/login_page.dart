@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/session/session_controller.dart';
@@ -317,9 +318,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                         child: Text(
                                           'Welcome back to Luqmah',
                                           style: GoogleFonts.plusJakartaSans(
-                                            textStyle: Theme.of(context)
-                                                .textTheme
-                                                .headlineMedium,
+                                            textStyle: Theme.of(
+                                              context,
+                                            ).textTheme.headlineMedium,
                                             fontWeight: FontWeight.w800,
                                           ),
                                         ),
@@ -353,16 +354,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   padding: WidgetStateProperty.all(
                                     const EdgeInsets.symmetric(vertical: 14),
                                   ),
-                                  backgroundColor: WidgetStateProperty.resolveWith(
-                                    (states) => states.contains(WidgetState.selected)
-                                        ? tokens.primary
-                                        : tokens.surfaceAlt.withValues(alpha: 0.6),
-                                  ),
-                                  foregroundColor: WidgetStateProperty.resolveWith(
-                                    (states) => states.contains(WidgetState.selected)
-                                        ? Colors.white
-                                        : tokens.strongText,
-                                  ),
+                                  backgroundColor:
+                                      WidgetStateProperty.resolveWith(
+                                        (states) =>
+                                            states.contains(
+                                              WidgetState.selected,
+                                            )
+                                            ? tokens.primary
+                                            : tokens.surfaceAlt.withValues(
+                                                alpha: 0.6,
+                                              ),
+                                      ),
+                                  foregroundColor:
+                                      WidgetStateProperty.resolveWith(
+                                        (states) =>
+                                            states.contains(
+                                              WidgetState.selected,
+                                            )
+                                            ? Colors.white
+                                            : tokens.strongText,
+                                      ),
                                   side: WidgetStateProperty.all(
                                     BorderSide(color: tokens.border),
                                   ),
@@ -492,7 +503,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                     TextButton(
                                       onPressed: _loading
                                           ? null
-                                          : () => context.go('/register'),
+                                          : () => context.push('/register'),
                                       child: const Text('Create account'),
                                     ),
                                   ],
@@ -502,9 +513,173 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      Align(
+                        alignment: Alignment.center,
+                        child: OutlinedButton(
+                          onPressed: _showContactUsDialog,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: tokens.mutedText,
+                            side: BorderSide(color: tokens.border),
+                            shape: const StadiumBorder(),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                          ),
+                          child: Text(
+                            'Need help? Contact Us',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showContactUsDialog() async {
+    final tokens = context.luqmah;
+    final textTheme = Theme.of(context).textTheme;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.xl),
+          ),
+          backgroundColor: tokens.surface,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xxl,
+              vertical: AppSpacing.xl,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'How can we help?',
+                  style: GoogleFonts.plusJakartaSans(
+                    textStyle: textTheme.titleLarge,
+                    fontWeight: FontWeight.w800,
+                    color: tokens.strongText,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Select a contact method below.',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: tokens.mutedText,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                _buildDialogOption(
+                  icon: Icons.mail_outline_rounded,
+                  text: 'E-mail: luqmah.project@gmail.com',
+                  tokens: tokens,
+                  onTap: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    Navigator.of(dialogContext).pop();
+                    final Uri emailUri = Uri(
+                      scheme: 'mailto',
+                      path: 'luqmah.project@gmail.com',
+                    );
+                    try {
+                      await launchUrl(emailUri);
+                    } catch (e) {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Could not open email application.'),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildDialogOption(
+                  icon: Icons.phone_outlined,
+                  text: '+962778700012',
+                  tokens: tokens,
+                  onTap: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    Navigator.of(dialogContext).pop();
+                    final Uri phoneUri = Uri(
+                      scheme: 'tel',
+                      path: '+962778700012',
+                    );
+                    try {
+                      await launchUrl(phoneUri);
+                    } catch (e) {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Could not open phone application.'),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(
+                    'Close',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700,
+                      color: tokens.primary,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDialogOption({
+    required IconData icon,
+    required String text,
+    required LuqmahThemeTokens tokens,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: tokens.surfaceAlt.withValues(alpha: 0.4),
+          side: BorderSide(color: tokens.border),
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          foregroundColor: tokens.strongText,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: tokens.strongText.withValues(alpha: 0.8),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              text,
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: tokens.strongText,
               ),
             ),
           ],

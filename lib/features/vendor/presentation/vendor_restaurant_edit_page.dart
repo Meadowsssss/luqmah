@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
@@ -152,7 +153,17 @@ class _VendorRestaurantEditPageState
   Widget build(BuildContext context) {
     final vendorData = ref.watch(vendorDataControllerProvider);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/vendor/profile');
+        }
+      },
+      child: Scaffold(
       appBar: PremiumPageAppBar(
         icon: Icons.edit_rounded,
         title: 'Edit restaurant',
@@ -218,7 +229,7 @@ class _VendorRestaurantEditPageState
           );
         },
       ),
-    );
+    ),);
   }
 }
 

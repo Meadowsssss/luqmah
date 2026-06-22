@@ -13,6 +13,12 @@ import '../../../models/vendor.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/premium_page_app_bar.dart';
 
+final restaurantsScrollControllerProvider = Provider<ScrollController>((ref) {
+  final controller = ScrollController();
+  ref.onDispose(controller.dispose);
+  return controller;
+});
+
 class RestaurantsPage extends ConsumerStatefulWidget {
   const RestaurantsPage({super.key});
 
@@ -22,6 +28,24 @@ class RestaurantsPage extends ConsumerStatefulWidget {
 
 class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
   bool _isScrolled = false;
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ref.read(restaurantsScrollControllerProvider);
+    _scrollController.addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    _handleScroll(_scrollController.offset);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    super.dispose();
+  }
 
   void _handleScroll(double offset) {
     final next = offset > 0;
@@ -70,14 +94,10 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
           ],
         ),
       ),
-      body: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          _handleScroll(notification.metrics.pixels);
-          return false;
-        },
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: [
+      body: ListView(
+        controller: _scrollController,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        children: [
           if (activeOrder == null)
             _CustomerHeroCard(textTheme: textTheme, tokens: tokens)
           else
@@ -144,8 +164,7 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
               );
             },
           ),
-          ],
-        ),
+        ],
       ),
     );
   }

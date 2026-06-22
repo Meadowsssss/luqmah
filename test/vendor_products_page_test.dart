@@ -82,7 +82,7 @@ void main() {
     expect(find.text('Chocolate Donut'), findsOneWidget);
     expect(find.text('Latte'), findsOneWidget);
 
-    await tester.tap(find.text('Donuts'));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Donuts'));
     await tester.pumpAndSettle();
 
     expect(find.text('Chocolate Donut'), findsOneWidget);
@@ -110,7 +110,7 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Donuts'));
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Donuts'));
       await tester.pumpAndSettle();
 
       controller.removeItem('item_1');

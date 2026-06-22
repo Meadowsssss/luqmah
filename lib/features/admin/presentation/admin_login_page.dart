@@ -58,8 +58,20 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Admin access')),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        context.go('/login');
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Admin access'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go('/login'),
+          ),
+        ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -137,6 +149,6 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
           ),
         ),
       ),
-    );
+    ),);
   }
 }

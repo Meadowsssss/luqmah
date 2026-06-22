@@ -16,10 +16,7 @@ class AppLoadingPage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              tokens.background,
-              tokens.surface,
-            ],
+            colors: [tokens.background, tokens.surface],
           ),
         ),
         child: SafeArea(
