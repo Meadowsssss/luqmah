@@ -468,270 +468,272 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
-                AppSurfaceCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Product details',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      if (isEditMode)
-                        TextFormField(
-                          initialValue: selectedRestaurant.title,
-                          decoration: const InputDecoration(
-                            labelText: 'Restaurant',
+                  AppSurfaceCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Product details',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        if (isEditMode)
+                          TextFormField(
+                            initialValue: selectedRestaurant.title,
+                            decoration: const InputDecoration(
+                              labelText: 'Restaurant',
+                            ),
+                            readOnly: true,
+                            enabled: false,
+                          )
+                        else
+                          DropdownButtonFormField<String>(
+                            key: ValueKey(currentRestaurantId),
+                            initialValue: currentRestaurantId,
+                            items: restaurants
+                                .map(
+                                  (value) => DropdownMenuItem(
+                                    value: value.id,
+                                    child: Text(value.title),
+                                  ),
+                                )
+                                .toList(growable: false),
+                            onChanged: (value) {
+                              if (value == null) {
+                                return;
+                              }
+                              setState(() {
+                                _restaurantId = value;
+                                final nextRestaurant = restaurants.firstWhere(
+                                  (item) => item.id == value,
+                                );
+                                _categoryId = nextRestaurant.categories.isEmpty
+                                    ? null
+                                    : nextRestaurant.categories.first.id;
+                                _creatingNewCategory = false;
+                                _newCategoryController.clear();
+                              });
+                            },
+                            decoration: const InputDecoration(
+                              labelText: 'Restaurant',
+                            ),
                           ),
-                          readOnly: true,
-                          enabled: false,
-                        )
-                      else
-                        DropdownButtonFormField<String>(
-                          key: ValueKey(currentRestaurantId),
-                          initialValue: currentRestaurantId,
-                          items: restaurants
-                              .map(
-                                (value) => DropdownMenuItem(
-                                  value: value.id,
-                                  child: Text(value.title),
-                                ),
-                              )
-                              .toList(growable: false),
-                          onChanged: (value) {
-                            if (value == null) {
-                              return;
-                            }
+                        const SizedBox(height: AppSpacing.lg),
+                        SegmentedButton<bool>(
+                          segments: const [
+                            ButtonSegment<bool>(
+                              value: false,
+                              label: Text('Use existing'),
+                            ),
+                            ButtonSegment<bool>(
+                              value: true,
+                              label: Text('Create new'),
+                            ),
+                          ],
+                          selected: <bool>{_creatingNewCategory},
+                          onSelectionChanged: (selection) {
                             setState(() {
-                              _restaurantId = value;
-                              final nextRestaurant = restaurants.firstWhere(
-                                (item) => item.id == value,
-                              );
-                              _categoryId = nextRestaurant.categories.isEmpty
-                                  ? null
-                                  : nextRestaurant.categories.first.id;
-                              _creatingNewCategory = false;
-                              _newCategoryController.clear();
+                              _creatingNewCategory = selection.first;
+                              if (!_creatingNewCategory) {
+                                _newCategoryController.clear();
+                              }
                             });
                           },
-                          decoration: const InputDecoration(
-                            labelText: 'Restaurant',
-                          ),
                         ),
-                      const SizedBox(height: AppSpacing.lg),
-                      SegmentedButton<bool>(
-                        segments: const [
-                          ButtonSegment<bool>(
-                            value: false,
-                            label: Text('Use existing'),
+                        const SizedBox(height: AppSpacing.lg),
+                        if (_creatingNewCategory)
+                          TextFormField(
+                            controller: _newCategoryController,
+                            decoration: const InputDecoration(
+                              labelText: 'New category name',
+                              hintText: 'Wraps, Breakfast, Signature drinks',
+                            ),
+                            validator: (value) {
+                              if (!_creatingNewCategory) {
+                                return null;
+                              }
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Category name is required';
+                              }
+                              return null;
+                            },
+                          )
+                        else
+                          DropdownButtonFormField<String>(
+                            key: ValueKey(
+                              '${selectedRestaurant.id}-${activeCategoryId ?? 'none'}',
+                            ),
+                            initialValue: activeCategoryId,
+                            items: categories
+                                .map(
+                                  (value) => DropdownMenuItem(
+                                    value: value.id,
+                                    child: Text(value.title),
+                                  ),
+                                )
+                                .toList(growable: false),
+                            onChanged: categories.isEmpty
+                                ? null
+                                : (value) {
+                                    setState(() => _categoryId = value);
+                                  },
+                            decoration: InputDecoration(
+                              labelText: 'Category',
+                              helperText: categories.isEmpty
+                                  ? 'No categories exist yet for this restaurant. Create one below.'
+                                  : null,
+                            ),
                           ),
-                          ButtonSegment<bool>(
-                            value: true,
-                            label: Text('Create new'),
-                          ),
-                        ],
-                        selected: <bool>{_creatingNewCategory},
-                        onSelectionChanged: (selection) {
-                          setState(() {
-                            _creatingNewCategory = selection.first;
-                            if (!_creatingNewCategory) {
-                              _newCategoryController.clear();
-                            }
-                          });
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      if (_creatingNewCategory)
+                        const SizedBox(height: AppSpacing.lg),
                         TextFormField(
-                          controller: _newCategoryController,
+                          controller: _titleController,
                           decoration: const InputDecoration(
-                            labelText: 'New category name',
-                            hintText: 'Wraps, Breakfast, Signature drinks',
+                            labelText: 'Food title',
+                          ),
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Food title is required'
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        TextFormField(
+                          controller: _descriptionController,
+                          decoration: const InputDecoration(
+                            labelText: 'Description',
+                          ),
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        TextFormField(
+                          controller: _ingredientsController,
+                          decoration: const InputDecoration(
+                            labelText: 'Ingredients',
+                            hintText: 'Tomato, mozzarella, basil',
+                          ),
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Ingredients are required'
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        TextFormField(
+                          controller: _priceController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Base price in JD',
                           ),
                           validator: (value) {
-                            if (!_creatingNewCategory) {
-                              return null;
-                            }
                             if (value == null || value.trim().isEmpty) {
-                              return 'Category name is required';
+                              return 'Price is required';
+                            }
+                            if (double.tryParse(value.trim()) == null) {
+                              return 'Enter a valid price';
                             }
                             return null;
                           },
-                        )
-                      else
-                        DropdownButtonFormField<String>(
-                          key: ValueKey(
-                            '${selectedRestaurant.id}-${activeCategoryId ?? 'none'}',
-                          ),
-                          initialValue: activeCategoryId,
-                          items: categories
-                              .map(
-                                (value) => DropdownMenuItem(
-                                  value: value.id,
-                                  child: Text(value.title),
-                                ),
-                              )
-                              .toList(growable: false),
-                          onChanged: categories.isEmpty
-                              ? null
-                              : (value) {
-                                  setState(() => _categoryId = value);
-                                },
-                          decoration: InputDecoration(
-                            labelText: 'Category',
-                            helperText: categories.isEmpty
-                                ? 'No categories exist yet for this restaurant. Create one below.'
-                                : null,
-                          ),
                         ),
-                      const SizedBox(height: AppSpacing.lg),
-                      TextFormField(
-                        controller: _titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Food title',
+                        const SizedBox(height: AppSpacing.lg),
+                        _ProductImagePicker(
+                          selectedBytes: _selectedImageBytes,
+                          existingImageUrl: existingImageUrl,
+                          onChoose: _submitting ? null : _pickImage,
+                          onRemove: hasImage
+                              ? () => _removeImage(
+                                  hasExistingImage: existingImageUrl.isNotEmpty,
+                                )
+                              : null,
                         ),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                            ? 'Food title is required'
-                            : null,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      TextFormField(
-                        controller: _descriptionController,
-                        decoration: const InputDecoration(
-                          labelText: 'Description',
-                        ),
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      TextFormField(
-                        controller: _ingredientsController,
-                        decoration: const InputDecoration(
-                          labelText: 'Ingredients',
-                          hintText: 'Tomato, mozzarella, basil',
-                        ),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                            ? 'Ingredients are required'
-                            : null,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      TextFormField(
-                        controller: _priceController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Base price in JD',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Price is required';
-                          }
-                          if (double.tryParse(value.trim()) == null) {
-                            return 'Enter a valid price';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      _ProductImagePicker(
-                        selectedBytes: _selectedImageBytes,
-                        existingImageUrl: existingImageUrl,
-                        onChoose: _submitting ? null : _pickImage,
-                        onRemove: hasImage
-                            ? () => _removeImage(
-                                hasExistingImage: existingImageUrl.isNotEmpty,
-                              )
-                            : null,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                AppSurfaceCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Option groups',
-                              style: Theme.of(context).textTheme.titleLarge,
+                  const SizedBox(height: AppSpacing.lg),
+                  AppSurfaceCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Option groups',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
                             ),
-                          ),
-                          TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _optionGroups.add(
-                                  _OptionGroupDraft(
-                                    title: '',
-                                    selectionType:
-                                        VendorMenuItemOptionSelectionType
-                                            .single,
-                                    options: [
-                                      _OptionValueDraft(
-                                        title: '',
-                                        priceDeltaText: '0',
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              });
-                            },
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Add group'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        'Use groups for size, milk type, sugar level, extras, or any other choices. New groups start as single choice.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: context.luqmah.mutedText,
+                            TextButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _optionGroups.add(
+                                    _OptionGroupDraft(
+                                      title: '',
+                                      selectionType:
+                                          VendorMenuItemOptionSelectionType
+                                              .single,
+                                      options: [
+                                        _OptionValueDraft(
+                                          title: '',
+                                          priceDeltaText: '0',
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                });
+                              },
+                              icon: const Icon(Icons.add_rounded),
+                              label: const Text('Add group'),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      if (_optionGroups.isEmpty)
+                        const SizedBox(height: AppSpacing.sm),
                         Text(
-                          'No option groups yet. Leave this empty for a simple product, or add a group for choices like size.',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        )
-                      else
-                        for (final entry in _optionGroups.asMap().entries) ...[
-                          _OptionGroupEditor(
-                            key: ValueKey('option-group-${entry.key}'),
-                            group: entry.value,
-                            onRemove: () {
-                              setState(() => _optionGroups.removeAt(entry.key));
-                            },
-                            onChanged: () => setState(() {}),
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-                        ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                ElevatedButton(
-                  onPressed: _submitting
-                      ? null
-                      : () => _submit(
-                          isEditMode: isEditMode,
-                          editingItem: editingItem,
+                          'Use groups for size, milk type, sugar level, extras, or any other choices. New groups start as single choice.',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: context.luqmah.mutedText),
                         ),
-                  child: _submitting
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                        const SizedBox(height: AppSpacing.lg),
+                        if (_optionGroups.isEmpty)
+                          Text(
+                            'No option groups yet. Leave this empty for a simple product, or add a group for choices like size.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          )
+                        else
+                          for (final entry
+                              in _optionGroups.asMap().entries) ...[
+                            _OptionGroupEditor(
+                              key: ValueKey('option-group-${entry.key}'),
+                              group: entry.value,
+                              onRemove: () {
+                                setState(
+                                  () => _optionGroups.removeAt(entry.key),
+                                );
+                              },
+                              onChanged: () => setState(() {}),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  ElevatedButton(
+                    onPressed: _submitting
+                        ? null
+                        : () => _submit(
+                            isEditMode: isEditMode,
+                            editingItem: editingItem,
                           ),
-                        )
-                      : Text(isEditMode ? 'Save changes' : 'Add product'),
-                ),
+                    child: _submitting
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(isEditMode ? 'Save changes' : 'Add product'),
+                  ),
                 ],
               ),
             ),
@@ -865,11 +867,11 @@ class _OptionGroupEditor extends StatelessWidget {
             segments: const [
               ButtonSegment(
                 value: VendorMenuItemOptionSelectionType.single,
-                label: Text('Single choice (radio buttons)'),
+                label: Text('Single choice'),
               ),
               ButtonSegment(
                 value: VendorMenuItemOptionSelectionType.multiple,
-                label: Text('Multiple choice (checkboxes)'),
+                label: Text('Multiple choice'),
               ),
             ],
             selected: <VendorMenuItemOptionSelectionType>{group.selectionType},
