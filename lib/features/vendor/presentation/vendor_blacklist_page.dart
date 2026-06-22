@@ -87,7 +87,7 @@ class _VendorBlacklistPageState extends ConsumerState<VendorBlacklistPage> {
       appBar: PremiumPageAppBar(
         icon: Icons.block_rounded,
         title: 'Blacklisted students',
-        subtitle: 'Review and manage restricted customers from future orders.',
+        subtitle: 'Review and manage restricted customers.',
         isScrolled: _isScrolled,
       ),
       body: blacklist.when(
@@ -121,65 +121,66 @@ class _VendorBlacklistPageState extends ConsumerState<VendorBlacklistPage> {
             child: ListView.separated(
               padding: const EdgeInsets.all(AppSpacing.lg),
               itemCount: entries.length,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: AppSpacing.lg),
               itemBuilder: (context, index) {
                 final entry = entries[index];
                 return AppSurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            entry.customerName,
-                            style: Theme.of(context).textTheme.titleMedium,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.customerName,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ),
-                        ),
-                        Text(
-                          formatter.format(entry.createdAt),
-                          style: Theme.of(context).textTheme.bodySmall,
+                          Text(
+                            formatter.format(entry.createdAt),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        entry.customerEmail.isEmpty
+                            ? 'No email available'
+                            : entry.customerEmail,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        entry.customerPhone.isEmpty
+                            ? 'No phone number added'
+                            : entry.customerPhone,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (entry.reason.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: context.luqmah.surfaceAlt,
+                            borderRadius: BorderRadius.circular(AppRadii.lg),
+                          ),
+                          child: Text(entry.reason),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      entry.customerEmail.isEmpty
-                          ? 'No email available'
-                          : entry.customerEmail,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      entry.customerPhone.isEmpty
-                          ? 'No phone number added'
-                          : entry.customerPhone,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    if (entry.reason.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        decoration: BoxDecoration(
-                          color: context.luqmah.surfaceAlt,
-                          borderRadius: BorderRadius.circular(AppRadii.lg),
+                      const SizedBox(height: AppSpacing.lg),
+                      OutlinedButton(
+                        onPressed: () => _removeEntry(
+                          context,
+                          ref,
+                          entry.customerId,
+                          entry.customerName,
                         ),
-                        child: Text(entry.reason),
+                        child: const Text('Remove from blacklist'),
                       ),
                     ],
-                    const SizedBox(height: AppSpacing.lg),
-                    OutlinedButton(
-                      onPressed: () => _removeEntry(
-                        context,
-                        ref,
-                        entry.customerId,
-                        entry.customerName,
-                      ),
-                      child: const Text('Remove from blacklist'),
-                    ),
-                  ],
-                ),
+                  ),
                 );
               },
             ),

@@ -48,7 +48,7 @@ class _CartPageState extends ConsumerState<CartPage> {
       appBar: PremiumPageAppBar(
         icon: Icons.shopping_bag_rounded,
         title: 'Your cart',
-        subtitle: 'Review your items and place the order when you are ready.',
+        subtitle: 'Review your items and place the order.',
         isScrolled: _isScrolled,
       ),
       body: SafeArea(
@@ -86,12 +86,12 @@ class _CartPageState extends ConsumerState<CartPage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                      Text(
-                                        'Your cart',
-                                        style: textTheme.titleLarge,
-                                      ),
-                                      const SizedBox(height: AppSpacing.lg),
-                                      Row(
+                                        Text(
+                                          'Your cart',
+                                          style: textTheme.titleLarge,
+                                        ),
+                                        const SizedBox(height: AppSpacing.lg),
+                                        Row(
                                           children: [
                                             Text(
                                               '${lines.length} ${lines.length == 1 ? 'item' : 'items'}',

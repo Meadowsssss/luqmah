@@ -96,7 +96,9 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
     }
 
     try {
-      await ref.read(vendorDataControllerProvider.notifier).deleteMenuItem(itemId);
+      await ref
+          .read(vendorDataControllerProvider.notifier)
+          .deleteMenuItem(itemId);
       if (!context.mounted) {
         return;
       }
@@ -123,7 +125,7 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
       appBar: PremiumPageAppBar(
         icon: Icons.restaurant_menu_rounded,
         title: 'Products',
-        subtitle: 'Add dishes, update items, and keep your menu ready to order from.',
+        subtitle: 'Add dishes, items, and keep your menu ready.',
         isScrolled: _isScrolled,
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -161,7 +163,8 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                     for (final item in items) item.categoryId: item.category,
                   }.entries,
                 ];
-                final effectiveSelectedCategoryId = categoryEntries.any(
+                final effectiveSelectedCategoryId =
+                    categoryEntries.any(
                       (entry) => entry.key == _selectedCategoryId,
                     )
                     ? _selectedCategoryId
@@ -174,10 +177,11 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                 final visibleItems = effectiveSelectedCategoryId == _allCategory
                     ? items
                     : items
-                        .where(
-                          (item) => item.categoryId == effectiveSelectedCategoryId,
-                        )
-                        .toList(growable: false);
+                          .where(
+                            (item) =>
+                                item.categoryId == effectiveSelectedCategoryId,
+                          )
+                          .toList(growable: false);
 
                 if (items.isEmpty) {
                   return const AppEmptyState(
@@ -204,20 +208,27 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                             checkmarkColor: context.luqmah.primary,
                             side: BorderSide(
                               color: effectiveSelectedCategoryId == category.key
-                                  ? context.luqmah.primary.withValues(alpha: 0.45)
+                                  ? context.luqmah.primary.withValues(
+                                      alpha: 0.45,
+                                    )
                                   : context.luqmah.border,
                             ),
                             labelStyle: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
-                                  color: effectiveSelectedCategoryId == category.key
+                                  color:
+                                      effectiveSelectedCategoryId ==
+                                          category.key
                                       ? context.luqmah.primary
                                       : context.luqmah.strongText,
                                   fontWeight: FontWeight.w700,
                                 ),
                             label: Text(category.value),
-                            selected: effectiveSelectedCategoryId == category.key,
+                            selected:
+                                effectiveSelectedCategoryId == category.key,
                             onSelected: (_) {
-                              setState(() => _selectedCategoryId = category.key);
+                              setState(
+                                () => _selectedCategoryId = category.key,
+                              );
                             },
                           );
                         },
@@ -245,11 +256,14 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                   const SizedBox(width: AppSpacing.md),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           item.title,
-                                          style: Theme.of(context).textTheme.titleMedium,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleMedium,
                                         ),
                                         const SizedBox(height: AppSpacing.xs),
                                         Wrap(
@@ -279,7 +293,9 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                       borderRadius: BorderRadius.circular(999),
                                       border: Border.all(
                                         color: item.isAvailable
-                                            ? context.luqmah.primary.withValues(alpha: 0.4)
+                                            ? context.luqmah.primary.withValues(
+                                                alpha: 0.4,
+                                              )
                                             : context.luqmah.border,
                                       ),
                                     ),
@@ -305,7 +321,9 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                     onSelected: (value) async {
                                       switch (value) {
                                         case 'edit':
-                                          await context.push('/vendor/products/${item.id}/edit');
+                                          await context.push(
+                                            '/vendor/products/${item.id}/edit',
+                                          );
                                           break;
                                         case 'availability':
                                           await _toggleAvailability(
@@ -316,7 +334,11 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                           );
                                           break;
                                         case 'delete':
-                                          await _deleteItem(context, ref, item.id);
+                                          await _deleteItem(
+                                            context,
+                                            ref,
+                                            item.id,
+                                          );
                                           break;
                                       }
                                     },
@@ -327,7 +349,9 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                       ),
                                       PopupMenuItem<String>(
                                         value: 'availability',
-                                        child: Text(item.isAvailable ? 'Hide' : 'Show'),
+                                        child: Text(
+                                          item.isAvailable ? 'Hide' : 'Show',
+                                        ),
                                       ),
                                       const PopupMenuItem<String>(
                                         value: 'delete',
@@ -354,10 +378,10 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                             '${group.title}: ${group.options.map((option) => option.label).join(', ')}',
                                       )
                                       .join(' | '),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(color: context.luqmah.mutedText),
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: context.luqmah.mutedText,
+                                      ),
                                 ),
                               ],
                             ],
@@ -428,9 +452,9 @@ class _ProductMetaPill extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: tokens.strongText,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: tokens.strongText,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

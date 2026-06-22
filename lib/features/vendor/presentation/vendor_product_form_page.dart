@@ -345,7 +345,7 @@ class _VendorProductFormPageState extends ConsumerState<VendorProductFormPage> {
           title: pageTitle,
           subtitle: isEditMode
               ? 'Update item details and keep the menu clear for customers.'
-              : 'Add a new item and keep your menu ready to order from.',
+              : 'Add a new item and keep your menu updated.',
           isScrolled: _isScrolled,
         ),
         body: Padding(
