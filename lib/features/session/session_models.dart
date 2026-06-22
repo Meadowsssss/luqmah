@@ -5,19 +5,33 @@ import 'backend_auth_repository.dart';
 enum AppRole { customer, vendor, admin }
 
 class PendingCustomerProfile {
-  const PendingCustomerProfile({required this.name, required this.phoneNumber});
+  const PendingCustomerProfile({
+    required this.name,
+    required this.phoneNumber,
+    this.email = '',
+    this.password = '',
+  });
 
   final String name;
   final String phoneNumber;
+  final String email;
+  final String password;
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'phoneNumber': phoneNumber};
+    return {
+      'name': name,
+      'phoneNumber': phoneNumber,
+      'email': email,
+      'password': password,
+    };
   }
 
   factory PendingCustomerProfile.fromJson(Map<String, dynamic> json) {
     return PendingCustomerProfile(
       name: json['name'] as String? ?? '',
       phoneNumber: json['phoneNumber'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      password: json['password'] as String? ?? '',
     );
   }
 }

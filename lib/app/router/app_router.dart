@@ -41,7 +41,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final snapshot = session.snapshot;
       final location = state.matchedLocation;
       final isAuthRoute = location == '/login' || location == '/register';
-      final isVerifyRoute = location == '/verify-email';
+      final isVerifyLinkRoute = location == '/verify-email' || location == '/__/auth/action';
       final isLoadingRoute = location == '/loading';
       final isVendorRoute = location.startsWith('/vendor');
       final isAdminRoute = location.startsWith('/admin');
@@ -52,17 +52,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (!snapshot.isSignedIn) {
-        return (isAuthRoute || isAdminLoginRoute) ? null : '/login';
+        return (isAuthRoute || isAdminLoginRoute || isVerifyLinkRoute) ? null : '/login';
       }
 
       if (!snapshot.isAdminSurface &&
           !snapshot.isVendorSurface &&
           !snapshot.isEmailVerified) {
-        return isVerifyRoute ? null : '/verify-email';
+        return isVerifyLinkRoute ? null : '/verify-email';
       }
 
       if (snapshot.isAdminSurface) {
-        if (isLoadingRoute || isAuthRoute || isVerifyRoute || !isAdminRoute) {
+        if (isLoadingRoute || isAuthRoute || isVerifyLinkRoute || !isAdminRoute) {
           return '/admin/vendors';
         }
         return null;
@@ -71,7 +71,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (snapshot.isVendorSurface) {
         if (isLoadingRoute ||
             isAuthRoute ||
-            isVerifyRoute ||
+            isVerifyLinkRoute ||
             isAdminRoute ||
             !isVendorRoute) {
           return '/vendor/orders';
@@ -82,7 +82,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (isVendorRoute ||
           isAdminRoute ||
           isAuthRoute ||
-          isVerifyRoute ||
+          isVerifyLinkRoute ||
           isLoadingRoute) {
         return '/restaurants';
       }
@@ -115,7 +115,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/verify-email',
-        builder: (context, state) => const VerifyEmailPage(),
+        builder: (context, state) {
+          final link = state.uri.toString();
+          final hasCode = state.uri.queryParameters.containsKey('oobCode');
+          return VerifyEmailPage(emailLink: hasCode ? link : null);
+        },
+      ),
+      GoRoute(
+        path: '/__/auth/action',
+        builder: (context, state) {
+          final link = state.uri.toString();
+          final hasCode = state.uri.queryParameters.containsKey('oobCode');
+          return VerifyEmailPage(emailLink: hasCode ? link : null);
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

@@ -89,4 +89,25 @@ class AuthRepository {
   }
 
   Future<void> logout() => _auth.signOut();
+
+  Future<void> sendSignInLinkToEmail({
+    required String email,
+    required ActionCodeSettings actionCodeSettings,
+  }) {
+    return _auth.sendSignInLinkToEmail(
+      email: email,
+      actionCodeSettings: actionCodeSettings,
+    );
+  }
+
+  bool isSignInWithEmailLink(String emailLink) {
+    return _auth.isSignInWithEmailLink(emailLink);
+  }
+
+  Future<UserCredential> signInWithEmailLink({
+    required String email,
+    required String emailLink,
+  }) {
+    return _auth.signInWithEmailLink(email: email, emailLink: emailLink);
+  }
 }

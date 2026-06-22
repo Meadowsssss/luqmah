@@ -51,8 +51,10 @@ class SessionController extends ChangeNotifier {
   late final StreamSubscription<User?> _subscription;
 
   SessionSnapshot _snapshot = SessionSnapshot.loading();
+  PendingCustomerProfile? _pendingProfile;
 
   SessionSnapshot get snapshot => _snapshot;
+  PendingCustomerProfile? get pendingProfile => _pendingProfile;
 
   Future<void> refresh({bool showLoading = false}) async {
     if (showLoading) {
@@ -74,6 +76,7 @@ class SessionController extends ChangeNotifier {
       await minimumLoading;
     }
     _snapshot = next;
+    _pendingProfile = await _sessionRepository.loadPendingCustomerProfile();
     notifyListeners();
 
     await _syncCustomerBackendSessionIfNeeded();
@@ -164,24 +167,30 @@ class SessionController extends ChangeNotifier {
         await _authRepository.logout();
       }
 
-      final credential = await _authRepository.register(
+      final profile = PendingCustomerProfile(
+        name: normalizedName,
+        phoneNumber: normalizedPhoneNumber,
         email: normalizedEmail,
         password: password,
       );
-      await _authRepository.updateCurrentUserDisplayName(normalizedName);
-      await _sessionRepository.savePendingCustomerProfile(
-        PendingCustomerProfile(
-          name: normalizedName,
-          phoneNumber: normalizedPhoneNumber,
-        ),
+      await _sessionRepository.savePendingCustomerProfile(profile);
+
+      final actionCodeSettings = ActionCodeSettings(
+        url: 'https://luqmah-14bc5.firebaseapp.com/verify-email',
+        handleCodeInApp: true,
+        androidPackageName: 'com.example.flutter_application_1',
+        androidInstallApp: true,
+        androidMinimumVersion: '12',
+        iOSBundleId: 'com.example.flutterApplication1',
       );
-      await credential.user?.sendEmailVerification();
+
+      await _authRepository.sendSignInLinkToEmail(
+        email: normalizedEmail,
+        actionCodeSettings: actionCodeSettings,
+      );
+
       await refresh();
     } catch (error) {
-      final user = _authRepository.currentUser;
-      if (user != null) {
-        await user.delete();
-      }
       await _sessionRepository.clearBackendSession();
       await _sessionRepository.clearPendingCustomerProfile();
       rethrow;
@@ -189,7 +198,80 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> resendVerification() async {
-    await _authRepository.sendEmailVerification();
+    final profile = await _sessionRepository.loadPendingCustomerProfile();
+    if (profile != null && profile.email.isNotEmpty) {
+      final actionCodeSettings = ActionCodeSettings(
+        url: 'https://luqmah-14bc5.firebaseapp.com/verify-email',
+        handleCodeInApp: true,
+        androidPackageName: 'com.example.flutter_application_1',
+        androidInstallApp: true,
+        androidMinimumVersion: '12',
+        iOSBundleId: 'com.example.flutterApplication1',
+      );
+      await _authRepository.sendSignInLinkToEmail(
+        email: profile.email,
+        actionCodeSettings: actionCodeSettings,
+      );
+    }
+  }
+
+  Future<void> completeEmailLinkRegistration(
+    String emailLink, {
+    String? email,
+    String? name,
+    String? phone,
+    String? password,
+  }) async {
+    final storedProfile = await _sessionRepository.loadPendingCustomerProfile();
+    final finalEmail = email?.trim() ?? storedProfile?.email ?? '';
+    final finalName = name?.trim() ?? storedProfile?.name ?? '';
+    final finalPhone = phone?.trim() ?? storedProfile?.phoneNumber ?? '';
+    final finalPassword = password ?? storedProfile?.password ?? '';
+
+    if (finalEmail.isEmpty) {
+      throw FirebaseAuthException(
+        code: 'missing-email',
+        message: 'Email address is required to complete sign in.',
+      );
+    }
+
+    final credential = await _authRepository.signInWithEmailLink(
+      email: finalEmail,
+      emailLink: emailLink,
+    );
+
+    final user = credential.user;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-user-returned',
+        message: 'Could not complete sign in.',
+      );
+    }
+
+    if (finalName.isNotEmpty) {
+      await _authRepository.updateCurrentUserDisplayName(finalName);
+    }
+
+    if (finalPassword.isNotEmpty) {
+      await user.updatePassword(finalPassword);
+    }
+
+    if (finalName.isNotEmpty && finalPhone.isNotEmpty) {
+      await _sessionRepository.savePendingCustomerProfile(
+        PendingCustomerProfile(
+          name: finalName,
+          phoneNumber: finalPhone,
+        ),
+      );
+    }
+
+    await _syncCustomerBackendSessionIfNeeded(
+      forceRefreshFirebaseToken: true,
+      rethrowOnFailure: true,
+    );
+
+    await _sessionRepository.clearPendingCustomerProfile();
+    await refresh();
   }
 
   Future<void> reloadVerification() async {

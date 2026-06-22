@@ -56,6 +56,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      if (mounted) {
+        context.go('/verify-email');
+      }
     } catch (error) {
       setState(() {
         _error = formatAuthError(error);
