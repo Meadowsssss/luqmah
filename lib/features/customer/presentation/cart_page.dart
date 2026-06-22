@@ -40,7 +40,7 @@ class _CartPageState extends ConsumerState<CartPage> {
     final restaurantAsync = lines.isEmpty
         ? null
         : ref.watch(restaurantByIdProvider(lines.first.item.restaurantId));
-    final isBusy = restaurantAsync?.valueOrNull?.isBusy ?? false;
+    final isBusy = restaurantAsync?.value?.isBusy ?? false;
     final textTheme = Theme.of(context).textTheme;
     final tokens = context.luqmah;
 

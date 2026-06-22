@@ -42,7 +42,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
   }
 
   void _replaceMenuItem(VendorMenuItem item) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) {
       return;
     }
@@ -66,7 +66,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
   }
 
   void _removeMenuItem(String itemId) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) {
       return;
     }
@@ -83,7 +83,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
   }
 
   void _replaceOrder(VendorOrder order) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) {
       return;
     }
@@ -105,7 +105,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
   }
 
   void _patchOrderStatus(String orderId, VendorOrderStatus status) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) {
       return;
     }
@@ -125,7 +125,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
   }
 
   void _patchRestaurantBusyState(String restaurantId, bool isBusy) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) {
       return;
     }
@@ -146,7 +146,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
   }
 
   void _replaceRestaurant(VendorRestaurant updatedRestaurant) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) {
       return;
     }
@@ -229,7 +229,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
   }
 
   Future<void> refreshSilently() async {
-    final previous = state.valueOrNull;
+    final previous = state.value;
     final next = await AsyncValue.guard(build);
     if (previous != null && next.hasError) {
       return;
@@ -241,7 +241,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
     String restaurantId,
     VendorRestaurantCategory category,
   ) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) {
       return;
     }
@@ -454,7 +454,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       status: status,
     );
 
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) {
       await refresh();
       return;
@@ -486,7 +486,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       isBusy: isBusy,
     );
 
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) {
       await refresh();
       return;
@@ -528,7 +528,7 @@ class VendorDataController extends AsyncNotifier<VendorDataState> {
       coverImage: coverImage,
     );
 
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) {
       await refresh();
       return;

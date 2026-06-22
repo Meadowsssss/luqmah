@@ -144,7 +144,7 @@ class _OrderHistoryCard extends ConsumerWidget {
     final restaurantAsync = order.restaurantId.isEmpty
         ? null
         : ref.watch(restaurantByIdProvider(order.restaurantId));
-    final restaurant = restaurantAsync?.valueOrNull;
+    final restaurant = restaurantAsync?.value;
     final statusColor = switch (order.status) {
       VendorOrderStatus.accepted => context.luqmah.success,
       VendorOrderStatus.inProgress => context.luqmah.warning,

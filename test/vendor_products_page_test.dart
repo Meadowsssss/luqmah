@@ -46,7 +46,7 @@ class _FakeVendorProductsController extends VendorDataController {
   }
 
   void removeItem(String itemId) {
-    final currentState = state.valueOrNull ?? _initialState;
+    final currentState = state.value ?? _initialState;
     state = AsyncData(
       VendorDataState(
         orders: currentState.orders,

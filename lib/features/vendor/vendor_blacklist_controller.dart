@@ -20,7 +20,7 @@ class VendorBlacklistController
   }
 
   Future<void> refreshSilently() async {
-    final previous = state.valueOrNull;
+    final previous = state.value;
     final next = await AsyncValue.guard(build);
     if (previous != null && next.hasError) {
       return;
@@ -43,7 +43,7 @@ class VendorBlacklistController
       reason: reason,
     );
 
-    final currentEntries = state.valueOrNull ?? const <VendorBlacklistEntry>[];
+    final currentEntries = state.value ?? const <VendorBlacklistEntry>[];
     state = AsyncData([
       entry,
       ...currentEntries.where((item) => item.customerId != customerId),
@@ -62,7 +62,7 @@ class VendorBlacklistController
       customerId: customerId,
     );
 
-    final currentEntries = state.valueOrNull ?? const <VendorBlacklistEntry>[];
+    final currentEntries = state.value ?? const <VendorBlacklistEntry>[];
     state = AsyncData(
       currentEntries
           .where((entry) => entry.customerId != removedCustomerId)

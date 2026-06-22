@@ -199,7 +199,7 @@ class _VendorOrderDetailsPageState
         final blacklistEntryAsync = ref.watch(
           vendorBlacklistEntryByCustomerIdProvider(order.customerId),
         );
-        final blacklistEntry = blacklistEntryAsync.valueOrNull;
+        final blacklistEntry = blacklistEntryAsync.value;
         final isBlacklisted = blacklistEntry != null;
 
         return Scaffold(

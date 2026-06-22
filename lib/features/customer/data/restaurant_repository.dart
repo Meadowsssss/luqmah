@@ -209,7 +209,7 @@ class RestaurantsController extends AsyncNotifier<List<Restaurant>> {
   }
 
   Future<void> refreshSilently() async {
-    final previous = state.valueOrNull;
+    final previous = state.value;
     final next = await AsyncValue.guard(build);
     if (previous != null && next.hasError) {
       return;
@@ -218,7 +218,7 @@ class RestaurantsController extends AsyncNotifier<List<Restaurant>> {
   }
 
   void patchBusyState(String restaurantId, bool isBusy) {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null) {
       return;
     }
@@ -240,20 +240,23 @@ class RestaurantsController extends AsyncNotifier<List<Restaurant>> {
 
 final restaurantByIdProvider = AsyncNotifierProvider.autoDispose
     .family<RestaurantDetailController, Restaurant?, String>(
-      RestaurantDetailController.new,
+      (id) => RestaurantDetailController(id),
     );
 
-class RestaurantDetailController extends AutoDisposeFamilyAsyncNotifier<Restaurant?, String> {
+class RestaurantDetailController extends AsyncNotifier<Restaurant?> {
+  RestaurantDetailController(this.id);
+  final String id;
+
   RestaurantRepository get _repository => ref.read(restaurantRepositoryProvider);
 
   @override
-  Future<Restaurant?> build(String id) {
+  Future<Restaurant?> build() {
     return _repository.fetchRestaurantById(id);
   }
 
   Future<void> refreshSilently() async {
-    final previous = state.valueOrNull;
-    final next = await AsyncValue.guard(() => build(arg));
+    final previous = state.value;
+    final next = await AsyncValue.guard(() => build());
     if (previous != null && next.hasError) {
       return;
     }
@@ -261,7 +264,7 @@ class RestaurantDetailController extends AutoDisposeFamilyAsyncNotifier<Restaura
   }
 
   void patchBusyState(bool isBusy) {
-    final restaurant = state.valueOrNull;
+    final restaurant = state.value;
     if (restaurant == null) {
       return;
     }
@@ -271,7 +274,7 @@ class RestaurantDetailController extends AutoDisposeFamilyAsyncNotifier<Restaura
 
     final repository = _repository;
     if (repository is ApiRestaurantRepository) {
-      repository.cacheRestaurant(nextRestaurant);
+      repository.patchRestaurantBusyState(id, isBusy);
     }
   }
 }

@@ -27,7 +27,7 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
   }
 
   void _replaceOrder(CustomerOrder order) {
-    final currentOrders = state.valueOrNull;
+    final currentOrders = state.value;
     if (currentOrders == null) {
       return;
     }
@@ -43,7 +43,7 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
   }
 
   void _patchOrderStatus(String orderId, VendorOrderStatus status) {
-    final currentOrders = state.valueOrNull;
+    final currentOrders = state.value;
     if (currentOrders == null) {
       return;
     }
@@ -100,7 +100,7 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
       );
     }
 
-    final currentOrders = state.valueOrNull;
+    final currentOrders = state.value;
     if (currentOrders != null && hasActiveCustomerOrder(currentOrders)) {
       throw const ApiException(
         "You already have an order in progress. You can't place a new order until your current order is finished.",
@@ -135,7 +135,7 @@ class CustomerOrdersController extends AsyncNotifier<List<CustomerOrder>> {
   }
 
   Future<void> refreshSilently() async {
-    final previous = state.valueOrNull;
+    final previous = state.value;
     final next = await AsyncValue.guard(build);
     if (previous != null && next.hasError) {
       return;

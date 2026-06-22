@@ -38,7 +38,7 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
     final textTheme = Theme.of(context).textTheme;
     final tokens = context.luqmah;
     CustomerOrder? activeOrder;
-    final orderItems = orders.valueOrNull ?? const <CustomerOrder>[];
+    final orderItems = orders.value ?? const <CustomerOrder>[];
     for (final order in orderItems) {
       if (order.isActive) {
         activeOrder = order;
