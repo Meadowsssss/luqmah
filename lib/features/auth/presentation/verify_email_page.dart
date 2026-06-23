@@ -60,7 +60,13 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
     final snapshot = ref.watch(sessionControllerProvider).snapshot;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify your email')),
+      appBar: AppBar(
+        title: const Text('Verify your email'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => ref.read(sessionControllerProvider).logout(),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
