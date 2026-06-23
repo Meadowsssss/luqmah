@@ -85,55 +85,47 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                    child: Column(
                      crossAxisAlignment: CrossAxisAlignment.stretch,
                      children: [
-                       Container(
-                         padding: const EdgeInsets.all(AppSpacing.lg),
-                         decoration: BoxDecoration(
-                           color: tokens.surfaceAlt.withValues(alpha: 0.68),
-                           borderRadius: BorderRadius.circular(AppRadii.lg),
-                           border: Border.all(color: tokens.border),
-                         ),
-                         child: Row(
-                           children: [
-                             Container(
-                               height: 46,
-                               width: 46,
-                               decoration: BoxDecoration(
-                                 color: tokens.primary.withValues(alpha: 0.12),
-                                 borderRadius: BorderRadius.circular(
-                                   AppRadii.md,
+                       Row(
+                         children: [
+                           Container(
+                             height: 46,
+                             width: 46,
+                             decoration: BoxDecoration(
+                               color: tokens.primary.withValues(alpha: 0.12),
+                               borderRadius: BorderRadius.circular(
+                                 AppRadii.md,
+                               ),
+                             ),
+                             child: Icon(
+                               Icons.person_add_alt_1_rounded,
+                               color: tokens.primary,
+                             ),
+                           ),
+                           const SizedBox(width: AppSpacing.md),
+                           Expanded(
+                             child: Column(
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 Text(
+                                   'Create your account',
+                                   style: Theme.of(context)
+                                       .textTheme
+                                       .titleLarge,
                                  ),
-                               ),
-                               child: Icon(
-                                 Icons.person_add_alt_1_rounded,
-                                 color: tokens.primary,
-                               ),
+                                 const SizedBox(height: AppSpacing.xs),
+                                 Text(
+                                   'Set up your Luqmah profile with your name, phone number, and Hashemite University email.',
+                                   style: Theme.of(context)
+                                       .textTheme
+                                       .bodyMedium
+                                       ?.copyWith(
+                                         color: context.luqmah.mutedText,
+                                       ),
+                                 ),
+                               ],
                              ),
-                             const SizedBox(width: AppSpacing.md),
-                             Expanded(
-                               child: Column(
-                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                 children: [
-                                   Text(
-                                     'Create your account',
-                                     style: Theme.of(context)
-                                         .textTheme
-                                         .titleLarge,
-                                   ),
-                                   const SizedBox(height: AppSpacing.xs),
-                                   Text(
-                                     'Set up your Luqmah profile with your name, phone number, and Hashemite University email.',
-                                     style: Theme.of(context)
-                                         .textTheme
-                                         .bodyMedium
-                                         ?.copyWith(
-                                           color: context.luqmah.mutedText,
-                                         ),
-                                   ),
-                                 ],
-                               ),
-                             ),
-                           ],
-                         ),
+                           ),
+                         ],
                        ),
                        const SizedBox(height: AppSpacing.xl),
                        Text(

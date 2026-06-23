@@ -22,6 +22,19 @@ class RestaurantsPage extends ConsumerStatefulWidget {
 
 class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
   bool _isScrolled = false;
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   void _handleScroll(double offset) {
     final next = offset > 0;
@@ -33,6 +46,25 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<List<CustomerOrder>>>(
+      customerOrdersControllerProvider,
+      (previous, next) {
+        final prevItems = previous?.valueOrNull ?? const [];
+        final nextItems = next.valueOrNull ?? const [];
+        final prevHasActive = prevItems.any((o) => o.isActive);
+        final nextHasActive = nextItems.any((o) => o.isActive);
+        if (nextHasActive && !prevHasActive) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        }
+      },
+    );
+
     final restaurants = ref.watch(restaurantsProvider);
     final orders = ref.watch(customerOrdersControllerProvider);
     final textTheme = Theme.of(context).textTheme;
@@ -76,6 +108,7 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
           return false;
         },
         child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
           if (activeOrder == null)
