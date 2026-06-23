@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/theme/luqmah_theme.dart';
 import '../../../features/session/session_controller.dart';
@@ -197,6 +198,159 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     context.go('/admin/login');
   }
+
+  Future<void> _launchEmail() async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'luqmah.project@gmail.com',
+    );
+    try {
+      if (!await launchUrl(emailUri, mode: LaunchMode.externalApplication)) {
+        throw 'Could not launch $emailUri';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open email application.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _launchPhone() async {
+    final Uri phoneUri = Uri(
+      scheme: 'tel',
+      path: '+962778700012',
+    );
+    try {
+      if (!await launchUrl(phoneUri, mode: LaunchMode.externalApplication)) {
+        throw 'Could not launch $phoneUri';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open phone application.')),
+        );
+      }
+    }
+  }
+
+  void _showContactUsBottomSheet() {
+    final tokens = context.luqmah;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: tokens.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadii.xl),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                Text(
+                  'How can we help?',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: tokens.strongText,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Select a contact method below.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: tokens.mutedText,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildContactOption(
+                  context: context,
+                  icon: Icons.mail_outline_rounded,
+                  label: 'Business E-mail: luqmah.project@gmail.com',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _launchEmail();
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildContactOption(
+                  context: context,
+                  icon: Icons.phone_outlined,
+                  label: '+962778700012',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _launchPhone();
+                  },
+                ),
+                const SizedBox(height: 20),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Close',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: tokens.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildContactOption({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final tokens = context.luqmah;
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: tokens.surfaceAlt.withValues(alpha: 0.8),
+          foregroundColor: tokens.strongText,
+          side: BorderSide(color: tokens.border, width: 1),
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: tokens.strongText, size: 20),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: tokens.strongText,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+          ),
+        ),
+      );
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -499,6 +653,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ),
                               ],
                             ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      Center(
+                        child: OutlinedButton(
+                          onPressed: _loading ? null : _showContactUsBottomSheet,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: tokens.mutedText,
+                            side: BorderSide(color: tokens.border),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Text(
+                            'Need help? Contact Us',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: tokens.strongText,
+                            ),
                           ),
                         ),
                       ),

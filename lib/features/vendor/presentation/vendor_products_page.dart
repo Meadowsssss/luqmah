@@ -259,17 +259,70 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          item.title,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleMedium,
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                item.title,
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.titleMedium,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              width: AppSpacing.sm,
+                                            ),
+                                            Text(
+                                              '${item.price.toStringAsFixed(2)} JD',
+                                              style: TextStyle(
+                                                color: context.luqmah.accent,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                         const SizedBox(height: AppSpacing.xs),
                                         Wrap(
                                           spacing: AppSpacing.sm,
                                           runSpacing: AppSpacing.xs,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
                                           children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.transparent,
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                                border: Border.all(
+                                                  color: item.isAvailable
+                                                      ? context.luqmah.primary
+                                                          .withValues(
+                                                          alpha: 0.4,
+                                                        )
+                                                      : context.luqmah.border,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                item.isAvailable
+                                                    ? 'Available'
+                                                    : 'Hidden',
+                                                style: TextStyle(
+                                                  color: item.isAvailable
+                                                      ? context.luqmah.primary
+                                                      : context
+                                                          .luqmah.mutedText,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
                                             _ProductMetaPill(
                                               icon: Icons.storefront_outlined,
                                               label: item.restaurantTitle,
@@ -281,40 +334,6 @@ class _VendorProductsPageState extends ConsumerState<VendorProductsPage> {
                                           ],
                                         ),
                                       ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.transparent,
-                                      borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(
-                                        color: item.isAvailable
-                                            ? context.luqmah.primary.withValues(
-                                                alpha: 0.4,
-                                              )
-                                            : context.luqmah.border,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      item.isAvailable ? 'Available' : 'Hidden',
-                                      style: TextStyle(
-                                        color: item.isAvailable
-                                            ? context.luqmah.primary
-                                            : context.luqmah.mutedText,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Text(
-                                    '${item.price.toStringAsFixed(2)} JD',
-                                    style: TextStyle(
-                                      color: context.luqmah.accent,
-                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                   PopupMenuButton<String>(
@@ -438,6 +457,7 @@ class _ProductMetaPill extends StatelessWidget {
     final tokens = context.luqmah;
 
     return Container(
+      constraints: const BoxConstraints(maxWidth: 160),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.transparent,
@@ -449,11 +469,15 @@ class _ProductMetaPill extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: tokens.primary),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: tokens.strongText,
-              fontWeight: FontWeight.w700,
+          Flexible(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: tokens.strongText,
+                fontWeight: FontWeight.w700,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],

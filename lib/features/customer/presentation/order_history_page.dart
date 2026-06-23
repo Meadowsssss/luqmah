@@ -167,9 +167,34 @@ class _OrderHistoryCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      order.restaurantName,
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            order.restaurantName,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            order.status.label,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Wrap(
@@ -187,23 +212,6 @@ class _OrderHistoryCard extends ConsumerWidget {
                       ],
                     ),
                   ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  order.status.label,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontWeight: FontWeight.w700,
-                  ),
                 ),
               ),
             ],
@@ -375,6 +383,7 @@ class _OrderMetaPill extends StatelessWidget {
     final tokens = context.luqmah;
 
     return Container(
+      constraints: const BoxConstraints(maxWidth: 160),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: tokens.surfaceAlt.withValues(alpha: 0.78),
@@ -386,11 +395,15 @@ class _OrderMetaPill extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: tokens.primary),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: tokens.strongText,
-              fontWeight: FontWeight.w700,
+          Flexible(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: tokens.strongText,
+                fontWeight: FontWeight.w700,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],
