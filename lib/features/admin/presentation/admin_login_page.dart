@@ -59,7 +59,13 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin access')),
+      appBar: AppBar(
+        title: const Text('Admin access'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.go('/login'),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
