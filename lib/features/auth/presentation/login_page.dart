@@ -218,10 +218,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _launchPhone() async {
-    final Uri phoneUri = Uri(
-      scheme: 'tel',
-      path: '+962778700012',
-    );
+    final Uri phoneUri = Uri(scheme: 'tel', path: '+962778700012');
     try {
       if (!await launchUrl(phoneUri, mode: LaunchMode.externalApplication)) {
         throw 'Could not launch $phoneUri';
@@ -242,9 +239,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       context: context,
       backgroundColor: tokens.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadii.xl),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
       ),
       builder: (context) {
         return SafeArea(
@@ -275,7 +270,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 _buildContactOption(
                   context: context,
                   icon: Icons.mail_outline_rounded,
-                  label: 'Business E-mail: luqmah.project@gmail.com',
+                  label: 'E-mail: luqmah.project@gmail.com',
                   onTap: () {
                     Navigator.pop(context);
                     _launchEmail();
@@ -347,10 +342,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
             ),
           ],
-          ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -471,9 +466,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                         child: Text(
                                           'Welcome back to Luqmah',
                                           style: GoogleFonts.plusJakartaSans(
-                                            textStyle: Theme.of(context)
-                                                .textTheme
-                                                .headlineMedium,
+                                            textStyle: Theme.of(
+                                              context,
+                                            ).textTheme.headlineMedium,
                                             fontWeight: FontWeight.w800,
                                           ),
                                         ),
@@ -507,16 +502,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   padding: WidgetStateProperty.all(
                                     const EdgeInsets.symmetric(vertical: 14),
                                   ),
-                                  backgroundColor: WidgetStateProperty.resolveWith(
-                                    (states) => states.contains(WidgetState.selected)
-                                        ? tokens.primary
-                                        : tokens.surfaceAlt.withValues(alpha: 0.6),
-                                  ),
-                                  foregroundColor: WidgetStateProperty.resolveWith(
-                                    (states) => states.contains(WidgetState.selected)
-                                        ? Colors.white
-                                        : tokens.strongText,
-                                  ),
+                                  backgroundColor:
+                                      WidgetStateProperty.resolveWith(
+                                        (states) =>
+                                            states.contains(
+                                              WidgetState.selected,
+                                            )
+                                            ? tokens.primary
+                                            : tokens.surfaceAlt.withValues(
+                                                alpha: 0.6,
+                                              ),
+                                      ),
+                                  foregroundColor:
+                                      WidgetStateProperty.resolveWith(
+                                        (states) =>
+                                            states.contains(
+                                              WidgetState.selected,
+                                            )
+                                            ? Colors.white
+                                            : tokens.strongText,
+                                      ),
                                   side: WidgetStateProperty.all(
                                     BorderSide(color: tokens.border),
                                   ),
@@ -659,7 +664,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       const SizedBox(height: AppSpacing.xxl),
                       Center(
                         child: OutlinedButton(
-                          onPressed: _loading ? null : _showContactUsBottomSheet,
+                          onPressed: _loading
+                              ? null
+                              : _showContactUsBottomSheet,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: tokens.mutedText,
                             side: BorderSide(color: tokens.border),
